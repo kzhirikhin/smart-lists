@@ -34,7 +34,12 @@ Smart Lists — локализованное веб-приложение для 
 Cloud Run identity `insights-api-runtime` имеет единственную project-level
 custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`.
 User-managed ключей у identity нет: будущий вызов использует ADC. Runtime пока
-остаётся на Anthropic до отдельного этапа замены провайдера.
+остаётся на Anthropic до отдельного этапа замены провайдера. Основной benchmark
+с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
+всех верхних API-границ показали у `gemini-3.5-flash-lite` более точный разбор
+связанных подпунктов при latency ниже примерно на 9% и цене выше в 1.25 раза.
+По итогам этапа 4 выбрана `gemini-3.5-flash-lite`;
+benchmark не менял production traffic.
 
 Точные версии всегда смотри в `package.json` и `package-lock.json`.
 
