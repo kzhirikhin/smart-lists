@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-09-02 (mysql2 override in the Prisma CLI)
+**Последнее обновление:** 2026-09-04 (Vertex AI IAM foundation)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -28,6 +28,13 @@ Smart Lists — локализованное веб-приложение для 
 - Vitest — юнит-тесты чистых функций и схем валидации;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Целевая миграция AI Insights на Vertex AI выполняется по этапам. В проекте
+`project-5b7c1bd1-572b-410d-826` включён `aiplatform.googleapis.com`, а
+Cloud Run identity `insights-api-runtime` имеет единственную project-level
+custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`.
+User-managed ключей у identity нет: будущий вызов использует ADC. Runtime пока
+остаётся на Anthropic до отдельного этапа замены провайдера.
 
 Точные версии всегда смотри в `package.json` и `package-lock.json`.
 
