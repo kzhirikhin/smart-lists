@@ -50,6 +50,7 @@ type InsightRequest = {
     omitted_item_notes: number;
   };
   user_message: string | null;
+  response_language: "ru" | "vi" | "en" | "ja";
 };
 
 /** Живая форма адреса Cloud Run — та же, что проверяет `insights-service-url`. */
@@ -440,7 +441,7 @@ describe("контекст AI — границы состава", () => {
     });
     setSessionUser(user.id);
 
-    await getListInsight(list.id, "С чего начать?", user.defaultSpaceId);
+    await getListInsight(list.id, "С чего начать?", user.defaultSpaceId, "ru");
 
     const body = lastRequest();
     expect(Object.keys(body).sort()).toEqual([
@@ -448,9 +449,11 @@ describe("контекст AI — границы состава", () => {
       "items",
       "list_note",
       "notes_meta",
+      "response_language",
       "title",
       "user_message",
     ]);
+    expect(body.response_language).toBe("ru");
     expect(Object.keys(body.items[0]).sort()).toEqual([
       "is_completed",
       "name",
@@ -470,7 +473,7 @@ describe("контекст AI — границы состава", () => {
 
     // Ни одного идентификатора: ни списка, ни записей, ни группы, ни самого
     // пользователя. Модель получает содержимое, но не может связать его с
-    // человеком, а логи Anthropic — сопоставить два запроса одного владельца.
+    // человеком, а логи AI-провайдера — сопоставить два запроса одного владельца.
     const serialized = JSON.stringify(body);
     for (const identifier of [
       list.id,

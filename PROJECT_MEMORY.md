@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-09-04 (Vertex AI IAM foundation)
+**Последнее обновление:** 2026-09-04 (этап 5 Vertex AI реализован в ветке)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -29,12 +29,14 @@ Smart Lists — локализованное веб-приложение для 
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
 
-Целевая миграция AI Insights на Vertex AI выполняется по этапам. В проекте
+Миграция AI Insights на Vertex AI выполняется по этапам. В проекте
 `project-5b7c1bd1-572b-410d-826` включён `aiplatform.googleapis.com`, а
 Cloud Run identity `insights-api-runtime` имеет единственную project-level
 custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`.
-User-managed ключей у identity нет: будущий вызов использует ADC. Runtime пока
-остаётся на Anthropic до отдельного этапа замены провайдера. Основной benchmark
+User-managed ключей у identity нет. На этапе 5 FastAPI-код переведён на
+`gemini-3.5-flash-lite` через ADC, а Server Action передаёт проверенную локаль
+интерфейса (`ru/vi/en/ja`) как явный `response_language`; production остаётся
+на Anthropic до отдельного rollout. Основной benchmark
 с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
 всех верхних API-границ показали у `gemini-3.5-flash-lite` более точный разбор
 связанных подпунктов при latency ниже примерно на 9% и цене выше в 1.25 раза.

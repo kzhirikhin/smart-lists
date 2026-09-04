@@ -64,12 +64,12 @@ Default Compute SA; 2026-09-01 — cleanup policy репозитория Artifac
 
 **Область:** runtime-архитектура приложения и AI-микросервиса
 
-**Методология:** STRIDE поверх DFD, дополнительно LINDDUN для потока данных в Anthropic
+**Методология:** STRIDE поверх DFD, дополнительно LINDDUN для потока данных к AI-провайдеру
 
 **Решение 2026-09-04:** одобрена поэтапная миграция AI Insights с Anthropic
 Claude Haiku 4.5 на Gemini Flash-Lite через Vertex AI. До переключения
 production Anthropic остаётся фактическим адресатом TB5, а Vertex AI ниже
-описан как целевое состояние. Этапы выполняются последовательно и не считаются
+описан как состояние ветки до production rollout. Этапы выполняются последовательно и не считаются
 закрытыми без отдельного подтверждения.
 
 Основное сравнение 16 синтетических сценариев с английским system prompt
@@ -279,7 +279,7 @@ Server Action. Один блок на сервис прятал бы это ра
 FastAPI к базе не обращается: весь контекст собирает Server Action и отправляет
 по HTTP. У сервиса нет ни драйвера БД, ни строки подключения.
 
-**Целевой DFD после миграции (ещё не runtime-факт):** блок Anthropic справа от
+**DFD ветки после этапа 5 (ещё не production-факт):** блок Anthropic справа от
 TB5 заменяется на `Vertex AI / Gemini Flash-Lite`; граница аутентифицируется
 короткоживущим access token из Application Default Credentials
 `insights-api-runtime`, без API key и без Anthropic token exchange. Сам TB5
@@ -312,8 +312,9 @@ Cloud Run развёрнут по свежему digest и защищён обе
 | TB1 | браузер → Server Actions | сессия NextAuth (БД), whitelist `AllowedEmail`, Zod, `listInSpaceWhere`, CSRF-проверка `Origin`/`Host` |
 | TB2 | браузер → S3 напрямую | presigned POST policy: `content-length-range`, `eq $Content-Type`, TTL 5 мин |
 | TB3 | браузер → Pusher (WSS) | `/api/pusher/auth`, private-канал строго по сессии |
-| TB4 | Next.js → FastAPI | Google ID-токен в `Authorization`, проверяемый дважды: IAM Cloud Run и сам сервис (подпись, `aud`, `email`); потолок тела 100 KB, `5/minute` |
+| TB4 | Next.js → FastAPI | Google ID-токен в `Authorization`, проверяемый дважды: IAM Cloud Run и сам сервис (подпись, `aud`, `email`); потолок тела 100 KB, `5/minute`; `response_language` ограничен `ru/vi/en/ja` |
 | TB5 | FastAPI → Anthropic | аутентификация — федерация по ID-токену Cloud Run, не ключ; таймаут 30 с и до двух автоматических повторов SDK; содержательно — договор, не архитектура |
+| TB5-target | FastAPI → Vertex AI | код этапа 5: ADC `insights-api-runtime`, фиксированные project/location/API/model, timeout 30 с, output cap 2048, без tools и API key; станет production-фактом только после rollout |
 | TB6 | приложение → Neon | TLS `verify-full`, connection string в server-side env |
 | TB7 | **пользователь A ↔ пользователь B** | `listInSpaceWhere`, вмерженный в Prisma `where` |
 | TB8 | GitHub Actions → S3 / прод | OIDC, `sub` привязан к `main`, роль только `s3:PutObject` |
@@ -1139,8 +1140,8 @@ STRIDE спрашивает «может ли злоумышленник что-
 | A78 | Spend Caps существуют на правильном проекте и сервисах | Ошибка scope оставляет Vertex AI или Cloud Run без независимого финансового предохранителя | ✅ вручную подтверждены 2026-09-04 в Billing Console: проект `project-5b7c1bd1-572b-410d-826`, Cloud Run ¥500/месяц, Vertex AI ¥100/месяц. Обычный alerts-only budget существует отдельно. Budget API не включён для CLI-проверки; Preview-конфигурация может дрейфовать без сигнала | M | 2026-09-04 |
 | A79 | Изменять IAM и billing может только административная identity, отделённая от runtime/deploy | Компрометация приложения или CD снимает последний независимый cost control | ✅ read-only IAM-сверка 2026-09-04: единственный Project Owner и Billing Admin — `zhirikhin.kirill@gmail.com`; у `github-deployer` и `insights-api-runtime` административных ролей нет | M | 2026-09-04 |
 | A80 | Деплойная identity не может назначить более сильную runtime identity или снять Spend Cap | Вредоносный workflow обходит ограничения текущего service account и финансовый предел | ✅ повторно сверено после Vertex IAM 2026-09-04: `github-deployer` имеет `artifactregistry.writer`, `run.developer` и `serviceAccountUser` только на `insights-api-runtime`; GitHub WIF ограничен repository ID `1199475908` и `main`. У runtime единственная project-role `vertexAiGeminiInvoker`; административных прав у runtime/deploy нет | M | 2026-09-04 |
-| A81 | После миграции Vertex AI остаётся единственным доступным AI-каналом | Сохранённая Anthropic federation позволит вредоносному коду тратить вне Vertex Spend Cap | ❌ **пока неверно:** production использует Anthropic, а её federation необходима. Удаление правила, четырёх `ANTHROPIC_*`, SDK и сетевого пути — обязательный отдельный этап только после успешного переключения и окна rollback | — | — |
-| A82 | Gemini вызывается через ADC runtime identity без API key | Ключ возвращает долгоживущий переносимый секрет и отдельный путь аутентификации | 🟡 **IAM-основание готово 2026-09-04:** включён `aiplatform.googleapis.com`; прикреплённый к Cloud Run `insights-api-runtime` получил custom role `vertexAiGeminiInvoker` только с `aiplatform.endpoints.predict`, user-managed ключей нет. Google SDK и сам вызов ещё не реализованы, поэтому end-to-end утверждение пока не закрыто | M | 2026-09-04 |
+| A81 | После миграции Vertex AI остаётся единственным доступным AI-каналом | Сохранённая Anthropic federation позволит вредоносному коду тратить вне Vertex Spend Cap | ❌ **пока неверно:** production использует Anthropic, а внешнее правило federation ещё существует. Код, SDK и четыре `ANTHROPIC_*` удалены в ветке этапа 5, но сам канал закрывается только отзывом правила после rollout | — | — |
+| A82 | Gemini вызывается через ADC runtime identity без API key | Ключ возвращает долгоживущий переносимый секрет и отдельный путь аутентификации | 🟡 **реализовано в коде 2026-09-04:** `genai.Client` явно закреплён на Vertex AI, project, `global`, `v1` и timeout; модель — literal allowlist, API key отсутствует. Статические и runtime-mock тесты зелёные; известный остаток — live end-to-end доказательство появится только после rollout | T* | каждый CI; live после rollout |
 | A83 | Компрометация Next.js или FastAPI не позволяет снять provider Spend Cap | Если runtime или deploy получают Budget/IAM Admin, прикладные лимиты и независимый cap схлопываются в одну границу доверия | ✅ текущий IAM это подтверждает, но после выдачи Vertex-роли и изменения deployment-контура требуется повторная live-сверка. Запрещённые полномочия должны остаться у runtime/deploy отсутствующими | M | 2026-09-04 |
 | A84 | Spend Cap является точным пределом расходов | Preview-cap срабатывает по оценке с задержкой; уже начатые запросы завершаются, поэтому сумма может быть превышена | ❌ по построению. Компенсации: cap задаётся ниже абсолютной границы, сохраняются квоты и прикладные лимиты. Небольшой перерасход и ежемесячное восстановление бюджета принимаются явно, а не выдаются за hard guarantee | — | — |
 | A85 | Условия обработки данных Vertex AI проверены для выбранных model и location | Перенос обещаний Anthropic по аналогии скрывает изменение retention, data residency, abuse-monitoring или использования пользовательского содержимого | ❌ **ещё не проверено:** до production требуется сверить актуальные условия Google для paid Vertex AI, выбранный location и модель, затем обновить LINDDUN-раздел фактическими выводами | — | — |
@@ -1158,7 +1159,7 @@ STRIDE спрашивает «может ли злоумышленник что-
 Колонка «Проверено» для **T** содержит «каждый CI» — дата там бессмысленна, гарантия обновляется сама. Для **M** и **R** это дата последней проверки, то есть момент, после которого возможен незамеченный дрейф.
 
 Распределение на 2026-09-04 после добавления предпроектных A78–A85 и
-исправления устаревшей сводки: **T — 34, M — 27, — — 13, R — 7, T\* — 4**
+исправления устаревшей сводки и реализации A82: **T — 34, M — 26, — — 13, R — 7, T\* — 5**
 (85 строк).
 Новые `—` намеренны: они не маскируют ещё не реализованную миграцию зелёным
 статусом, а задают условия её завершения. Практический вывод остаётся прежним:
@@ -1389,9 +1390,9 @@ checkout не доказывала бы происхождение всего о
 | 1. Модель угроз | ✅ закрыт 2026-09-04 | impact-check, целевой DFD и A78–A85 зафиксированы без подмены текущего состояния целевым |
 | 2. Security-контракты | ✅ закрыт 2026-09-04 | восемь strict-XFAIL контрактов фиксируют RED для auth, endpoint, capabilities, logging, fail-closed ответа и удаления legacy; XPASS ломает CI |
 | 3. Vertex IAM | ✅ закрыт 2026-09-04 | API включён; keyless Cloud Run ADC получил custom role только с `aiplatform.endpoints.predict`, без административных полномочий и user-managed ключей |
-| 4. Сравнение Flash-Lite | в работе | выполнены 32 вызова 3.1/3.5 на основном наборе и 8 peak-вызовов у верхних API-границ; peak уточнил рекомендацию в пользу 3.5, требуется явное принятие выбора |
-| 5. Замена провайдера | не начат | асинхронный Vertex-вызов при неизменном входном контракте и prompt boundary |
-| 6. Удаление Anthropic | не начат | устранён обход Vertex Spend Cap через старую federation |
+| 4. Сравнение Flash-Lite | ✅ закрыт 2026-09-04 | после 32 обычных и 8 peak-вызовов владелец выбрал `gemini-3.5-flash-lite` |
+| 5. Замена провайдера | в работе | в ветке реализованы асинхронный Vertex-вызов, ADC, fail-closed ошибки и явный языковой контракт; production ещё не переключён |
+| 6. Удаление Anthropic | не начат | отзыв внешнего правила federation устраняет обход Vertex Spend Cap; runtime-код и SDK уже удалены этапом 5 |
 | 7. Supply chain | не начат | hash-pinned Google SDK, SBOM, vulnerability/provenance gates |
 | 8. Проверка | не начат | автоматические и ручные негативные/позитивные сценарии |
 | 9. Production rollout | не начат | smoke, наблюдение, контролируемый rollback |

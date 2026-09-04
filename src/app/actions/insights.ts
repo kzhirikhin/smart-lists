@@ -50,6 +50,9 @@ import {
 /** Максимальная длина пользовательского вопроса (символов). */
 const MAX_USER_MESSAGE_LENGTH = 500;
 
+/** Языки, для которых интерфейс и AI-ответ имеют полный контракт. */
+const responseLanguageSchema = z.enum(["ru", "vi", "en", "ja"]);
+
 /** Запас над ожидаемым ответом Anthropic при `max_tokens=2048`. */
 const MAX_INSIGHT_RESPONSE_LENGTH = 20_000;
 
@@ -84,6 +87,7 @@ export async function getListInsight(
   listId: string,
   userMessage?: string,
   spaceId?: string,
+  responseLanguage?: string,
 ): Promise<InsightResult> {
   // Проверяем авторизацию
   const session = await auth();
@@ -381,6 +385,11 @@ export async function getListInsight(
 
   // Hard cap на длину вопроса — защита от cost abuse
   const safeUserMessage = userMessage?.slice(0, MAX_USER_MESSAGE_LENGTH);
+  // Локаль приходит из клиентского маршрута, поэтому остаётся недоверенным
+  // вводом. В сервис уходит только один из четырёх поддерживаемых кодов;
+  // неизвестное значение безопасно сводится к английскому.
+  const safeResponseLanguage =
+    responseLanguageSchema.safeParse(responseLanguage).data ?? "en";
 
   // Токен едет в обычном `Authorization`, а не в `X-Serverless-Authorization`,
   // и это осознанно. Cloud Run принимает оба, но из второго вырезает подпись
@@ -426,6 +435,7 @@ export async function getListInsight(
           omitted_item_notes: omittedItemNotes,
         },
         user_message: safeUserMessage ?? null,
+        response_language: safeResponseLanguage,
       }),
     });
 
