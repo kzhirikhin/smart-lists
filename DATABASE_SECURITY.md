@@ -34,13 +34,26 @@ policy.
 | `smartlists_backup` | Production backup workflow | Read-only полный dump с `BYPASSRLS`, без write, DDL и membership |
 
 `neondb_owner` остаётся операторской break-glass ролью Neon. Её credential не
-должен находиться в Vercel или GitHub Actions. `DIRECT_URL` доступен только
-защищённым migration/audit операциям соответствующего GitHub Environment;
-обычные CI jobs и работающий Next.js его не получают.
+должен находиться в Vercel, GitHub Actions или локальном `.env`. `DIRECT_URL`
+доступен только защищённым migration/audit операциям соответствующего GitHub
+Environment; обычные CI jobs и работающий Next.js его не получают.
 
-Пароли ролей создаются и ротируются вне репозитория. Доступ к Neon Console/API
-считается эквивалентным компрометации БД: точное поведение control plane при
-хранении SQL-created role passwords остаётся непроверяемым допущением A43.
+Локальная разработка использует те же роли, что и Preview с Production:
+`smartlists_runtime` в `DATABASE_URL` и `smartlists_migrator` в `DIRECT_URL`.
+Это не только убирает владельческий credential с рабочей машины: под
+`neondb_owner` действовал `BYPASSRLS`, поэтому весь RLS-контур локально молча не
+применялся и расхождение с боевым поведением нельзя было заметить. Следствие для
+инструментов: у migrator нет `CREATEDB`, а `prisma migrate dev` создаёт shadow-базу,
+поэтому её адрес задаётся явно через `SHADOW_DATABASE_URL` и указывает на
+одноразовый контейнер из `docker-compose.test.yml`. Guard в `prisma.config.ts`
+принимает только петлевой адрес: Prisma стирает эту базу перед каждым запуском.
+
+Пароли ролей создаются вне репозитория, но **секретными не остаются**: у проекта
+`store_passwords: true`, и 2026-09-03 проверено, что control plane выдаёт рабочие
+пароли даже для ролей, заведённых SQL в обход консоли. Поэтому разделение
+привилегий здесь опирается на права ролей внутри БД, а не на то, что их пароли
+кому-то неизвестны. Доступ к Neon Console или API эквивалентен компрометации БД —
+см. A43 и A44 в `THREAT_MODEL.md`.
 
 ## Tenant-контекст
 

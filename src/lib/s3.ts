@@ -2,7 +2,7 @@
  * @file s3.ts
  * @description Серверный S3-клиент и хелперы для работы с вложениями.
  *
- * ВНИМАНИЕ: модуль читает секретные AWS-ключи из env и НЕ должен импортироваться
+ * ВНИМАНИЕ: модуль работает с учётными данными AWS и НЕ должен импортироваться
  * в клиентские компоненты (`"use client"`). Использовать только из Server Actions.
  *
  * Архитектурный принцип фичи — клиент грузит байты напрямую в S3 по presigned
@@ -28,6 +28,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
 import { getExtension } from "@/lib/attachments";
 import { logger } from "@/lib/logger";
+import { resolveS3Credentials } from "@/lib/s3-credentials";
 
 // ---------------------------------------------------------------------------
 // Конфигурация из env
@@ -46,24 +47,29 @@ const PRESIGN_TTL = 300; // 5 минут
 
 /**
  * Единственный экземпляр S3Client.
- * Ключи передаём явно (а не через авто-обнаружение SDK) — это развязывает нас
- * от зарезервированных `AWS_*`-имён на платформах вроде Vercel.
+ * Учётные данные передаём явно (а не через авто-обнаружение SDK) — это
+ * развязывает нас от зарезервированных `AWS_*`-имён на платформах вроде Vercel.
+ * По той же причине роль читается из `S3_ROLE_ARN`, а не из документированного
+ * Vercel `AWS_ROLE_ARN`: имя вида `AWS_*` платформа вправе переопределить, и
+ * `AWS_REGION` она действительно выставляет сама, по региону исполнения.
  */
 const s3Client = new S3Client({
   region: REGION,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
-  },
+  credentials: resolveS3Credentials(process.env),
 });
 
-/** Заданы ли все обязательные переменные окружения для S3. */
+/**
+ * Достаточно ли конфигурации, чтобы обращаться к S3.
+ *
+ * Проверяются именно те переменные, которые выбрал `resolveS3Credentials`:
+ * при федерации статических ключей нет и требовать их нельзя, иначе вложения
+ * выключатся на рабочей конфигурации.
+ */
 export function isS3Configured(): boolean {
+  if (!BUCKET || !REGION) return false;
+  if (process.env.S3_ROLE_ARN) return true;
   return Boolean(
-    BUCKET &&
-      REGION &&
-      process.env.S3_ACCESS_KEY_ID &&
-      process.env.S3_SECRET_ACCESS_KEY,
+    process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY,
   );
 }
 

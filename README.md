@@ -51,6 +51,14 @@ AUTH_GOOGLE_SECRET=google-client-secret
 
 `DATABASE_URL` and `DIRECT_URL` may be identical locally. In a cloud environment the first one usually uses a pooled connection for the PrismaPg runtime adapter, while the second is loaded by `prisma.config.ts` and used by Prisma CLI for migrations.
 
+If the migration role deliberately lacks `CREATEDB` — as it does here, so that no owner-level credential sits on a development machine — then `prisma migrate dev` cannot create its shadow database and needs one supplied:
+
+```env
+SHADOW_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/smartlists_shadow
+```
+
+That address points at the throwaway container from `docker-compose.test.yml`, which creates the database on every start; bring it up with `npm run test:integration:db` before authoring a migration. The value is not a secret, but it is dangerous in a different way: Prisma **wipes** the database it names before every run. `prisma.config.ts` therefore accepts a loopback address only and refuses a value equal to the working one.
+
 The runtime pool is deliberately limited to five connections per application instance, with finite connection and idle timeouts. This avoids inheriting node-postgres defaults that are unsafe for an unbounded number of serverless instances.
 
 > Important: the root `.env` is **development** configuration. The Prisma CLI reads its variables from there, so production connection strings must never land in this file. Production values live only in the hosting provider's environment variables and in GitHub Secrets. This is not limited to the database: Pusher and S3 also use separate resources in development. See [Environment separation](#environment-separation).
@@ -87,6 +95,14 @@ S3_REGION=ap-southeast-1
 S3_ACCESS_KEY_ID=aws-access-key
 S3_SECRET_ACCESS_KEY=aws-secret-key
 ```
+
+Where the platform can issue an OIDC token — Vercel does — the static pair is replaced by a role, and no long-lived key exists on that path at all:
+
+```env
+S3_ROLE_ARN=arn:aws:iam::accountid:role/role-name
+```
+
+A role, when present, wins over a key pair, so both can coexist during a cutover and the deployment still exercises federation; removing `S3_ROLE_ARN` is the rollback. A malformed ARN fails startup rather than falling back to the key pair, because the dangerous outcome is not a broken deployment but a working one that everybody believes has already left long-lived keys behind.
 
 5. AI insights are intentionally unavailable in Local and Preview. Production
 uses Google identity federation rather than a shared static secret. Configure
@@ -182,7 +198,9 @@ No single check is treated as sufficient. A request crosses several independent 
 
 Every component holds the narrowest set of rights that still lets it do its job.
 
-**Storage.** The bucket is private and has no public URLs at all; downloads are issued as presigned GET links with a five-minute TTL. Each environment has its own IAM user, scoped to the `lists/*` prefix, and dev and production permissions are deliberately kept identical — if dev were broader, a key outside `lists/` would pass locally and fail in production.
+**Storage.** The bucket is private and has no public URLs at all; downloads are issued as presigned GET links with a five-minute TTL. Each environment has its own IAM role, scoped to the `lists/*` prefix, and dev and production permissions are deliberately kept identical — if dev were broader, a key outside `lists/` would pass in one environment and fail in the other. Nothing holds a long-lived key any more: the deployed application obtains short-lived credentials by exchanging a Vercel OIDC token, each role trusts exactly one environment's token subject, and the access keys that preceded this have been deleted rather than left dormant.
+
+The buckets also refuse the account that owns them. A bucket policy denies reading, writing, listing and version deletion to every principal except the application's own role and the account root — so administrative credentials, which exist for operating the account rather than for reading user data, do not reach the files. The same shape covers the backup bucket, where database dumps carry users' Google tokens and nothing but the backup role needs to write. Being resource-based, none of it can be undone by granting oneself broader IAM permissions; recovery goes through the root user, and that path was rehearsed on a throwaway bucket before either policy was applied.
 
 **Secrets stay on the server.** Only `NEXT_PUBLIC_*` variables reach the browser bundle: the client gets the Pusher key, while the Pusher secret and the AWS keys remain server-side. Modules that read privileged state are marked `import "server-only"` ([`src/lib/spaces.ts`](src/lib/spaces.ts#L1)), which turns an accidental client import into a build error rather than a leak.
 
@@ -275,7 +293,9 @@ Auth.js appends the provider callback path and securely returns the browser to t
 
 ### Database
 
-The development environment is a separate Neon branch created from the main one: a copy of the data appears instantly and then lives independently.
+The development environment is a separate Neon branch. It was originally created from the main one, and no longer is: production data stays in production. The rule is written as an outcome rather than a prohibition on copying, because copying is not the only way data arrives — Preview runs against this same branch, so anyone who signs in there creates rows in it simply by using the application. What keeps the branch free of other people's data is therefore the whitelist: every address in `AllowedEmail` belongs to the maintainer, and the moment one does not, the assumption behind the local `.env` no longer holds.
+
+Should production data ever need examining outside production, it goes to a separate environment with its own protection, not to a developer's machine.
 
 - production `DATABASE_URL` remains in Vercel, while migration `DIRECT_URL`
   credentials are scoped to the dedicated GitHub Environments and backup
@@ -285,7 +305,7 @@ The development environment is a separate Neon branch created from the main one:
   promotion waits for its required `Production database migration` check;
 - Preview migrations run before the stable proxy branch is pushed;
 - migrations are developed against the dev branch with `npx prisma migrate dev`;
-- when fresh data is needed, the dev branch is recreated from the main one in the Neon console.
+- the dev branch is not refreshed from the main one; test data is created in it directly.
 
 To check which database the current environment is connected to, look at the host in `DATABASE_URL`: every Neon branch has its own endpoint identifier.
 
@@ -293,7 +313,7 @@ To check which database the current environment is connected to, look at the hos
 
 The key risk behind splitting S3: the database stores only object keys, while the files themselves exist in a single copy. While the bucket was shared, deleting an attachment in development erased the production file.
 
-- the dev bucket is served by a separate IAM user;
+- the dev bucket is served by a separate IAM role, assumed by Preview deployments through OIDC federation; local development currently has no S3 credentials at all, so attachments are switched off there;
 - its policy mirrors the production one and is limited to the `lists/*` prefix — permissions must match across environments, otherwise a key outside `lists/` passes locally and fails in production;
 - the dev bucket's CORS allows `http://localhost:3000` and preview addresses; the production bucket allows only the production domain.
 

@@ -18,7 +18,9 @@
  *   Возвращает `Session | null`.
  *
  * Провайдер: Google OAuth 2.0.
- * Учётные данные (CLIENT_ID, CLIENT_SECRET) хранятся в `.env.local`.
+ * Учётные данные (CLIENT_ID, CLIENT_SECRET) берутся из окружения: локально —
+ * из корневого `.env`, в Preview и Production — из переменных Vercel, причём
+ * OAuth-клиент и `AUTH_SECRET` у этих двух сред разные.
  *
  * Адаптер: PrismaAdapter — автоматически создаёт/обновляет записи
  * в таблицах `User`, `Account`, `Session`, `VerificationToken` в PostgreSQL.

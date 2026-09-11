@@ -8,9 +8,9 @@ import {
   EXPECTED_ROUTINE_DEFINITIONS,
   EXPECTED_ROUTINES,
   EXPECTED_TABLES,
-  EXPECTED_TRIGGERS,
   RUNTIME_EXECUTE_ROUTINES,
   RUNTIME_TABLE_PRIVILEGES,
+  assertTriggerInventory,
 } from "./database-role-contract.mjs";
 
 const { Client } = pg;
@@ -114,15 +114,42 @@ async function listPublicPolicies(client) {
   return result.rows.map((row) => row.policy);
 }
 
+// Права на объекты выдаёт их владелец. Пока схему создал сам admin, владелец —
+// он; после передачи владения контрактной роли объектами владеет она, а admin
+// состоит в ней без наследования (`inherit_option = false` и на локальной
+// тестовой базе, и на production), поэтому обязан делать `SET ROLE`. Владелец
+// определяется по факту, а не по предположению о стадии, — иначе скрипт
+// работает ровно в одной из двух и молча ломается при переходе.
+// Владелец определяется по таблицам, а не по схеме: до передачи владения схема
+// public принадлежит псевдороли `pg_database_owner`, и сравнивать её с ролью
+// таблиц бессмысленно. Неоднородное владение таблицами — отказ: при нём часть
+// GRANT прошла бы, а часть нет.
+async function resolvePublicObjectOwner(client) {
+  const owners = await client.query(`
+    SELECT DISTINCT pg_get_userbyid(relation.relowner) AS owner
+    FROM pg_class relation
+    JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'public'
+      AND relation.relkind = 'r'
+    ORDER BY owner
+  `);
+  if (owners.rowCount !== 1) {
+    throw new Error(
+      "Владение таблицами public неоднородно или таблиц нет: " +
+        `${owners.rows.map((row) => row.owner).join(", ") || "∅"}.`,
+    );
+  }
+  return owners.rows[0].owner;
+}
+
+// Триггеры и включённость RLS читаются вместе: состояние guard-ов имеет смысл
+// только в паре с RLS, потому что профиль rollout определяется обоими.
 async function listPublicTriggers(client) {
-  const result = await client.query(`
-    SELECT format(
-             '%s:%s:%s:%s',
-             relation.relname,
-             trigger.tgname,
-             routine.proname,
-             trigger.tgenabled
-           ) AS trigger
+  const triggers = await client.query(`
+    SELECT relation.relname AS "table",
+           trigger.tgname AS name,
+           routine.proname AS "function",
+           trigger.tgenabled AS enabled
     FROM pg_trigger trigger
     JOIN pg_class relation ON relation.oid = trigger.tgrelid
     JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
@@ -131,7 +158,19 @@ async function listPublicTriggers(client) {
       AND NOT trigger.tgisinternal
     ORDER BY relation.relname, trigger.tgname
   `);
-  return result.rows.map((row) => row.trigger);
+  const relations = await client.query(`
+    SELECT relation.relname AS name
+    FROM pg_class relation
+    JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'public'
+      AND relation.relkind = 'r'
+      AND relation.relrowsecurity
+    ORDER BY relation.relname
+  `);
+  return {
+    triggers: triggers.rows,
+    rlsEnabled: relations.rows.map((row) => row.name),
+  };
 }
 
 async function assertExistingRuntimeRoleIsRestricted(client) {
@@ -310,6 +349,7 @@ async function main() {
   await client.connect();
 
   let roleCreated = false;
+  let appliedProfile;
   try {
     await client.query("BEGIN");
 
@@ -328,10 +368,13 @@ async function main() {
       EXPECTED_POLICIES,
       "Набор policies public",
     );
-    assertSameValues(
-      await listPublicTriggers(client),
-      EXPECTED_TRIGGERS,
-      "Набор triggers public",
+    // Состояние guard-триггеров сверяется с профилем rollout, а не с
+    // константой: на production арендная изоляция включена, и жёсткая сверка
+    // делала бы ротацию runtime-пароля неисполнимой ровно там (A89).
+    const triggerCatalog = await listPublicTriggers(client);
+    const enforcementProfile = assertTriggerInventory(
+      triggerCatalog.triggers,
+      triggerCatalog.rlsEnabled,
     );
 
     const roleResult = await client.query(
@@ -372,6 +415,14 @@ async function main() {
     await client.query(
       `GRANT CONNECT ON DATABASE ${databaseIdentifier} TO ${roleIdentifier}`,
     );
+    // Права уровня БД остаются за admin: базой контрактная роль не владеет.
+    // Всё, что ниже, — объектное, и выдаётся от имени владельца.
+    const objectOwner = await resolvePublicObjectOwner(client);
+    const assumeOwner = objectOwner !== databaseResult.rows[0].owner_role;
+    if (assumeOwner) {
+      await client.query(`SET ROLE ${client.escapeIdentifier(objectOwner)}`);
+    }
+
     await client.query(
       `REVOKE ALL PRIVILEGES ON SCHEMA public FROM ${roleIdentifier}`,
     );
@@ -404,6 +455,12 @@ async function main() {
       );
     }
 
+    if (assumeOwner) {
+      await client.query("RESET ROLE");
+    }
+
+    // Здесь речь о будущих объектах самого admin, поэтому выполняется от него
+    // и после RESET ROLE: `FOR ROLE` требует членства в названной роли.
     for (const objectType of ["TABLES", "SEQUENCES", "FUNCTIONS"]) {
       await client.query(
         `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerIdentifier} IN SCHEMA public ` +
@@ -411,6 +468,18 @@ async function main() {
       );
     }
 
+    const afterCatalog = await listPublicTriggers(client);
+    const enforcementAfter = assertTriggerInventory(
+      afterCatalog.triggers,
+      afterCatalog.rlsEnabled,
+    );
+    if (enforcementAfter !== enforcementProfile) {
+      throw new Error(
+        `Профиль арендной изоляции изменился: было ${enforcementProfile}, ` +
+          `стало ${enforcementAfter}.`,
+      );
+    }
+    appliedProfile = enforcementProfile;
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
@@ -429,6 +498,8 @@ async function main() {
     role: RUNTIME_ROLE,
     roleCreated,
     endpointFingerprint: fingerprint(adminUrl.hostname),
+    enforcementProfile: appliedProfile,
+    enforcementProfileChanged: false,
   }, null, 2));
 }
 

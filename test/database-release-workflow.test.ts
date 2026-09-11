@@ -10,6 +10,27 @@ const guard = readRepoFile("scripts/verify-release-database.mjs");
 const productionJob = ci.slice(ci.indexOf("  production-migration:"));
 
 describe("database release workflow", () => {
+  it("обходит skip предков только при успехе каждого прямого needs и без отмены", () => {
+    const condition = productionJob.match(/    if: >-\n([\s\S]*?)\n    needs:/)?.[1];
+    const dependencies = productionJob.match(/    needs: \[([^\]]+)\]/)?.[1]
+      .split(",").map((job) => job.trim());
+    expect(condition).toBeDefined();
+    expect(dependencies?.length).toBeGreaterThan(0);
+
+    // Набор берётся из самого workflow: новый needs тоже обязан иметь guard.
+    // Тест закрепляет форму условия, но не эмулирует планировщик GitHub.
+    const clauses = condition!.trim().split(/\s*&&\s*/).map((clause) =>
+      clause.replace(/needs\['([^']+)'\]/g, "needs.$1"),
+    );
+    expect(clauses).toEqual([
+      "!cancelled()",
+      "github.event_name == 'push'",
+      "github.ref == 'refs/heads/main'",
+      "vars.ENABLE_PRODUCTION_MIGRATION == 'true'",
+      ...dependencies!.map((job) => `needs.${job}.result == 'success'`),
+    ]);
+  });
+
   it("вызывается только после всех проверок push в main", () => {
     expect(ci).toContain("github.event_name == 'push'");
     expect(ci).toContain("github.ref == 'refs/heads/main'");

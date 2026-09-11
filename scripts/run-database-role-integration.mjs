@@ -253,7 +253,11 @@ async function proveUnexpectedOwnerMemberRejected(
   }
 }
 
-async function proveTenantEnforcementConfigurator(baseEnv, migratorDatabaseUrl) {
+async function proveTenantEnforcementConfigurator(
+  baseEnv,
+  migratorDatabaseUrl,
+  runtimeDatabasePassword,
+) {
   const enforcementEnv = {
     ...baseEnv,
     DIRECT_URL: migratorDatabaseUrl,
@@ -405,6 +409,45 @@ async function proveTenantEnforcementConfigurator(baseEnv, migratorDatabaseUrl) 
     "запрещена из профиля tenant-full",
   );
 
+  // Регрессия 2026-09-06. Конфигуратор ролей сверял состояние guard-триггеров
+  // с константой «всегда выключены» и потому отказывался работать на базе, где
+  // арендная изоляция уже включена, — то есть ротация паролей операционных
+  // ролей была неисполнима именно на production. Прогоняем полный круг смены
+  // пароля на самом сильном профиле и возвращаем прежний, чтобы остальные
+  // проверки этой функции продолжали пользоваться той же строкой подключения.
+  const originalMigratorPassword = new URL(migratorDatabaseUrl).password;
+  const rotationArgs = [
+    "scripts/configure-operational-roles.mjs",
+    "--apply",
+    "--scope=migration",
+    "--rotate-migrator-password",
+  ];
+  run(process.execPath, rotationArgs, {
+    ...baseEnv,
+    MIGRATOR_ROLE_PASSWORD: password(),
+  });
+  run(process.execPath, rotationArgs, {
+    ...baseEnv,
+    MIGRATOR_ROLE_PASSWORD: originalMigratorPassword,
+  });
+
+  // Runtime-роль настраивается отдельным скриптом с собственной сверкой
+  // инвентаря, и та же поломка была и в нём. Её цена выше: ротация runtime —
+  // единственная операция с настоящим окном отказа боевого приложения.
+  const runtimeRotationArgs = [
+    "scripts/configure-runtime-role.mjs",
+    "--apply",
+    "--rotate-password",
+  ];
+  run(process.execPath, runtimeRotationArgs, {
+    ...baseEnv,
+    RUNTIME_ROLE_PASSWORD: password(),
+  });
+  run(process.execPath, runtimeRotationArgs, {
+    ...baseEnv,
+    RUNTIME_ROLE_PASSWORD: runtimeDatabasePassword,
+  });
+
   const tenantFullClient = new Client({ connectionString: migratorDatabaseUrl });
   await tenantFullClient.connect();
   try {
@@ -548,7 +591,11 @@ async function main() {
   // Rollout-гейт проходит disabled -> usage-canary -> list-item -> space-groups
   // и обратно, идемпотентен и отвергает подменённые helper/policy и частичный
   // профиль.
-  await proveTenantEnforcementConfigurator(baseEnv, migratorDatabaseUrl);
+  await proveTenantEnforcementConfigurator(
+    baseEnv,
+    migratorDatabaseUrl,
+    runtimePassword,
+  );
 
   run(
     process.execPath,

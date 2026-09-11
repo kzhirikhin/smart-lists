@@ -125,8 +125,11 @@ export const EXPECTED_POLICIES = [
   "_ListGroupMembers:app_list_group_membership_update:UPDATE:PERMISSIVE:public",
 ];
 
-// D означает disabled. Включение guard-триггеров и RLS — отдельный gate;
-// этот контракт намеренно не позволяет configurator сделать это молча.
+// Состояние в конце строки: O — enabled, D — disabled. Для аудит-триггеров это
+// требование, для guard-ов арендной изоляции — лишь состояние в профиле
+// `disabled`: они включаются по одному отдельным gate, и их фактическое
+// состояние сверяется с профилем rollout (см. assertTriggerInventory), а не с
+// этим списком. Тождество триггеров при этом сверяется строго по нему.
 export const EXPECTED_TRIGGERS = [
   "AllowedEmail:app_audit_global_admin_change:app_audit_global_admin_change:O",
   "AppSetting:app_audit_global_admin_change:app_audit_global_admin_change:O",
@@ -139,6 +142,140 @@ export const EXPECTED_TRIGGERS = [
   "UserDailyUsage:app_tenant_update_columns_guard:app_enforce_tenant_update_columns:D",
   "_ListGroupMembers:app_tenant_update_columns_guard:app_enforce_tenant_update_columns:D",
 ];
+
+export const GUARD_NAME = "app_tenant_update_columns_guard";
+
+export const TENANT_TABLES = [
+  "Space",
+  "List",
+  "ListShare",
+  "ListGroup",
+  "_ListGroupMembers",
+  "Item",
+  "Attachment",
+  "UserDailyUsage",
+];
+
+// Ступени rollout арендной изоляции. RLS и guard-триггеры включаются только
+// вместе и только целыми ступенями: промежуточное состояние означает, что
+// переход не довели до конца, и любой configurator обязан остановиться.
+export const PROFILE_TABLES = {
+  disabled: [],
+  "usage-canary": ["UserDailyUsage"],
+  "list-item": ["UserDailyUsage", "List", "Item"],
+  "space-groups": [
+    "UserDailyUsage",
+    "List",
+    "Item",
+    "Space",
+    "ListGroup",
+    "_ListGroupMembers",
+  ],
+  "tenant-full": [
+    "UserDailyUsage",
+    "List",
+    "Item",
+    "Space",
+    "ListGroup",
+    "_ListGroupMembers",
+    "ListShare",
+    "Attachment",
+  ],
+};
+
+function sortedValues(values) {
+  return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+function assertMatchingValues(actual, expected, label) {
+  const actualSorted = sortedValues(actual);
+  const expectedSorted = sortedValues(expected);
+  if (JSON.stringify(actualSorted) !== JSON.stringify(expectedSorted)) {
+    throw new Error(
+      `${label} не совпадает. Ожидалось: ${expectedSorted.join(", ") || "∅"}; ` +
+        `получено: ${actualSorted.join(", ") || "∅"}.`,
+    );
+  }
+}
+
+export function identifyEnforcementProfile(rlsEnabled, guardsEnabled) {
+  const actualRls = sortedValues(rlsEnabled);
+  const actualGuards = sortedValues(guardsEnabled);
+
+  for (const [profile, tables] of Object.entries(PROFILE_TABLES)) {
+    const expected = sortedValues(tables);
+    if (
+      JSON.stringify(actualRls) === JSON.stringify(expected) &&
+      JSON.stringify(actualGuards) === JSON.stringify(expected)
+    ) {
+      return profile;
+    }
+  }
+
+  throw new Error(
+    "Текущее состояние RLS/guards не соответствует известному rollout-профилю: " +
+      `RLS=${actualRls.join(", ") || "∅"}; ` +
+      `guards=${actualGuards.join(", ") || "∅"}.`,
+  );
+}
+
+// Сверяет инвентарь триггеров и возвращает профиль rollout, в котором база
+// находится сейчас. Тождество триггеров и состояние аудит-триггеров жёсткие;
+// состояние guard-ов свободно ровно настолько, насколько его допускает набор
+// известных профилей. Прежний контракт вместо этого требовал, чтобы guard-ы
+// были всегда выключены, и потому запрещал любую работу с ролями на базе,
+// где арендная изоляция уже включена, — то есть на production.
+export function assertTriggerInventory(triggers, rlsEnabledTables) {
+  assertMatchingValues(
+    triggers.map(
+      (trigger) => `${trigger.table}:${trigger.name}:${trigger.function}`,
+    ),
+    EXPECTED_TRIGGERS.map((trigger) =>
+      trigger.split(":").slice(0, 3).join(":"),
+    ),
+    "Триггеры",
+  );
+  assertMatchingValues(
+    triggers
+      .filter((trigger) => trigger.name !== GUARD_NAME)
+      .map(
+        (trigger) =>
+          `${trigger.table}:${trigger.name}:${trigger.function}:${trigger.enabled}`,
+      ),
+    EXPECTED_TRIGGERS.filter((trigger) => !trigger.includes(`:${GUARD_NAME}:`)),
+    "Состояние always-on триггеров",
+  );
+
+  const guardsEnabled = [];
+  for (const trigger of triggers.filter(
+    (trigger) => trigger.name === GUARD_NAME,
+  )) {
+    if (trigger.enabled === "D") continue;
+    // Состояния R и A меняют поведение триггера при репликации и в сессиях с
+    // session_replication_role, поэтому неизвестное состояние — это отказ.
+    if (trigger.enabled !== "O") {
+      throw new Error(
+        `Неожиданное состояние guard-триггера ${trigger.table}: ${trigger.enabled}.`,
+      );
+    }
+    guardsEnabled.push(trigger.table);
+  }
+
+  const tenantTables = new Set(TENANT_TABLES);
+  const unexpectedRls = rlsEnabledTables.filter(
+    (table) => !tenantTables.has(table),
+  );
+  if (unexpectedRls.length > 0) {
+    throw new Error(
+      `RLS неожиданно включён вне tenant-контура: ${unexpectedRls.join(", ")}.`,
+    );
+  }
+
+  return identifyEnforcementProfile(
+    rlsEnabledTables.filter((table) => tenantTables.has(table)),
+    guardsEnabled,
+  );
+}
 
 export const RUNTIME_TABLE_PRIVILEGES = {
   Account: ["SELECT", "INSERT"],

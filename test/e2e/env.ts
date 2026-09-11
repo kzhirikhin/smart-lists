@@ -54,9 +54,9 @@ export const appEnv: Record<string, string> = {
   S3_ACCESS_KEY_ID: "e2e-access-key",
   S3_SECRET_ACCESS_KEY: "e2e-secret-key",
 
-  // AI-сервис. Адрес заведомо недоступен: инсайты в Тир 1 не проверяются.
-  INSIGHTS_SERVICE_URL: "http://127.0.0.1:9/insights",
-  INSIGHTS_SERVICE_SECRET: "e2e-insights-secret",
+  // AI-сервис намеренно не настроен: без INSIGHTS_SERVICE_URL Action не доходит
+  // до сети, а инсайты в Тир 1 не проверяются. Статического секрета сервиса в
+  // протоколе нет с 2026-08-09, поэтому подставлять его нечем и незачем.
 
   // Логи приложения попадают в вывод webServer. Оставляем только ошибки.
   LOG_LEVEL: "error",

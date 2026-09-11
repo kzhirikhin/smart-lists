@@ -18,6 +18,12 @@ services:
       - "127.0.0.1:5433:5432"
     tmpfs:
       - /var/lib/postgresql/data
+    # Рядом с тестовой базой в том же инстансе поднимается shadow-база для
+    # `prisma migrate dev`: отдельный контейнер ради неё не нужен, а init-скрипт
+    # отрабатывает при каждом `up`, потому что каталог данных лежит в tmpfs.
+    # Монтируется только на чтение — контейнеру незачем править файл.
+    volumes:
+      - ./docker/init-shadow-db.sql:/docker-entrypoint-initdb.d/10-shadow.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d smartlists_test"]
       interval: 2s

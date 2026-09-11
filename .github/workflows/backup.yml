@@ -16,6 +16,12 @@ permissions:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    # Environment ограничивает место использования credential: секрет доступен
+    # только job, объявившей его, и только с ветки `main` по branch policy. До
+    # этого строка подключения роли бэкапа была repository-секретом, то есть
+    # читалась любым workflow с любой ветки. Регистр имени существенен: он
+    # входит в OIDC-claim `sub`, на который смотрит trust policy роли AWS.
+    environment: Backup
 
     steps:
       - name: Install PostgreSQL client

@@ -371,10 +371,21 @@ jobs:
   production-migration:
     name: Production database migration
     runs-on: ubuntu-latest
+    # gate допускает штатный skip docs/dependency-review на push. Неявный
+    # success() распространяет этот skip на миграции через всю цепочку needs.
+    # Явная status-функция снимает его; каждый обязательный результат ниже
+    # всё равно должен быть успешным, а отменённый workflow не начинает DDL.
     if: >-
+      !cancelled() &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
-      vars.ENABLE_PRODUCTION_MIGRATION == 'true'
+      vars.ENABLE_PRODUCTION_MIGRATION == 'true' &&
+      needs['security-static'].result == 'success' &&
+      needs.checks.result == 'success' &&
+      needs.integration.result == 'success' &&
+      needs.e2e.result == 'success' &&
+      needs.secrets.result == 'success' &&
+      needs.gate.result == 'success'
     needs: [security-static, checks, integration, e2e, secrets, gate]
     permissions:
       contents: read

@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { PROFILE_TABLES } from "../scripts/database-role-contract.mjs";
+
 const readRepoFile = (path: string) =>
   readFileSync(fileURLToPath(new URL(`../${path}`, import.meta.url)), "utf8");
 
@@ -64,9 +66,21 @@ describe("Preview tenant RLS workflow", () => {
     expect(configurator).toContain('await client.query("ROLLBACK")');
     expect(configurator).toContain("Post-change enforcement profile");
     expect(configurator).toContain("Committed enforcement profile");
-    expect(configurator).toContain('["UserDailyUsage", "List", "Item"]');
-    expect(configurator).toContain('"space-groups"');
-    expect(configurator).toContain('"tenant-full"');
+    // Ступени rollout проверяются по самой модели, а не по тексту файла:
+    // модель переехала в общий контракт, и защищать надо порядок ступеней,
+    // а не место их объявления.
+    expect(Object.keys(PROFILE_TABLES)).toEqual([
+      "disabled",
+      "usage-canary",
+      "list-item",
+      "space-groups",
+      "tenant-full",
+    ]);
+    expect(PROFILE_TABLES["list-item"]).toEqual([
+      "UserDailyUsage",
+      "List",
+      "Item",
+    ]);
     expect(configurator).toContain("ROUTINE_CONTRACTS");
     expect(configurator).toContain("POLICY_PREDICATES");
   });

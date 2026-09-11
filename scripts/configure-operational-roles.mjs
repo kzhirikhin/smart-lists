@@ -12,10 +12,10 @@ import {
   EXPECTED_ROUTINES,
   EXPECTED_SEQUENCES,
   EXPECTED_TABLES,
-  EXPECTED_TRIGGERS,
   EXPECTED_VIEWS,
   RUNTIME_EXECUTE_ROUTINES,
   RUNTIME_TABLE_PRIVILEGES,
+  assertTriggerInventory,
 } from "./database-role-contract.mjs";
 
 const { Client } = pg;
@@ -221,13 +221,10 @@ async function securityInventory(client) {
     ORDER BY tablename, policyname
   `);
   const triggers = await client.query(`
-    SELECT format(
-             '%s:%s:%s:%s',
-             relation.relname,
-             trigger.tgname,
-             routine.proname,
-             trigger.tgenabled
-           ) AS trigger
+    SELECT relation.relname AS "table",
+           trigger.tgname AS name,
+           routine.proname AS "function",
+           trigger.tgenabled AS enabled
     FROM pg_trigger trigger
     JOIN pg_class relation ON relation.oid = trigger.tgrelid
     JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
@@ -236,16 +233,30 @@ async function securityInventory(client) {
       AND NOT trigger.tgisinternal
     ORDER BY relation.relname, trigger.tgname
   `);
+  const relations = await client.query(`
+    SELECT relation.relname AS name
+    FROM pg_class relation
+    JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'public'
+      AND relation.relkind = 'r'
+      AND relation.relrowsecurity
+    ORDER BY relation.relname
+  `);
   return {
     policies: policies.rows.map((row) => row.policy),
-    triggers: triggers.rows.map((row) => row.trigger),
+    triggers: triggers.rows,
+    rlsEnabled: relations.rows.map((row) => row.name),
   };
 }
 
+// Возвращает профиль арендной изоляции. Менять его этот скрипт не вправе —
+// это отдельный gate, — но и падать из-за того, что он уже включён, не должен:
+// именно так ротация паролей операционных ролей оказалась неисполнимой на
+// production, где enforcement включён с самого rollout.
 async function assertSecurityInventory(client) {
   const actual = await securityInventory(client);
   assertSameValues(actual.policies, EXPECTED_POLICIES, "Policies");
-  assertSameValues(actual.triggers, EXPECTED_TRIGGERS, "Triggers");
+  return assertTriggerInventory(actual.triggers, actual.rlsEnabled);
 }
 
 function assertInventory(actual) {
@@ -678,10 +689,16 @@ async function applyBackupRole(client, context) {
   await client.query("RESET ROLE");
 }
 
-async function verifyOwnership(client) {
+async function verifyOwnership(client, expectedProfile) {
   const actual = await inventory(client);
   assertInventory(actual);
-  await assertSecurityInventory(client);
+  const profile = await assertSecurityInventory(client);
+  if (profile !== expectedProfile) {
+    throw new Error(
+      `Профиль арендной изоляции изменился: было ${expectedProfile}, ` +
+        `стало ${profile}.`,
+    );
+  }
   for (const rows of Object.values(actual)) {
     for (const row of rows) {
       if (row.owner !== DATABASE_ROLES.owner) {
@@ -734,7 +751,7 @@ async function verifyDefaultPrivileges(client, expectBackup) {
   assertSameValues(actual, expected, "Owner default privileges");
 }
 
-async function verifyMigrator(connectionString) {
+async function verifyMigrator(connectionString, expectedProfile) {
   const client = new Client({ connectionString });
   await client.connect();
   try {
@@ -747,7 +764,7 @@ async function verifyMigrator(connectionString) {
     ) {
       throw new Error("Migrator session/current user contract failed.");
     }
-    await verifyOwnership(client);
+    await verifyOwnership(client, expectedProfile);
   } finally {
     await client.end();
   }
@@ -846,6 +863,7 @@ async function main() {
         "database owner remains unchanged",
         "runtime ACL and role attributes remain unchanged",
         "unexpected object, owner, role attribute or membership aborts apply",
+        "tenant enforcement profile remains unchanged",
         "credentials are never printed",
       ],
     }, null, 2));
@@ -868,7 +886,7 @@ async function main() {
     ).rows[0];
     const actualInventory = await inventory(client);
     assertInventory(actualInventory);
-    await assertSecurityInventory(client);
+    const enforcementProfile = await assertSecurityInventory(client);
     const roles = await assertExistingRolesAreSafe(
       client,
       connection.database,
@@ -887,6 +905,7 @@ async function main() {
       roles,
       ownership,
       runtimeBefore,
+      enforcementProfile,
     };
 
     if (scope === "migration" || scope === "all") {
@@ -897,8 +916,17 @@ async function main() {
     }
 
     assertRuntimeUnchanged(runtimeBefore, await runtimeSnapshot(client));
+    // Профиль сверяется независимо от scope: применение backup-роли проходит
+    // мимо verifyOwnership, но затрагивает ту же базу.
+    const enforcementAfter = await assertSecurityInventory(client);
+    if (enforcementAfter !== enforcementProfile) {
+      throw new Error(
+        `Профиль арендной изоляции изменился: было ${enforcementProfile}, ` +
+          `стало ${enforcementAfter}.`,
+      );
+    }
     if (scope === "migration" || scope === "all") {
-      await verifyOwnership(client);
+      await verifyOwnership(client, enforcementProfile);
     }
     await verifyDefaultPrivileges(
       client,
@@ -916,7 +944,7 @@ async function main() {
     const url = new URL(adminConnectionString);
     url.username = DATABASE_ROLES.migrator;
     url.password = migratorPassword;
-    await verifyMigrator(url.toString());
+    await verifyMigrator(url.toString(), context.enforcementProfile);
   }
   if (scope === "backup" || scope === "all") {
     const url = new URL(adminConnectionString);
@@ -931,6 +959,8 @@ async function main() {
     endpointFingerprint: fingerprint(adminUrl.hostname),
     databaseOwnerChanged: false,
     runtimeContractChanged: false,
+    enforcementProfile: context.enforcementProfile,
+    enforcementProfileChanged: false,
   }, null, 2));
 }
 

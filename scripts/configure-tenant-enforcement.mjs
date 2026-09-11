@@ -10,21 +10,19 @@ import {
   EXPECTED_ROUTINES,
   EXPECTED_TABLES,
   EXPECTED_TRIGGERS,
+  GUARD_NAME,
+  PROFILE_TABLES,
   RUNTIME_TABLE_PRIVILEGES,
+  TENANT_TABLES,
+  identifyEnforcementProfile,
 } from "./database-role-contract.mjs";
 
 const { Client } = pg;
 
-export const TENANT_TABLES = [
-  "Space",
-  "List",
-  "ListShare",
-  "ListGroup",
-  "_ListGroupMembers",
-  "Item",
-  "Attachment",
-  "UserDailyUsage",
-];
+// Модель профилей живёт в общем контракте: ею пользуется и configurator ролей,
+// которому запрещено менять enforcement, но нельзя и падать из-за того, что
+// оно уже включено. Реэкспорт сохраняет прежний путь импорта.
+export { TENANT_TABLES, identifyEnforcementProfile };
 
 export const ENFORCEMENT_OPERATIONS = {
   "enable-usage-canary": {
@@ -61,30 +59,6 @@ export const ENFORCEMENT_OPERATIONS = {
   },
 };
 
-const PROFILE_TABLES = {
-  disabled: [],
-  "usage-canary": ["UserDailyUsage"],
-  "list-item": ["UserDailyUsage", "List", "Item"],
-  "space-groups": [
-    "UserDailyUsage",
-    "List",
-    "Item",
-    "Space",
-    "ListGroup",
-    "_ListGroupMembers",
-  ],
-  "tenant-full": [
-    "UserDailyUsage",
-    "List",
-    "Item",
-    "Space",
-    "ListGroup",
-    "_ListGroupMembers",
-    "ListShare",
-    "Attachment",
-  ],
-};
-const GUARD_NAME = "app_tenant_update_columns_guard";
 const USAGE_POLICY_PREDICATE =
   '("userId" = NULLIF(current_setting(\'app.user_id\'::text, true), \'\'::text))';
 const LIST_ACCESS_PREDICATE = "(app_list_access(id) IS NOT NULL)";
@@ -285,27 +259,6 @@ export function parseEnforcementArguments(args) {
   }
 
   return { apply: args.includes("--apply"), operation };
-}
-
-export function identifyEnforcementProfile(rlsEnabled, guardsEnabled) {
-  const actualRls = sorted(rlsEnabled);
-  const actualGuards = sorted(guardsEnabled);
-
-  for (const [profile, tables] of Object.entries(PROFILE_TABLES)) {
-    const expected = sorted(tables);
-    if (
-      JSON.stringify(actualRls) === JSON.stringify(expected) &&
-      JSON.stringify(actualGuards) === JSON.stringify(expected)
-    ) {
-      return profile;
-    }
-  }
-
-  throw new Error(
-    "Текущее состояние RLS/guards не соответствует известному rollout-профилю: " +
-      `RLS=${actualRls.join(", ") || "∅"}; ` +
-      `guards=${actualGuards.join(", ") || "∅"}.`,
-  );
 }
 
 export function resolveEnforcementTransition(operation, currentProfile) {
