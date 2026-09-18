@@ -3,25 +3,42 @@
  * @description Проверка согласованности файлов перевода.
  *
  * Правило проекта — новый пользовательский текст получает ключ сразу во всех
- * четырёх локалях. Забытый ключ не ломает ни сборку, ни типы: next-intl
+ * поддерживаемых локалях. Забытый ключ не ломает ни сборку, ни типы: next-intl
  * обнаружит пропажу только в рантайме и только на той локали, которую никто
  * не открыл при проверке. Здесь это ловится статически.
  *
  * `ru` взят эталоном как язык оригинала: с него делаются остальные переводы.
+ *
+ * Набор локалей берётся из `routing.locales` и сверяется с каталогом
+ * `messages/`, а не перечисляется здесь списком. Перечень, который ведётся
+ * руками, остаётся зелёным для всякой локали, в него не попавшей: пятый язык
+ * молча выпал бы из всех проверок этого файла, включая обязательное
+ * уведомление о передаче данных.
  */
+
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import en from "../messages/en.json";
-import ja from "../messages/ja.json";
-import ru from "../messages/ru.json";
-import vi from "../messages/vi.json";
+import { routing } from "@/i18n/routing";
 
 type MessageTree = { [key: string]: string | MessageTree };
 
-const locales: Record<string, MessageTree> = { ru, en, vi, ja };
+const MESSAGES_DIR = fileURLToPath(new URL("../messages", import.meta.url));
+
+const localeNames: string[] = [...routing.locales];
+const locales: Record<string, MessageTree> = Object.fromEntries(
+  localeNames.map((locale) => [
+    locale,
+    JSON.parse(
+      readFileSync(path.join(MESSAGES_DIR, `${locale}.json`), "utf8"),
+    ) as MessageTree,
+  ]),
+);
 const REFERENCE = "ru";
-const translations = Object.keys(locales).filter((l) => l !== REFERENCE);
+const translations = localeNames.filter((l) => l !== REFERENCE);
 
 /** Разворачивает вложенный объект в плоский список путей вида "a.b.c". */
 function flatten(tree: MessageTree, prefix = ""): Map<string, string> {
@@ -84,6 +101,24 @@ const flat = Object.fromEntries(
   Object.entries(locales).map(([locale, tree]) => [locale, flatten(tree)]),
 ) as Record<string, Map<string, string>>;
 
+describe("источник набора локалей", () => {
+  // Без этих двух проверок обход по `routing.locales` может стать пустым или
+  // неполным и тогда все остальные тесты файла пройдут, ничего не проверив.
+  it("эталон и хотя бы один перевод присутствуют", () => {
+    expect(localeNames).toContain(REFERENCE);
+    expect(translations.length).toBeGreaterThan(0);
+  });
+
+  it("каталог messages совпадает с routing.locales", () => {
+    const files = readdirSync(MESSAGES_DIR)
+      .filter((name) => name.endsWith(".json"))
+      .map((name) => path.basename(name, ".json"))
+      .sort();
+
+    expect(files).toEqual([...localeNames].sort());
+  });
+});
+
 describe("наборы ключей", () => {
   it.each(translations)("в %s нет ключей, отсутствующих в ru", (locale) => {
     const extra = [...flat[locale].keys()].filter((key) => !flat[REFERENCE].has(key));
@@ -99,7 +134,7 @@ describe("наборы ключей", () => {
 });
 
 describe("значения", () => {
-  it.each(Object.keys(locales))("в %s нет пустых строк", (locale) => {
+  it.each(localeNames)("в %s нет пустых строк", (locale) => {
     const empty = [...flat[locale].entries()]
       .filter(([, value]) => value.trim() === "")
       .map(([key]) => key);
@@ -128,7 +163,7 @@ describe("значения", () => {
     expect(unknown).toEqual([]);
   });
 
-  it.each(Object.keys(locales))("в %s сбалансированы фигурные скобки", (locale) => {
+  it.each(localeNames)("в %s сбалансированы фигурные скобки", (locale) => {
     const broken = [...flat[locale].entries()]
       .filter(([, value]) => !isBalanced(value))
       .map(([key]) => key);
@@ -151,5 +186,14 @@ describe("структура", () => {
 
   it("эталонная локаль не пуста", () => {
     expect(flat[REFERENCE].size).toBeGreaterThan(0);
+  });
+});
+
+/** Уведомление обязано называть фактического получателя пользовательских данных. */
+describe("уведомление AI о передаче данных", () => {
+  it.each(localeNames)("в %s указан Vertex AI, а не прежний провайдер", (locale) => {
+    const notice = flat[locale].get("AiInsight.privacyNotice");
+    expect(notice).toContain("Vertex AI");
+    expect(notice).not.toContain("Anthropic");
   });
 });
