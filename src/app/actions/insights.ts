@@ -53,7 +53,7 @@ const MAX_USER_MESSAGE_LENGTH = 500;
 /** Языки, для которых интерфейс и AI-ответ имеют полный контракт. */
 const responseLanguageSchema = z.enum(["ru", "vi", "en", "ja"]);
 
-/** Запас над ожидаемым ответом Anthropic при `max_tokens=2048`. */
+/** Запас над ограниченным ответом AI-сервиса при `max_output_tokens=2048`. */
 const MAX_INSIGHT_RESPONSE_LENGTH = 20_000;
 
 const insightResponseSchema = z.object({
