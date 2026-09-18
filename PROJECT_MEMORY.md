@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-09-06 (ротация секретов, Backup Environment, release-миграции и security-обновления зависимостей)
+**Последнее обновление:** 2026-09-11 (этап 7 проверки Vertex AI)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -28,6 +28,25 @@ Smart Lists — локализованное веб-приложение для 
 - Vitest — юнит-тесты чистых функций и схем валидации;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Миграция AI Insights на Vertex AI выполняется по этапам. В проекте
+`project-5b7c1bd1-572b-410d-826` включён `aiplatform.googleapis.com`, а
+Cloud Run identity `insights-api-runtime` имеет единственную project-level
+custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`.
+User-managed ключей у identity нет. На этапе 5 FastAPI-код переведён на
+`gemini-3.5-flash-lite` через ADC, а Server Action передаёт проверенную локаль
+интерфейса (`ru/vi/en/ja`) как явный `response_language`; production остаётся
+на Anthropic до отдельного rollout. Основной benchmark
+с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
+всех верхних API-границ показали у `gemini-3.5-flash-lite` более точный разбор
+связанных подпунктов при latency ниже примерно на 9% и цене выше в 1.25 раза.
+По итогам этапа 4 выбрана `gemini-3.5-flash-lite`;
+benchmark не менял production traffic.
+Этап 7 подтвердил live-вызовы на четырёх локалях и synthetic peak с 150
+задачами, полный набор тестов и production-сборки. IAM повторно соответствует
+least privilege. Project-level in-memory cache Vertex AI отключён; `global` не
+даёт гарантии data residency, а возможное abuse-monitoring логирование остаётся
+явно принятым временным риском до отдельного исключения Google.
 
 Точные версии всегда смотри в `package.json` и `package-lock.json`.
 
