@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-09-11 (этап 7 проверки Vertex AI)
+**Последнее обновление:** 2026-09-18 (production rollout Vertex AI)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -35,8 +35,11 @@ Cloud Run identity `insights-api-runtime` имеет единственную pr
 custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`.
 User-managed ключей у identity нет. На этапе 5 FastAPI-код переведён на
 `gemini-3.5-flash-lite` через ADC, а Server Action передаёт проверенную локаль
-интерфейса (`ru/vi/en/ja`) как явный `response_language`; production остаётся
-на Anthropic до отдельного rollout. Основной benchmark
+интерфейса (`ru/vi/en/ja`) как явный `response_language`. С 2026-09-18 production
+использует Vertex AI: Cloud Run `insights-api-00058-kdq` получает 100% трафика;
+пользователь получил инсайт через production-интерфейс, два POST завершились HTTP 200
+без ошибок в логах. Прежняя ревизия `insights-api-00057-rlj` сохранена для rollback;
+Anthropic federation будет отозвана отдельно на этапе 9. Основной benchmark
 с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
 всех верхних API-границ показали у `gemini-3.5-flash-lite` более точный разбор
 связанных подпунктов при latency ниже примерно на 9% и цене выше в 1.25 раза.
