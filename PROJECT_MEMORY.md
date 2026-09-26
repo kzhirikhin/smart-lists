@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-09-26 (AI prompt и FastAPI Python 3.14 развёрнуты)
+**Последнее обновление:** 2026-09-26 (AI prompt и FastAPI Python 3.14 развёрнуты; порог recurring image-scan)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -58,10 +58,11 @@ benchmark не менял production traffic.
 Prompt с 2026-09-26 требует короткие рекомендации по незавершённым пунктам
 вместо пересказа списка. PR #71 и #72 слиты; deploy run `36235087848` прошёл
 тесты, provenance, SBOM, pre-deploy Grype и Cloud Run. Живой ответ через UI
-после смены prompt ожидает ручной проверки. Отдельный recurring image-scan run
-`36235469369` для нового digest красный: 49 High-находок по 12 CVE в базовых
-пакетах Debian, без VEX или waiver; его нужно разбирать отдельно от прошедшего
-pre-deploy gate. Этап 7 подтвердил live-вызовы на четырёх локалях и synthetic peak с 150
+после смены prompt ожидает ручной проверки. Recurring image-scan run
+`36235469369` для нового digest был красным на 49 High по 12 CVE в базовых
+пакетах Debian — все `wont-fix`/`not-fixed`. С того же дня такие High видны
+как advisory и run не красят (THREAT_MODEL A100); post-merge run
+`36240283568` на том же digest зелёный с одним warning. Этап 7 подтвердил live-вызовы на четырёх локалях и synthetic peak с 150
 задачами, полный набор тестов и production-сборки. IAM повторно соответствует
 least privilege. Project-level in-memory cache Vertex AI отключён; `global` не
 даёт гарантии data residency, а возможное abuse-monitoring логирование остаётся
@@ -643,6 +644,12 @@ Security-обновления 2026-09-06: `fast-uri` 3.1.7 в дереве Prism
   owner/approver, причина, remediation plan, evidence и срок максимум 30 дней.
   Истёкший waiver, `in_triage`, wildcard, повреждённая политика и техническая
   ошибка Grype не подавляются.
+- С 2026-09-26 recurring gate блокирует только то, что можно исправить:
+  Critical при любом fix state и High с `fixed` или неясным state. High с
+  явным `not-fixed`/`wont-fix` попадает в `advisory`, свёрнутую таблицу job
+  summary и warning, но run не красит. Причина — gate был красным с 16.09 подряд
+  на неисправимом Debian-шуме и прятал реальные Critical/fixable находки.
+  Принятый остаток описан в `THREAT_MODEL.md` (A100).
 - В FastAPI deploy после push и до Cloud Run Syft 1.51.0 строит CycloneDX JSON
   1.6 из `${IMAGE}@${digest}`. Workflow проверяет checksum инструмента, формат,
   непустой состав и связь metadata с тем же digest, затем fail-closed
