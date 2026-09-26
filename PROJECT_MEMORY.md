@@ -61,7 +61,8 @@ Prompt с 2026-09-26 требует короткие рекомендации п
 после смены prompt ожидает ручной проверки. Recurring image-scan run
 `36235469369` для нового digest был красным на 49 High по 12 CVE в базовых
 пакетах Debian — все `wont-fix`/`not-fixed`. С того же дня такие High видны
-как advisory и run не красят (THREAT_MODEL A100). Этап 7 подтвердил live-вызовы на четырёх локалях и synthetic peak с 150
+как advisory и run не красят (THREAT_MODEL A100); post-merge run
+`36240283568` на том же digest зелёный с одним warning. Этап 7 подтвердил live-вызовы на четырёх локалях и synthetic peak с 150
 задачами, полный набор тестов и production-сборки. IAM повторно соответствует
 least privilege. Project-level in-memory cache Vertex AI отключён; `global` не
 даёт гарантии data residency, а возможное abuse-monitoring логирование остаётся
