@@ -223,7 +223,7 @@
     "analyzing": "Analyzing...",
     "error": "Failed to get the insight",
     "rateLimitError": "Daily limit reached. Try again tomorrow.",
-    "privacyNotice": "The list title, its items, notes of everyone sharing it, your group names and your question are sent to Anthropic for analysis. Any member can turn this off in the list menu.",
+    "privacyNotice": "The list title, its items, notes of everyone sharing it, your group names and your question are sent to Vertex AI (Google Cloud) for analysis. Any member can turn this off in the list menu.",
     "disabledError": "AI is turned off for this list",
     "notesContext": "Item notes sent: {included}; omitted: {omitted}."
   },

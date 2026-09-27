@@ -223,7 +223,7 @@
     "analyzing": "Đang phân tích...",
     "error": "Không thể lấy phân tích",
     "rateLimitError": "Đã đạt giới hạn hôm nay. Thử lại vào ngày mai.",
-    "privacyNotice": "Tên danh sách, các mục trong đó, ghi chú của mọi thành viên, tên các nhóm của bạn và câu hỏi của bạn được gửi tới Anthropic để phân tích. Bất kỳ thành viên nào cũng có thể tắt trong menu danh sách.",
+    "privacyNotice": "Tên danh sách, các mục trong đó, ghi chú của mọi thành viên, tên các nhóm của bạn và câu hỏi của bạn được gửi tới Vertex AI (Google Cloud) để phân tích. Bất kỳ thành viên nào cũng có thể tắt trong menu danh sách.",
     "disabledError": "AI đã tắt cho danh sách này",
     "notesContext": "Đã gửi ghi chú mục: {included}; đã bỏ qua: {omitted}."
   },

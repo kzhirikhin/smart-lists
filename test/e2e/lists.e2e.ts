@@ -199,7 +199,7 @@ test("AI выключается из меню списка и кнопка ис�
   // Строка о передаче данных видна до всякого запроса: она адресована и тому,
   // кто инсайт не запрашивает.
   await card.getByTestId("ai-insight-button").click();
-  await expect(card.getByTestId("ai-privacy-notice")).toBeVisible();
+  await expect(card.getByTestId("ai-privacy-notice")).toContainText("Vertex AI");
 
   const menu = await openListMenu(card);
   await menu.getByTestId("list-ai-toggle").click();

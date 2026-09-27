@@ -10,7 +10,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { getListInsight } from "@/app/actions/insights";
 import { useCurrentSpaceId } from "@/components/spaces/SpaceContext";
 import SafeMarkdown from "@/components/lists/SafeMarkdown";
@@ -78,6 +78,7 @@ type AiInsightProps = {
  */
 export default function AiInsight({ listId }: AiInsightProps) {
   const t = useTranslations("AiInsight");
+  const locale = useLocale();
   const spaceId = useCurrentSpaceId();
 
   const [userMessage, setUserMessage] = useState("");
@@ -95,7 +96,12 @@ export default function AiInsight({ listId }: AiInsightProps) {
     setError(null);
     setIsLoading(true);
 
-    const result = await getListInsight(listId, userMessage.trim() || undefined, spaceId);
+    const result = await getListInsight(
+      listId,
+      userMessage.trim() || undefined,
+      spaceId,
+      locale,
+    );
 
     setIsLoading(false);
 
