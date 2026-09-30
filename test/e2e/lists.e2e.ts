@@ -134,6 +134,31 @@ test("счётчик выполненных виден по умолчанию �
   await expect(listCard(page, list.id).getByTestId("list-items-counter")).toHaveCount(0);
 });
 
+test("пустой, активный и завершённый списки визуально различаются", async ({
+  page,
+  user,
+  db,
+}) => {
+  const list = await makeList(db, user.id, user.defaultSpaceId);
+  await openSpace(page, user);
+  const card = listCard(page, list.id);
+  await expect(card).toHaveAttribute("data-progress-state", "empty");
+  await expect(card).toHaveClass(/bg-gray-50/);
+
+  const [first, second] = await makeItems(db, list.id, ["Раз", "Два"]);
+  await page.reload();
+  await expect(card).toHaveAttribute("data-progress-state", "active");
+
+  await itemRow(card, first.id).getByTestId("item-toggle").click();
+  await expect(card).toHaveAttribute("data-progress-state", "active");
+  await itemRow(card, second.id).getByTestId("item-toggle").click();
+  await expect(card).toHaveAttribute("data-progress-state", "complete");
+  await expect(card).toHaveClass(/bg-emerald-50\/50/);
+
+  await page.reload();
+  await expect(listCard(page, list.id)).toHaveAttribute("data-progress-state", "complete");
+});
+
 test("раскладка даёт три колонки на десктопе, две на среднем экране и одну на телефоне", async ({
   page,
   user,
