@@ -448,6 +448,11 @@ const ListCard = memo(function ListCard({
    */
   const { completedCount: completedItemsCount, totalCount: itemsCount } =
     buildItemTree(list.items);
+  const listProgressState = itemsCount === 0
+    ? "empty"
+    : completedItemsCount === itemsCount
+      ? "complete"
+      : "active";
 
   const bodyId = `list-body-${list.id}`;
 
@@ -528,6 +533,7 @@ const ListCard = memo(function ListCard({
       data-list-id={list.id}
       data-list-role={isOwner ? "owner" : "editor"}
       data-collapsed={isBodyHidden}
+      data-progress-state={listProgressState}
       /* Карточка объявляет себя целью для записи, которую тащат из другого
          списка. Атрибут отдельный от `data-list-id`: тот адресует карточку
          вообще, а этот — только для геометрии броска, и по нему же идёт
@@ -535,7 +541,13 @@ const ListCard = memo(function ListCard({
          же модуль прямой записью в DOM — карточка мемоизирована, и
          перерисовывать её на каждое пересечение границы незачем. */
       {...{ [DROP_TARGET_ATTR]: list.id }}
-      className="border border-gray-100 dark:border-transparent p-6 rounded-xl shadow-sm dark:shadow-lg dark:shadow-black/50 bg-white dark:bg-zinc-900 data-[item-drop-active=true]:ring-2 data-[item-drop-active=true]:ring-gray-800 dark:data-[item-drop-active=true]:ring-zinc-200"
+      className={`border p-6 rounded-xl shadow-sm dark:shadow-lg dark:shadow-black/50 transition-colors data-[item-drop-active=true]:ring-2 data-[item-drop-active=true]:ring-gray-800 dark:data-[item-drop-active=true]:ring-zinc-200 ${
+        listProgressState === "empty"
+          ? "border-gray-200 bg-gray-50 dark:border-transparent dark:bg-zinc-900/60"
+          : listProgressState === "complete"
+            ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+            : "border-gray-100 bg-white dark:border-transparent dark:bg-zinc-900"
+      }`}
     >
       {/* Заголовок и кнопки управления. Разделительная черта и отступ под ней
           нужны, только если ниже что-то есть: у свёрнутой карточки без открытой
@@ -610,13 +622,13 @@ const ListCard = memo(function ListCard({
                 setEditTitle(list.title);
               }}
             >
-              <h2 className="text-xl font-bold truncate" data-testid="list-title"><Highlight text={list.title} query={searchQuery} /></h2>
+              <h2 className={`text-xl font-bold truncate ${listProgressState === "empty" ? "text-gray-500 dark:text-zinc-400" : listProgressState === "complete" ? "text-emerald-800 dark:text-emerald-200" : ""}`} data-testid="list-title"><Highlight text={list.title} query={searchQuery} /></h2>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 dark:text-zinc-500 text-base flex-shrink-0">
                 ✎
               </span>
             </div>
           ) : (
-            <h2 className="text-xl font-bold truncate" data-testid="list-title"><Highlight text={list.title} query={searchQuery} /></h2>
+            <h2 className={`text-xl font-bold truncate ${listProgressState === "empty" ? "text-gray-500 dark:text-zinc-400" : listProgressState === "complete" ? "text-emerald-800 dark:text-emerald-200" : ""}`} data-testid="list-title"><Highlight text={list.title} query={searchQuery} /></h2>
           )}
         </div>
 
