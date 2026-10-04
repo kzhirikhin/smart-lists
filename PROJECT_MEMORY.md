@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; Next.js 16.3.8; GitHub PAT; AWS Action; OIDC/UI/i18n)
+**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; Next.js 16.3.8; GitHub PAT; AWS Action/SDK; OIDC/UI/i18n)
 **Состояние:** активная разработка
 
 
@@ -11,6 +11,11 @@ Framer Motion 13.4.4, Lucide React 1.48.0 и next-intl 4.14.7. Runtime-код о
 OIDC-пакетов идентичен предыдущим версиям; cli-config 0.3.0 добавляет только
 необязательный nativeBinaryAutoOptIn. Все десять изменённых npm-пакетов
 выдержаны более семи дней, integrity совпадает с registry; установка без хуков.
+Владелец проверил на Preview AWS SDK загрузку, скачивание и удаление вложений.
+Известный дефект: кириллица TXT искажается только при просмотре в браузере;
+скачанный файл открывается корректно. Прямой POST передаёт исходный File без
+перекодирования, а inline-ответ text/plain не задаёт charset. Кодировка файла
+может отличаться от UTF-8, поэтому исправление требует отдельного решения.
 
 ## Назначение
 
@@ -29,7 +34,7 @@ Smart Lists — локализованное веб-приложение для 
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
 - `next-intl` `4.14.7`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
-- Pusher, приватный S3-бакет через AWS SDK `3.1115.0` и внешний FastAPI-сервис
+- Pusher, приватный S3-бакет через AWS SDK `3.1141.0` и внешний FastAPI-сервис
   AI-инсайтов;
 - Zod, Pino, React Hot Toast, `next-themes` и `lucide-react` `1.48.0`;
 - Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
@@ -122,6 +127,12 @@ AWS Action бэкапов обновлён до configure-aws-credentials 6.3.0 
 передаются явно; translate-env-variables=false запрещает подмену inputs
 окружением других шагов. Контракт проверяет все вызовы AWS Action в workflow
 (workflow-action-pins.test.ts). GitHub OIDC и Environment Backup сохранены.
+
+AWS SDK S3 и оба presigner-пакета обновлены до 3.1141.0 (PR #198).
+Все 24 изменённых пакета выдержаны семь дней; integrity сверён с npm.
+Установка без хуков сохранена. S3-клиент получает credentials явно через
+resolveS3Credentials; TTL 300 секунд и поток PENDING → S3 → HeadObject →
+UPLOADED сохранены. Живая проверка вложений выполняется на Preview.
 
 ## Карта репозитория
 
@@ -1562,7 +1573,7 @@ variables выглядит уборкой и не вызывает ни одно
   fail-closed зависимостью deploy — это принято ради запрета выкладки без SBOM.
 - 2026-08-28: после семидневной выдержки и ручной сверки опубликованных
   артефактов слиты Dependabot PR №127 (`@vercel/oidc` `3.8.5`, Framer Motion
-  `13.1.1`, `next-intl` `4.13.7`) и №114 (AWS SDK S3 `3.1115.0`). Обновления
+  `13.1.1`, `next-intl` `4.13.7`) и №114 (AWS SDK S3 `3.1141.0`). Обновления
   применены последовательно; каждый merge прошёл полный CI, Dependency Review,
   CodeQL и Vercel deployment. Runtime-код `@vercel/oidc` не изменился, а S3-
   контракт приложения сохранил явные credentials, presigned TTL 5 минут и
