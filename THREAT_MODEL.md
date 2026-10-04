@@ -103,6 +103,17 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 
 ## Текущее состояние
 
+**brace-expansion 2026-10-04.** Закрыты Dependabot #91/#92
+(GHSA-q2hr-2g5m-vwhr, moderate, квадратичный DoS на `{a},b}`): overrides
+`brace-expansion@1` 1.1.18 → 1.1.21 и `brace-expansion@5` 5.0.9 → 5.0.12.
+Обе ветки — dev-only (eslint и typescript-eslint через minimatch), шаблоны
+приходят из конфига линтера, а не от пользователя, поэтому фактический риск
+был низким. Релизы от 2026-09-14 выдержаны дольше семи дней (A52), integrity
+совпадает с registry, lock пересобран в `node:24` с `--ignore-scripts`. Дифф
+кода сведён к лимитам глубины и перезапусков и итеративному разбору; сети,
+fs, eval и install-хуков нет. В `npm audit` brace-expansion больше не
+встречается; braces, deepmerge-ts и fast-uri остаются отдельной задачей.
+
 **Кодировка TXT при просмотре 2026-10-04.** Presigned GET для `text/plain`
 передаёт `response-content-type: text/plain; charset=utf-8`; тип берётся из
 БД, а не от клиента. Меняется только заголовок ответа S3: тип остаётся
