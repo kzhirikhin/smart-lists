@@ -26,7 +26,7 @@ import {
 } from "@aws-sdk/s3-presigned-post";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
-import { getExtension } from "@/lib/attachments";
+import { getExtension, getResponseContentType } from "@/lib/attachments";
 import { logger } from "@/lib/logger";
 import { resolveS3Credentials } from "@/lib/s3-credentials";
 
@@ -239,12 +239,14 @@ export async function getObjectPrefix(
  * Bucket приватный — прямых публичных ссылок нет, отдаём только так.
  *
  * @param key      object key в S3.
- * @param fileName оригинальное имя — для заголовка Content-Disposition.
- * @param download true → форсировать скачивание (attachment), false → инлайн-просмотр.
+ * @param fileName    оригинальное имя — для заголовка Content-Disposition.
+ * @param contentType хранимый тип — по нему решается, нужен ли charset в ответе.
+ * @param download    true → форсировать скачивание (attachment), false → инлайн-просмотр.
  */
 export function getDownloadUrl(
   key: string,
   fileName: string,
+  contentType: string,
   download = false,
 ): Promise<string> {
   // encodeURIComponent защищает заголовок от спецсимволов и юникода в имени
@@ -260,6 +262,7 @@ export function getDownloadUrl(
     Bucket: BUCKET,
     Key: key,
     ResponseContentDisposition: disposition,
+    ResponseContentType: getResponseContentType(contentType),
   });
   return getSignedUrl(s3Client, command, { expiresIn: PRESIGN_TTL });
 }

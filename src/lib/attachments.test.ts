@@ -16,6 +16,7 @@ import {
   formatFileSize,
   getCategory,
   getExtension,
+  getResponseContentType,
   hasMagicBytes,
   isAllowedType,
   matchesMagicBytes,
@@ -91,6 +92,20 @@ describe("getCategory и getExtension", () => {
   it("возвращают null для унаследованных свойств, а не функцию прототипа", () => {
     expect(getCategory("toString")).toBeNull();
     expect(getExtension("toString")).toBeNull();
+  });
+});
+
+describe("getResponseContentType", () => {
+  it("объявляет UTF-8 для текста, иначе браузер угадывает кодировку по локали", () => {
+    expect(getResponseContentType("text/plain")).toBe(
+      "text/plain; charset=utf-8",
+    );
+  });
+
+  it("не трогает бинарные форматы: у них charset не бывает", () => {
+    expect(getResponseContentType("image/png")).toBeUndefined();
+    expect(getResponseContentType("image/jpeg")).toBeUndefined();
+    expect(getResponseContentType("application/pdf")).toBeUndefined();
   });
 });
 
