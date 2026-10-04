@@ -702,7 +702,7 @@ export async function getAttachmentUrl(input: {
               ...listInSpaceWhere(userId, result.data.spaceId),
             },
           },
-          select: { key: true, name: true },
+          select: { key: true, name: true, contentType: true },
         });
       },
     ).catch((error) => {
@@ -717,6 +717,7 @@ export async function getAttachmentUrl(input: {
     const url = await getDownloadUrl(
       attachment.key,
       attachment.name,
+      attachment.contentType,
       result.data.download ?? false,
     );
     return { success: true, url };

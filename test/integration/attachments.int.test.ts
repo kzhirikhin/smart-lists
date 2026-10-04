@@ -807,6 +807,39 @@ describe("getAttachmentUrl", () => {
     expect(result.url).toBe("https://s3.test/download");
   });
 
+  it("передаёт подписи хранимый тип, а не доверяет клиенту", async () => {
+    // По типу из БД решается, объявлять ли charset: без него кириллица TXT
+    // при инлайн-просмотре искажается.
+    const user = await makeUser();
+    const list = await makeList(user.id, user.defaultSpaceId);
+    const row = await prisma.attachment.create({
+      data: {
+        key: `lists/${list.id}/${crypto.randomUUID()}.txt`,
+        name: "заметка.txt",
+        type: "DOCUMENT",
+        contentType: "text/plain",
+        size: 100,
+        status: "UPLOADED",
+        listId: list.id,
+        uploadedById: user.id,
+      },
+    });
+    setSessionUser(user.id);
+
+    await getAttachmentUrl({
+      attachmentId: row.id,
+      spaceId: user.defaultSpaceId,
+    });
+
+    const s3 = await import("@/lib/s3");
+    expect(vi.mocked(s3.getDownloadUrl)).toHaveBeenCalledWith(
+      row.key,
+      "заметка.txt",
+      "text/plain",
+      false,
+    );
+  });
+
   it("не выдаёт ссылку на ещё не подтверждённый PENDING", async () => {
     const user = await makeUser();
     const list = await makeList(user.id, user.defaultSpaceId);
