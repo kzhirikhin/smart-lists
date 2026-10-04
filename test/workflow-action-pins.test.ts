@@ -54,6 +54,26 @@ const actionRefs = workflows.flatMap(({ name, body }) =>
   })),
 );
 
+// Берём все вызовы из файлов, чтобы новый шаг с AWS Action тоже попадал в gate.
+const awsCredentialSteps = workflows.flatMap(({ name, body }) =>
+  body
+    .split(/(?=^[ \t]*-[ \t]+(?:name|uses):)/m)
+    .filter((step) =>
+      /^[ \t]*(?:-[ \t]*)?uses:[ \t]*aws-actions\/configure-aws-credentials@/m.test(step),
+    )
+    .map((step) => ({ file: name, step })),
+);
+
+describe("AWS credentials используют явные настройки workflow", () => {
+  it("находит action бэкапа", () => {
+    expect(awsCredentialSteps.map(({ file }) => file)).toContain("backup.yml");
+  });
+
+  it.each(awsCredentialSteps)("$file: окружение не подменяет inputs", ({ step }) => {
+    expect(step).toMatch(/^[ \t]+translate-env-variables:[ \t]*false[ \t]*(?:#.*)?$/m);
+  });
+});
+
 describe("GitHub Actions закреплены по SHA", () => {
   // Проверки ниже проходят и на пустом списке, поэтому сначала требуем, чтобы
   // выражение действительно что-то нашло. Иначе сломанный regexp сделал бы
