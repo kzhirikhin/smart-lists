@@ -92,6 +92,15 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 `gemini-3.5-flash-lite`. Это не утверждение о текущем runtime; полный
 снимок хранится в FastAPI-репозитории.
 
+
+Сверка production-зависимостей 2026-10-04: OIDC 3.8.9 и AWS credential provider
+3.3.9 не меняют runtime-код получения credentials; cli-config 0.3.0 добавляет
+только необязательный nativeBinaryAutoOptIn. Framer Motion 13.4.4, Lucide 1.48.0
+и next-intl 4.14.7 не добавляют внешних сервисов или данных. Проверены возраст
+и registry integrity всех десяти изменённых пакетов; install-хуки отключены.
+Границы AWS/GCP federation, server-only секреты, IAM и передаваемые данные
+сохраняются; A51/A60/A61 не получают новых допущений.
+
 ## Текущее состояние
 
 **AWS SDK 2026-10-04 (PR #198).** client-s3, s3-presigned-post и
@@ -102,7 +111,10 @@ S3Client с явными credentials, resolveS3Credentials и GCP OIDC-пото�
 TB3, приватный бакет, TTL 300 секунд, условия presigned POST и two-phase
 PENDING → S3 → HeadObject → UPLOADED не меняются. Новых credentials,
 внешних сервисов или полномочий нет. Локальные интеграции используют mocks;
-реальный S3 smoke выполняется на Preview отдельно. Сравнительный npm audit
+Владелец проверил загрузку, скачивание и удаление на Preview 2026-10-04 (M).
+Скачанный TXT корректен; искажение кириллицы при inline-просмотре отмечено
+отдельным дефектом отображения, передача данных и границы доверия не изменены.
+Сравнительный npm audit
 на неизменённом lock main и этой ветке одинаков: Critical=0, High=22,
 moderate=1. Источники — brace-expansion, braces, deepmerge-ts и fast-uri;
 AWS SDK новых advisory не добавляет. Исправления этих существующих находок
