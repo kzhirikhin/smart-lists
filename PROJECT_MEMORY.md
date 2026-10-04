@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; Next.js 16.3.8; GitHub PAT; AWS Action)
+**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; Next.js 16.3.8; GitHub PAT; AWS Action/SDK)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -17,12 +17,12 @@ Smart Lists — локализованное веб-приложение для 
 ## Актуальный стек
 
 - Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
-- React `19.2.8`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.1.1` и dnd-kit;
-- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.5`;
+- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.0` и dnd-kit;
+- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.8`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
-- `next-intl` `4.13.7`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
-- Pusher, приватный S3-бакет через AWS SDK `3.1115.0` и внешний FastAPI-сервис
+- `next-intl` `4.14.5`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
+- Pusher, приватный S3-бакет через AWS SDK `3.1141.0` и внешний FastAPI-сервис
   AI-инсайтов;
 - Zod, Pino, React Hot Toast, `next-themes` и `lucide-react`;
 - Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
@@ -115,6 +115,12 @@ AWS Action бэкапов обновлён до configure-aws-credentials 6.3.0 
 передаются явно; translate-env-variables=false запрещает подмену inputs
 окружением других шагов. Контракт проверяет все вызовы AWS Action в workflow
 (workflow-action-pins.test.ts). GitHub OIDC и Environment Backup сохранены.
+
+AWS SDK S3 и оба presigner-пакета обновлены до 3.1141.0 (PR #198).
+Все 24 изменённых пакета выдержаны семь дней; integrity сверён с npm.
+Установка без хуков сохранена. S3-клиент получает credentials явно через
+resolveS3Credentials; TTL 300 секунд и поток PENDING → S3 → HeadObject →
+UPLOADED сохранены. Живая проверка вложений выполняется на Preview.
 
 ## Карта репозитория
 

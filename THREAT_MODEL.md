@@ -94,6 +94,20 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 
 ## Текущее состояние
 
+**AWS SDK 2026-10-04 (PR #198).** client-s3, s3-presigned-post и
+s3-request-presigner обновлены 3.1136.0 → 3.1141.0. Все 24 изменённые
+прямые/транзитивные пакеты выдержаны не менее семи дней, integrity совпадает
+с официальным npm registry; install-хуков нет, A51/A52 сохранены. Проверены
+S3Client с явными credentials, resolveS3Credentials и GCP OIDC-поток.
+TB3, приватный бакет, TTL 300 секунд, условия presigned POST и two-phase
+PENDING → S3 → HeadObject → UPLOADED не меняются. Новых credentials,
+внешних сервисов или полномочий нет. Локальные интеграции используют mocks;
+реальный S3 smoke выполняется на Preview отдельно. Сравнительный npm audit
+на неизменённом lock main и этой ветке одинаков: Critical=0, High=22,
+moderate=1. Источники — brace-expansion, braces, deepmerge-ts и fast-uri;
+AWS SDK новых advisory не добавляет. Исправления этих существующих находок
+требуют отдельного dependency-review, а не downgrade Next/Prisma из audit fix.
+
 **AWS Action бэкапов 2026-10-04 (PR #201).** configure-aws-credentials
 6.2.3 → 6.3.0, официальный SHA сверён с тегом; релиз выдержан с 09-15 (A52).
 Изучены изменения src/action.yml: переключатель translate-env-variables
