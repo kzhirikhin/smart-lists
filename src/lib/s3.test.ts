@@ -98,3 +98,30 @@ describe("готовность конфигурации S3", () => {
     ).rejects.toThrow(/S3_ROLE_ARN/);
   });
 });
+
+describe("presigned GET", () => {
+  it("для текста просит S3 отдать charset=utf-8 при инлайн-просмотре", async () => {
+    // Регрессия: без charset кириллица в браузере показывалась как «РџСЂРѕ».
+    const { getDownloadUrl } = await loadWith({ ...BASE, ...KEYS });
+    const url = new URL(
+      await getDownloadUrl("lists/l/f.txt", "заметка.txt", "text/plain"),
+    );
+    expect(url.searchParams.get("response-content-type")).toBe(
+      "text/plain; charset=utf-8",
+    );
+    expect(url.searchParams.get("response-content-disposition")).toMatch(
+      /^inline; /,
+    );
+  });
+
+  it("для бинарных форматов хранимый тип не переопределяет", async () => {
+    const { getDownloadUrl } = await loadWith({ ...BASE, ...KEYS });
+    const url = new URL(
+      await getDownloadUrl("lists/l/f.png", "photo.png", "image/png", true),
+    );
+    expect(url.searchParams.has("response-content-type")).toBe(false);
+    expect(url.searchParams.get("response-content-disposition")).toMatch(
+      /^attachment; /,
+    );
+  });
+});
