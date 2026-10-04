@@ -115,8 +115,9 @@ SBOM и pre-deploy Grype и развернул digest
 в ревизию `insights-api-00064-8hh` со 100% трафика. TLS-handshake
 из локального runtime image к Google API/JWKS прошёл с проверкой имени
 и сертификата, минимум TLS 1.2, согласован TLS 1.3. Это не измерение production
-TLS. Живой ответ Vertex AI после выкладки ожидает проверки владельцем;
-браузер агента недоступен. Read-only image-scan 37185456034 завершился PASS:
+TLS. Владелец 2026-10-04 подтвердил работоспособность AI-инсайтов
+через production-интерфейс после обновления (ручная проверка, M).
+Read-only image-scan 37185456034 завершился PASS:
 проверены provenance и runtime evidence serving-child digest
 `sha256:597192693542c0646a55f83c21d6968bfb99b63f7d16758869ff88448c58753a`
 с привязкой к подписанному parent. Critical=0, блокирующие High=0,
