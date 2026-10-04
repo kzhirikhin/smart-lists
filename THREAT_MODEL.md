@@ -94,6 +94,34 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 
 ## Текущее состояние
 
+**Обновление зависимостей AI-сервиса 2026-10-04.** В FastAPI-репозитории
+влит PR FastAPI #78 с выдержанными обновлениями: Google Gen AI SDK
+2.25.0, google-auth 2.58.1, Uvicorn 0.54.0, Starlette 1.7.0, Pydantic 2.13.5, AnyIO 4.15.1,
+cryptography 50.0.1 и совместимые транзитивные пакеты. FastAPI 0.141.1,
+httpx 0.28.1 и websockets 16.1.1 сохранены; новые мажоры не приняты.
+Все изменённые версии выдержаны семь дней по PyPI (A52). Lock пересобран
+pip-compile на Linux Python 3.14; установка требует SHA-256 и только wheel
+(A51). TB4/TB5, Google ID-token verification, бюджеты payload, prompt boundary,
+фиксированный адрес Vertex AI и полномочия runtime identity не меняются
+(A56/A59). Обновление cryptography и certifi меняет зависимости безопасности,
+но не добавляет credentials или границы доверия. Проверка нового image digest
+остаётся отдельным fail-closed deploy gate с attestation, SBOM и Grype
+(A62/A100); старые VEX/waiver не доказывают состояние нового образа.
+248 тестов, pip check, production build и Uvicorn HTTP smoke прошли
+в чистом окружении; /insights без токена отклонён до разбора body.
+Deploy run 37185259888 прошёл test, BuildKit provenance, keyless attestation,
+SBOM и pre-deploy Grype и развернул digest
+`sha256:18e75d3fc3482d38e94f1a40d92c4d0328f6fec1057757a1da3c3dde834141fa`
+в ревизию `insights-api-00064-8hh` со 100% трафика. TLS-handshake
+из локального runtime image к Google API/JWKS прошёл с проверкой имени
+и сертификата, минимум TLS 1.2, согласован TLS 1.3. Это не измерение production
+TLS. Живой ответ Vertex AI после выкладки ожидает проверки владельцем;
+браузер агента недоступен. Read-only image-scan 37185456034 завершился PASS:
+проверены provenance и runtime evidence serving-child digest
+`sha256:597192693542c0646a55f83c21d6968bfb99b63f7d16758869ff88448c58753a`
+с привязкой к подписанному parent. Critical=0, блокирующие High=0,
+55 High без исправления остаются advisory; VEX/waiver=0 (A100).
+
 **Deployment Protection — ручная сверка 2026-09-28.** Владелец подтвердил
 `Vercel Authentication: Standard Protection` скриншотами панели и проверкой
 в инкогнито: Preview и уникальные URL production-деплоев требуют входа в

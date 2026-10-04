@@ -19,7 +19,7 @@ Smart Lists — локализованное веб-приложение для 
 - Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
 - React `19.2.8`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.1.1` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.5`;
-- Prisma `7.9.1`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
+- Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
 - `next-intl` `4.13.7`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
 - Pusher, приватный S3-бакет через AWS SDK `3.1115.0` и внешний FastAPI-сервис
@@ -37,8 +37,8 @@ custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`
 User-managed ключей у identity нет. На этапе 5 FastAPI-код переведён на
 `gemini-3.5-flash-lite` через ADC, а Server Action передаёт проверенную локаль
 интерфейса (`ru/vi/en/ja`) как явный `response_language`. С 2026-09-18 production
-использует Vertex AI; с 2026-09-26 100% трафика получает ревизия
-`insights-api-00060-bnx` на Python 3.14 и AnyIO 4.14.2, без четырёх
+использует Vertex AI; с 2026-10-04 100% трафика получает ревизия
+`insights-api-00064-8hh` на Python 3.14 и AnyIO 4.15.1, без четырёх
 `ANTHROPIC_*`. Пользователь получил инсайт через
 production-интерфейс до и после их удаления, POST-запросы завершились HTTP 200
 без ошибок в логах. Владелец подтвердил архивирование Anthropic federation rule
@@ -47,7 +47,7 @@ production-интерфейс до и после их удаления, POST-з�
 том же этапе: их было 33 из 34, включая сохранявшуюся для rollback
 `insights-api-00057-rlj`, и после архивирования правила откат на неё всё равно
 не вернул бы работающий AI-канал. После новой выкладки состав оставшихся
-старых ревизий не инвентаризирован; serving revision — `insights-api-00060-bnx`. Уведомление о передаче
+старых ревизий не инвентаризирован; serving revision — `insights-api-00064-8hh`. Уведомление о передаче
 данных в панели AI синхронизировано с фактическим Vertex AI во всех четырёх
 локалях; регрессия выявлена на этапе 9 и закрыта тестами. Основной benchmark
 с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
@@ -67,6 +67,19 @@ Prompt с 2026-09-26 требует короткие рекомендации п
 least privilege. Project-level in-memory cache Vertex AI отключён; `global` не
 даёт гарантии data residency, а возможное abuse-monitoring логирование остаётся
 явно принятым временным риском до отдельного исключения Google.
+
+Обновление Python-зависимостей 2026-10-04 (FastAPI PR #78) принято после
+семидневной выдержки всех 21 изменённых версий. Google Gen AI SDK 2.25.0,
+google-auth 2.58.1, Starlette 1.7.0, Pydantic 2.13.5, Uvicorn 0.54.0 и
+совместимые транзитивные пакеты прошли 248 тестов, hash-установку только wheel,
+pip check, production build и Uvicorn HTTP smoke. Run 37185259888 проверил
+provenance, attestation, SBOM и pre-deploy Grype и направил 100% трафика
+на insights-api-00064-8hh. Read-only scan 37185456034 прошёл provenance,
+runtime evidence и gate: Critical=0, блокирующие High=0, 55 неисправимых High
+остаются advisory по A100, VEX/waiver=0. Контракт AI, prompt, модель и IAM
+не менялись.
+Живой ответ после обновления ожидает проверки владельцем; браузер агента
+недоступен. Новые версии FastAPI, SDK и websockets 17 пока не приняты.
 
 Два известных ограничения, которые миграция создала и которые стоит помнить.
 Первое: у `google.genai` в исключении нет `request_id`, поэтому ошибку с
