@@ -84,6 +84,7 @@
     "picomatch@2": "2.3.2",
     "picomatch@4": "4.0.5",
     "mysql2@3": "3.24.2",
+    "fast-uri@3": "3.1.8",
     "@babel/core": "^7.29.6"
   }
 }

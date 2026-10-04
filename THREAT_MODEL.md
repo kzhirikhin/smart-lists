@@ -103,6 +103,21 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 
 ## Текущее состояние
 
+**fast-uri и остаток npm audit 2026-10-04.** Override `fast-uri@3` → 3.1.8
+закрывает GHSA-hrr3-gc8f-f4qj (moderate, непоследовательная нормализация
+регистра хоста). Путь: `prisma` (devDependencies) → `@prisma/dev` → `ajv` →
+`fast-uri`, то есть только локальный `prisma dev`; `ajv` требует `^3.0.1`.
+Релиз от 2026-09-15 выдержан (A52), integrity совпадает с registry, lock
+пересобран в `node:24` с `--ignore-scripts`, дифф кода сведён к самому фиксу.
+Оставшиеся находки — только build/dev, в рантайм приложения не попадают:
+`deepmerge-ts` 7.1.5 (high) закреплён внутри `@prisma/config` ровно, исправлен
+лишь в мажоре 8 — override через мажор запрещён, ждём релиза Prisma; входом
+служит наш `prisma.config.ts`. `braces` 3.0.3 (high) — исправленной версии
+нет вовсе, путь `eslint-config-next` → `fast-glob` → `micromatch`, входом
+служат шаблоны конфига ESLint. Остальные шесть пакетов отчёта — каскад от этих
+двух. `npm audit fix --force` предлагает откат `eslint-config-next` до 14 и
+`prisma` до 6 и не применяется.
+
 **brace-expansion 2026-10-04.** Закрыты Dependabot #91/#92
 (GHSA-q2hr-2g5m-vwhr, moderate, квадратичный DoS на `{a},b}`): overrides
 `brace-expansion@1` 1.1.18 → 1.1.21 и `brace-expansion@5` 5.0.9 → 5.0.12.
@@ -112,7 +127,7 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 совпадает с registry, lock пересобран в `node:24` с `--ignore-scripts`. Дифф
 кода сведён к лимитам глубины и перезапусков и итеративному разбору; сети,
 fs, eval и install-хуков нет. В `npm audit` brace-expansion больше не
-встречается; braces, deepmerge-ts и fast-uri остаются отдельной задачей.
+встречается; fast-uri закрыт следующей записью, braces и deepmerge-ts разобраны там же.
 
 **Кодировка TXT при просмотре 2026-10-04.** Presigned GET для `text/plain`
 передаёт `response-content-type: text/plain; charset=utf-8`; тип берётся из
