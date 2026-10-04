@@ -4,6 +4,8 @@
  * и состава заголовков безопасности.
  */
 
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { nextConfig } from "../next.config";
@@ -28,6 +30,31 @@ async function cspDirectives(): Promise<Record<string, string>> {
 }
 
 describe("nextConfig", () => {
+  it("не откатывает Next.js ниже security-релиза и синхронизирует ESLint-конфиг", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
+      dependencies: { next: string };
+      devDependencies: { "eslint-config-next": string };
+    };
+    const lock = JSON.parse(
+      readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"),
+    ) as { packages: Record<string, { version?: string }> };
+    const version = manifest.dependencies.next;
+
+    // Точная stable-версия исключает незаметный переход на prerelease.
+    // 16.3.8 включает исправление RCE в next/og и последующие security-патчи.
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+    const [major, minor, patch] = version.split(".").map(Number);
+    expect(
+      major > 16 ||
+        (major === 16 && (minor > 3 || (minor === 3 && patch >= 8))),
+    ).toBe(true);
+    expect(manifest.devDependencies["eslint-config-next"]).toBe(version);
+    expect(lock.packages["node_modules/next"].version).toBe(version);
+    expect(lock.packages["node_modules/eslint-config-next"].version).toBe(version);
+  });
+
   it("не публикует X-Powered-By", () => {
     expect(nextConfig.poweredByHeader).toBe(false);
   });

@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; новые результаты dependency audit)
+**Последнее обновление:** 2026-10-04 (Vitest 5.0.2; security-обновление Next.js 16.3.8)
 **Состояние:** активная разработка
 
 ## Назначение
@@ -16,7 +16,7 @@ Smart Lists — локализованное веб-приложение для 
 
 ## Актуальный стек
 
-- Next.js `16.3.3`, App Router, Server Components и Server Actions;
+- Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
 - React `19.2.8`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.1.1` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.5`;
 - Prisma `7.9.1`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
@@ -78,9 +78,13 @@ least privilege. Project-level in-memory cache Vertex AI отключён; `glob
 
 Точные версии всегда смотри в `package.json` и `package-lock.json`.
 
-Проверка `npm audit` 2026-10-04 обнаружила critical для закреплённого Next.js
-`16.3.5` и другие находки в неизменённых зависимостях. Обновление Vitest их
-не устраняет; нужен отдельный разбор security-обновлений (THREAT_MODEL A58).
+Security-обновление Next.js `16.3.5 → 16.3.8` от 2026-10-04 закрывает
+critical `GHSA-vcvr-r3jv-pc5j` (RCE в Node.js `next/og ImageResponse`)
+и последующие advisory релиза 16.3.8. Приложение не использует `next/og`,
+динамические metadata image routes, `next/image`, Draft Mode или `use cache`;
+исправление зависимости снимает необходимость полагаться на эту недостижимость.
+Тест `next-config.test.ts` запрещает откат ниже 16.3.8 и рассинхрон Next/ESLint/lock.
+Другие high/moderate-находки dependency audit требуют отдельного разбора.
 
 Security-обновления 2026-09-06: `fast-uri` 3.1.7 в дереве Prisma CLI и
 `@humanfs/node` 0.16.8 в дереве ESLint; второе также обновляет `@humanfs/core`
