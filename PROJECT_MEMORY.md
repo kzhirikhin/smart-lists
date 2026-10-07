@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-04 (кодировка TXT; Vitest 5.0.2; Next.js 16.3.8; GitHub PAT; AWS Action/SDK; OIDC/UI/i18n)
+**Последнее обновление:** 2026-10-07 (типы Node 24; Framer Motion 13.4.5; dependency audit)
 **Состояние:** активная разработка
 
 
@@ -30,7 +30,7 @@ Smart Lists — локализованное веб-приложение для 
 ## Актуальный стек
 
 - Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
-- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.4` и dnd-kit;
+- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.5` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.9`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
