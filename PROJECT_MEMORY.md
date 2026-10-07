@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-07 (AWS SDK 3.1143.0; типы Node 24; Framer Motion 13.4.5; dependency audit)
+**Последнее обновление:** 2026-10-07 (security-патчи sharp/source-map-js/fast-copy; UI/i18n)
 **Состояние:** активная разработка
 
 
@@ -30,17 +30,25 @@ Smart Lists — локализованное веб-приложение для 
 ## Актуальный стек
 
 - Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
-- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.5` и dnd-kit;
+- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.6` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.9`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
-- `next-intl` `4.14.7`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
+- `next-intl` `4.14.8`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
 - Pusher, приватный S3-бакет через AWS SDK `3.1143.0` и внешний FastAPI-сервис
   AI-инсайтов;
-- Zod, Pino, React Hot Toast, `next-themes` и `lucide-react` `1.48.0`;
+- Zod, Pino, React Hot Toast, `next-themes` и `lucide-react` `1.49.0`;
 - Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Security-патчи 2026-10-07: `source-map-js` 1.2.2, `sharp` 0.35.5 и
+`@img/sharp-libvips-*` 1.3.4 в lock; `fast-copy@4` закреплён override 4.1.1.
+Next 16.3.8 разрешает sharp `^0.35.4`, поэтому патч принят без override
+sharp. Свежая fast-copy 4.1.2 не нужна для исправления и пока не выдержана.
+Linux Node 24 подтвердил librsvg 2.63.2, SVG → PNG, ограничения section
+offsets/source maps и maxDepth; install-хуки отключены. Остаток npm audit —
+8 High в dev/build-цепочках braces и deepmerge-ts, без Critical/moderate.
 
 Миграция AI Insights на Vertex AI завершена 2026-09-18: все десять этапов
 закрыты, включая итоговый пересмотр модели угроз. В проекте

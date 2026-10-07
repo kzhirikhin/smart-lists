@@ -121,19 +121,33 @@ install-хуков нет. Типы не входят в runtime; исправл
 AnimatePresence и Reorder не меняют права, данные или внешние интеграции.
 A51/A52, TB3 и OIDC-контроли сохранены.
 
-**Новые advisory 2026-10-07: открыты, не внесены этими PR.** Сравнение npm
-audit с неизменённым main: Critical=0, High=10, moderate=1; это количество
-пакетов с учётом транзитивного распространения, а не независимых угроз.
-Новые источники: sharp 0.35.4 (GHSA-wq5f-xc86-pv6w, librsvg/SVG),
-source-map-js 1.2.1 (GHSA-68fv-2mgg-jv7q, DoS на source maps),
-fast-copy 4.0.3 (GHSA-jggr-w7fw-pc2j, глубокие объекты).
+**Новые advisory 2026-10-07: закрыты в зависимостях.** sharp 0.35.5 с
+пакетами @img/sharp-libvips-* 1.3.4 закрывает GHSA-wq5f-xc86-pv6w (librsvg/SVG), source-map-js
+1.2.2 — GHSA-68fv-2mgg-jv7q (ограничение section offsets), fast-copy 4.1.1 —
+GHSA-jggr-w7fw-pc2j (maxDepth и контролируемый RangeError). Это выдержанные
+релизы, integrity сверена с npm registry, install-хуки отключены; lock
+пересобран на node:24 Linux. fast-copy 4.1.2 от 10-05 не принят: уязвимость
+уже исправлена в выдержанной 4.1.1, зафиксированной override fast-copy@4.
 source-map-js используется сборщиками, fast-copy — dev-транспортом
-pino-pretty, который отключён в production. sharp закреплён внутри Next:
-override запрещён, нужен релиз Next с исправленным sharp. Прямых импортов
-sharp/next/image в приложении нет, SVG-вложения не разрешены; это сужает
-прикладной путь, но не доказывает недостижимость decoder во всём Next.
-Состояние PIE production Node неизвестно; снижение риска из upstream
-workaround не засчитывается. Новые находки требуют отдельного security-review.
+pino-pretty, который отключён в production. **Уточнение прежней оценки:**
+Next 16.3.8 объявляет sharp как optionalDependency ^0.35.4, а не точную
+версию. 0.35.5 входит в разрешённый диапазон и обновлена только в lock;
+override sharp/PostCSS не добавлен. Состояние PIE production Node остаётся
+неизвестным, но закрытие опирается на патч librsvg, а не на этот workaround.
+Linux smoke на Node 24 подтвердил sharp 0.35.5, libvips 8.18.7 и librsvg
+2.63.2, успешное SVG → PNG, отказ на section offset 1e12, контролируемый
+MaxDepthExceededError на глубине 2000 и независимое копирование Buffer.
+Это проверка конкретной сборки (R, 2026-10-07), не новый постоянный CI-контроль.
+Новых границ доверия, данных и полномочий нет; SVG-вложения по-прежнему
+запрещены. npm audit: Critical=0, High=8, moderate=0; остаток — только
+известные dev/build-цепочки braces и deepmerge-ts (см. ниже).
+
+**UI/i18n 2026-10-07.** Framer Motion 13.4.6 исправляет AnimatePresence
+mode=wait и отменяет изменение вычисления scroll range; Lucide 1.49.0
+обновляет иконки и optional peer @types/react; next-intl 4.14.8 сохраняет
+порядок извлечённых сообщений. Восемь изменённых пакетов выдержаны больше
+недели, integrity совпадает, install-хуков нет. Авторизация, локали,
+внешние интеграции и передаваемые данные не меняются, A51/A52 сохранены.
 
 **fast-uri и остаток npm audit 2026-10-04.** Override `fast-uri@3` → 3.1.8
 закрывает GHSA-hrr3-gc8f-f4qj (moderate, непоследовательная нормализация
@@ -1737,11 +1751,11 @@ checkout не доказывала бы происхождение всего о
 
 ### Приоритет 1 — критично
 
-- **Открыто 2026-10-07: dependency security-review.** Разобрать новые
+- **Закрыто в коде 2026-10-07: dependency security-review.** Проверены
   GHSA-wq5f-xc86-pv6w (sharp), GHSA-68fv-2mgg-jv7q (source-map-js) и
-  GHSA-jggr-w7fw-pc2j (fast-copy). Для sharp проверить исправленный релиз
-  Next и runtime-достижимость SVG decoder; отдельный override не применять.
-  PR Dependabot #214–216 не считать проверенными или принятым риском до review.
+  GHSA-jggr-w7fw-pc2j (fast-copy). Приняты sharp 0.35.5 в разрешённом
+  диапазоне Next, source-map-js 1.2.2 и выдержанная fast-copy 4.1.1.
+  Override sharp не применяется; закрытие основано на исправленных версиях.
 
 Порядок изменён по итогам шага 0. Раньше 1.3 был условным («если ingress публичный»); теперь это подтверждённый факт, и он стал первым.
 
