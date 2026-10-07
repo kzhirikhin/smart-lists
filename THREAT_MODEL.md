@@ -103,6 +103,27 @@ production TB5 ведёт в Vertex AI; внешнее правило Anthropic 
 
 ## Текущее состояние
 
+**Review зависимостей 2026-10-07.** Типы Node обновлены 24.13.6 → 24.19.0
+(undici-types 7.24.6), Framer Motion и motion-dom — 13.4.4 → 13.4.5.
+Возраст релизов больше семи дней, integrity совпадает с registry,
+install-хуков нет. Типы не входят в runtime; исправления layout,
+AnimatePresence и Reorder не меняют права, данные или внешние интеграции.
+A51/A52, TB3 и OIDC-контроли сохранены.
+
+**Новые advisory 2026-10-07: открыты, не внесены этими PR.** Сравнение npm
+audit с неизменённым main: Critical=0, High=10, moderate=1; это количество
+пакетов с учётом транзитивного распространения, а не независимых угроз.
+Новые источники: sharp 0.35.4 (GHSA-wq5f-xc86-pv6w, librsvg/SVG),
+source-map-js 1.2.1 (GHSA-68fv-2mgg-jv7q, DoS на source maps),
+fast-copy 4.0.3 (GHSA-jggr-w7fw-pc2j, глубокие объекты).
+source-map-js используется сборщиками, fast-copy — dev-транспортом
+pino-pretty, который отключён в production. sharp закреплён внутри Next:
+override запрещён, нужен релиз Next с исправленным sharp. Прямых импортов
+sharp/next/image в приложении нет, SVG-вложения не разрешены; это сужает
+прикладной путь, но не доказывает недостижимость decoder во всём Next.
+Состояние PIE production Node неизвестно; снижение риска из upstream
+workaround не засчитывается. Новые находки требуют отдельного security-review.
+
 **fast-uri и остаток npm audit 2026-10-04.** Override `fast-uri@3` → 3.1.8
 закрывает GHSA-hrr3-gc8f-f4qj (moderate, непоследовательная нормализация
 регистра хоста). Путь: `prisma` (devDependencies) → `@prisma/dev` → `ajv` →
@@ -1701,6 +1722,12 @@ checkout не доказывала бы происхождение всего о
 Следующий шаг 0 не нужен: неизвестных не осталось, все строки реестра имеют статус.
 
 ### Приоритет 1 — критично
+
+- **Открыто 2026-10-07: dependency security-review.** Разобрать новые
+  GHSA-wq5f-xc86-pv6w (sharp), GHSA-68fv-2mgg-jv7q (source-map-js) и
+  GHSA-jggr-w7fw-pc2j (fast-copy). Для sharp проверить исправленный релиз
+  Next и runtime-достижимость SVG decoder; отдельный override не применять.
+  PR Dependabot #214–216 не считать проверенными или принятым риском до review.
 
 Порядок изменён по итогам шага 0. Раньше 1.3 был условным («если ingress публичный»); теперь это подтверждённый факт, и он стал первым.
 
