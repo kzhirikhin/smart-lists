@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-07 (типы Node 24; Framer Motion 13.4.5; dependency audit)
+**Последнее обновление:** 2026-10-07 (AWS SDK 3.1143.0; типы Node 24; Framer Motion 13.4.5; dependency audit)
 **Состояние:** активная разработка
 
 
@@ -35,7 +35,7 @@ Smart Lists — локализованное веб-приложение для 
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
 - `next-intl` `4.14.7`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
-- Pusher, приватный S3-бакет через AWS SDK `3.1141.0` и внешний FastAPI-сервис
+- Pusher, приватный S3-бакет через AWS SDK `3.1143.0` и внешний FastAPI-сервис
   AI-инсайтов;
 - Zod, Pino, React Hot Toast, `next-themes` и `lucide-react` `1.48.0`;
 - Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
