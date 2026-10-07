@@ -45,6 +45,13 @@ Smart Lists — локализованное веб-приложение для 
 TypeScript 6.0.3 закреплён точно; совместимый `typescript-eslint@8` — override
 8.71.0. `ignore@7` оставлен на 7.0.5, чтобы обновление компилятора не подтянуло
 свежий транзитивный релиз. Конфигурация strict и правила ESLint сохранены.
+PR #219 выложен 2026-10-07: CI 37625134128 прошёл сборку, интеграционные
+тесты и E2E; production deployment 6910656459 завершился успешно для
+commit `42c60ce1bdf47d8fea46868a9ea77de914932fdd`.
+TypeScript 7 пока несовместим с peer-диапазоном typescript-eslint (`<6.1`);
+ESLint 10 не поддерживается текущими eslint-plugin-react/jsx-a11y.
+dotenv 18.0.6 опубликован 2026-10-06 UTC: семидневная выдержка — 2026-10-14
+JST; ранние 18.0.4/18.0.5 не выбираем вместо исправленного релиза.
 
 Security-патчи 2026-10-07: `source-map-js` 1.2.2, `sharp` 0.35.5 и
 `@img/sharp-libvips-*` 1.3.4 в lock; `fast-copy@4` закреплён override 4.1.1.
@@ -62,8 +69,8 @@ custom role `vertexAiGeminiInvoker` ровно с `aiplatform.endpoints.predict`
 User-managed ключей у identity нет. На этапе 5 FastAPI-код переведён на
 `gemini-3.5-flash-lite` через ADC, а Server Action передаёт проверенную локаль
 интерфейса (`ru/vi/en/ja`) как явный `response_language`. С 2026-09-18 production
-использует Vertex AI; с 2026-10-04 100% трафика получает ревизия
-`insights-api-00064-8hh` на Python 3.14 и AnyIO 4.15.1, без четырёх
+использует Vertex AI; с 2026-10-07 100% трафика получает ревизия
+`insights-api-00065-4nz` на Python 3.14 и AnyIO 4.15.1, без четырёх
 `ANTHROPIC_*`. Пользователь получил инсайт через
 production-интерфейс до и после их удаления, POST-запросы завершились HTTP 200
 без ошибок в логах. Владелец подтвердил архивирование Anthropic federation rule
@@ -72,7 +79,7 @@ production-интерфейс до и после их удаления, POST-з�
 том же этапе: их было 33 из 34, включая сохранявшуюся для rollback
 `insights-api-00057-rlj`, и после архивирования правила откат на неё всё равно
 не вернул бы работающий AI-канал. После новой выкладки состав оставшихся
-старых ревизий не инвентаризирован; serving revision — `insights-api-00064-8hh`. Уведомление о передаче
+старых ревизий не инвентаризирован; serving revision — `insights-api-00065-4nz`. Уведомление о передаче
 данных в панели AI синхронизировано с фактическим Vertex AI во всех четырёх
 локалях; регрессия выявлена на этапе 9 и закрыта тестами. Основной benchmark
 с английским system prompt предпочёл 3.1, но четыре дополнительных сценария у
@@ -104,7 +111,18 @@ runtime evidence и gate: Critical=0, блокирующие High=0, 55 неис
 остаются advisory по A100, VEX/waiver=0. Контракт AI, prompt, модель и IAM
 не менялись.
 Владелец 2026-10-04 подтвердил, что AI-инсайты в production работают после
-обновления. Новые версии FastAPI, SDK и websockets 17 пока не приняты.
+обновления. Более свежие SDK и websockets 17 пока не приняты.
+
+FastAPI PR #80 обновил сервис до 0.142.2 и добавил обязательный
+opentelemetry-api 1.45.0; нативная телеметрия выключена всеми пятью флагами
+(THREAT_MODEL A102). 249 тестов, hash-locked wheel install и pip check прошли.
+Deploy run 37625407408 подтвердил provenance, attestation, SBOM и pre-deploy
+Grype; 2026-10-07 ревизия `insights-api-00065-4nz` получила 100% трафика.
+Владелец подтвердил работающий AI-инсайт в production после обновления.
+Read-only scan 37625960319 подтвердил provenance и runtime evidence нового
+serving-child digest `sha256:dc7c859413d0289bc2217ebe206ccc24bb2128b2183db7bea416b7f614bd5aff`:
+gate PASS, Critical=0, блокирующие High=0, прежние 55 High без исправления
+остаются advisory, VEX/waiver=0.
 
 Два известных ограничения, которые миграция создала и которые стоит помнить.
 Первое: у `google.genai` в исключении нет `request_id`, поэтому ошибку с
