@@ -30,7 +30,7 @@ Smart Lists — локализованное веб-приложение для 
 ## Актуальный стек
 
 - Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
-- React `19.3.0`, TypeScript strict, Tailwind CSS 4, Framer Motion `13.4.6` и dnd-kit;
+- React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.4.6` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.9`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
@@ -41,6 +41,10 @@ Smart Lists — локализованное веб-приложение для 
 - Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+TypeScript 6.0.3 закреплён точно; совместимый `typescript-eslint@8` — override
+8.71.0. `ignore@7` оставлен на 7.0.5, чтобы обновление компилятора не подтянуло
+свежий транзитивный релиз. Конфигурация strict и правила ESLint сохранены.
 
 Security-патчи 2026-10-07: `source-map-js` 1.2.2, `sharp` 0.35.5 и
 `@img/sharp-libvips-*` 1.3.4 в lock; `fast-copy@4` закреплён override 4.1.1.

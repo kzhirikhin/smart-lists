@@ -2,6 +2,12 @@
 
 **Дата составления:** 2026-08-09
 
+Сверка 2026-10-07: TypeScript 6.0.3 и совместимый typescript-eslint 8.71.0
+обновляют только инструменты проверки/сборки. Strict, правила запрета сырого
+HTML и release gates сохранены; новых активов, границ доверия или передаваемых
+наружу данных нет. Версии выдержаны, lock пересобран в Node 24/Linux без
+install-хуков; ignore@7 сохранён на 7.0.5. A51/A52 остаются действующими.
+
 **Последняя сверка с кодом:** 2026-08-13 (полная); 2026-08-28 — актуальный
 security diff: scoped DB-контур, tenant policy/column-guard объекты, live audit
 trail, attachment/AI privacy-потоки, dependency/SAST/secret gates,
