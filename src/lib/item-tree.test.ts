@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyCompletion, buildItemTree } from "@/lib/item-tree";
+import { applyCompletion, applyItemStatus, buildItemTree } from "@/lib/item-tree";
 
 type TestItem = {
   id: string;
@@ -182,5 +182,32 @@ describe("applyCompletion — контракт", () => {
   it("неизвестный ID оставляет состояние прежним", () => {
     const items = [item("a"), item("a1", "a")];
     expect(applyCompletion(items, "missing", true)).toEqual(items);
+  });
+});
+
+ describe("состояние выполнения", () => {
+  it("начало не меняет порядок, нумерацию и счётчик завершённых", () => {
+    const input = [item("a"), item("b"), item("c")];
+    const next = applyItemStatus(input, "b", "IN_PROGRESS");
+    const tree = buildItemTree(next);
+    expect(tree.nodes.map((node) => [node.item.id, node.number, node.status])).toEqual([
+      ["a", 1, "NOT_STARTED"], ["b", 2, "IN_PROGRESS"], ["c", 3, "NOT_STARTED"],
+    ]);
+    expect(tree.completedCount).toBe(0);
+    expect(input[1]).not.toHaveProperty("status");
+  });
+  it("начало блока сохраняет выполненные подпункты, а сброс очищает блок", () => {
+    const input = [item("a"), item("done", "a", true), item("open", "a")];
+    const started = applyItemStatus(input, "a", "IN_PROGRESS");
+    expect(started.map((entry) => [entry.id, entry.isCompleted])).toEqual([["a", false], ["done", true], ["open", false]]);
+    expect(buildItemTree(started).nodes[0].status).toBe("IN_PROGRESS");
+    expect(buildItemTree(applyItemStatus(started, "a", "NOT_STARTED")).nodes[0].status).toBe("NOT_STARTED");
+  });
+  it("изменение подпункта пересчитывает состояние родителя", () => {
+    const input = [item("a"), item("sub", "a")];
+    const next = applyItemStatus(input, "sub", "IN_PROGRESS");
+    expect(buildItemTree(next).nodes[0].status).toBe("IN_PROGRESS");
+    expect(buildItemTree(applyCompletion(next, "sub", true)).nodes[0].status).toBe("COMPLETED");
+    expect(buildItemTree(applyCompletion(next, "a", false)).nodes[0].status).toBe("NOT_STARTED");
   });
 });

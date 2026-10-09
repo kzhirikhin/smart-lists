@@ -26,6 +26,7 @@ import {
   createItemSchema,
   deleteItemSchema,
   toggleItemSchema,
+  setItemStatusSchema,
   createListSchema,
   deleteListSchema,
   shareListSchema,
@@ -81,10 +82,10 @@ function getValidationError(error: ZodError): string {
 /**
  * Приводит кеш отметки родителя в соответствие с его подпунктами.
  *
- * Выполняет две условные операции через переданный transaction client.
+ * Выполняет условные операции через переданный transaction client.
  * Вызывающий сначала меняет подпункт, затем пересчитывает родителя в той же
- * scoped-транзакции. Условия взаимоисключающие, поэтому ровно одна операция
- * затрагивает строку, а вторая ничего не делает.
+ * scoped-транзакции. Сначала пересчитывается завершённость, затем
+ * незавершённый блок получает «в процессе», если работа уже началась.
  *
  * Отметка родителя производная (см. `src/lib/item-tree.ts`), и в строке лежит
  * лишь кеш для запросов, которые дерево не собирают. Поэтому атомарность с
@@ -107,7 +108,7 @@ async function syncParentCompletion(
       listId,
       children: { some: {}, none: { isCompleted: false } },
     },
-    data: { isCompleted: true },
+    data: { isCompleted: true, status: "COMPLETED" },
   });
   await tx.item.updateMany({
     where: {
@@ -115,7 +116,18 @@ async function syncParentCompletion(
       listId,
       children: { some: { isCompleted: false } },
     },
-    data: { isCompleted: false },
+    data: { isCompleted: false, status: "NOT_STARTED" },
+  });
+  await tx.item.updateMany({
+    where: {
+      id: parentId,
+      listId,
+      isCompleted: false,
+      children: {
+        some: { OR: [{ isCompleted: true }, { status: "IN_PROGRESS" }] },
+      },
+    },
+    data: { status: "IN_PROGRESS" },
   });
 }
 
@@ -286,12 +298,9 @@ export async function addItem(formData: FormData) {
       });
 
       if (parentItemId) {
-        // Новый подпункт всегда невыполненный, поэтому родитель заведомо
-        // перестаёт быть выполненным. Обновление кеша атомарно с INSERT.
-        await tx.item.updateMany({
-          where: { id: parentItemId, listId },
-          data: { isCompleted: false },
-        });
+        // Новый подпункт снимает завершённость; начатость зависит от остальных.
+        // Обновление кеша атомарно с INSERT.
+        await syncParentCompletion(tx, parentItemId, listId);
       }
 
       return {
@@ -488,23 +497,23 @@ export async function toggleItem(formData: FormData) {
       // чтении оно не используется, но остаётся согласованным кешем.
       await tx.item.updateMany({
         where: { parentId: result.data.itemId, listId: item.listId },
-        data: { isCompleted },
+        data: { isCompleted, status: isCompleted ? "COMPLETED" : "NOT_STARTED" },
       });
       await tx.item.update({
         where: { id: result.data.itemId },
-        data: { isCompleted },
+        data: { isCompleted, status: isCompleted ? "COMPLETED" : "NOT_STARTED" },
       });
     } else if (item.parentId) {
       // Каскад вверх. Пересчёт родителя видит уже изменённый подпункт.
       await tx.item.update({
         where: { id: result.data.itemId },
-        data: { isCompleted },
+        data: { isCompleted, status: isCompleted ? "COMPLETED" : "NOT_STARTED" },
       });
       await syncParentCompletion(tx, item.parentId, item.listId);
     } else {
       await tx.item.update({
         where: { id: result.data.itemId },
-        data: { isCompleted },
+        data: { isCompleted, status: isCompleted ? "COMPLETED" : "NOT_STARTED" },
       });
     }
 
@@ -521,6 +530,56 @@ export async function toggleItem(formData: FormData) {
   const socketId = formData.get("socketId");
   after(() => notifyUsers(toggled.notificationUserIds, socketId));
   logger.info({ uid: hashId(userId), listId: toggled.listId, completed: isCompleted, action: "toggleItem" }, "Статус записи изменён");
+}
+
+/** Меняет состояние содержимого с теми же правами owner/editor и scoped-контекстом. */
+export async function setItemStatus(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "unauthorized" };
+  const userId = session.user.id;
+  if (!(await consumeMutationBudget(userId))) return { success: false, error: "dailyLimitReached" };
+  const parsed = setItemStatusSchema.safeParse({
+    itemId: formData.get("itemId"),
+    status: formData.get("status"),
+  });
+  if (!parsed.success) return { success: false, error: "validationError" };
+  const space = await resolveActionSpace(userId, formData);
+  if (!space) return { success: false, error: "notFound" };
+  const { itemId, status } = parsed.data;
+  const changed = await withSpaceDb(userId, space.id, async (tx) => {
+    const item = await tx.item.findFirst({
+      where: { id: itemId, list: listInSpaceWhere(userId, space.id) },
+      select: {
+        listId: true,
+        parentId: true,
+        list: {
+          select: { ownerId: true, shares: { select: { userId: true } } },
+        },
+      },
+    });
+    if (!item) return null;
+    const data = { status, isCompleted: status === "COMPLETED" };
+    await tx.item.update({ where: { id: itemId }, data });
+    if (item.parentId) {
+      await syncParentCompletion(tx, item.parentId, item.listId);
+    } else {
+      await tx.item.updateMany({
+        where: {
+          parentId: itemId,
+          listId: item.listId,
+          ...(status === "IN_PROGRESS" ? { isCompleted: false } : {}),
+        },
+        data,
+      });
+      await syncParentCompletion(tx, itemId, item.listId);
+    }
+    return { notificationUserIds: listNotificationUserIds(item.list) };
+  });
+  if (!changed) return { success: false, error: "notFound" };
+  revalidatePath("/", "layout");
+  const socketId = formData.get("socketId");
+  after(() => notifyUsers(changed.notificationUserIds, socketId));
+  return { success: true };
 }
 
 /**
@@ -1469,6 +1528,7 @@ export async function createList(formData: FormData) {
           note: item.note,
           noteVersion: item.noteVersion,
           isCompleted: item.isCompleted,
+          status: item.status,
           parentId: item.parentId,
           addedBy: item.addedBy
             ? {

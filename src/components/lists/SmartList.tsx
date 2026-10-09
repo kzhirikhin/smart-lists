@@ -65,8 +65,9 @@ import {
 } from "@/components/lists/Notes";
 import { getNoteExcerpt } from "@/lib/notes";
 import { MAX_ITEMS_PER_LIST, MAX_SUB_ITEMS_PER_ITEM } from "@/lib/limits";
-import { applyCompletion, buildItemTree, type ItemNode } from "@/lib/item-tree";
+import { applyCompletion, applyItemStatus, buildItemTree, type ItemNode } from "@/lib/item-tree";
 import { useCollapsedItems } from "@/components/providers/CollapsedItemsProvider";
+import { getItemStatus, type ItemStatus } from "@/lib/item-status";
 import CollapseChevron from "@/components/ui/CollapseChevron";
 
 // ---------------------------------------------------------------------------
@@ -80,6 +81,7 @@ type Item = {
   note: string | null;
   noteVersion: number;
   isCompleted: boolean;
+  status?: ItemStatus;
   /**
    * ID родительского пункта. null — пункт верхнего уровня.
    *
@@ -100,6 +102,7 @@ type Item = {
  * объект, потому что позиционных аргументов набралось бы полдюжины.
  */
 type RowContext = {
+  status?: ItemStatus;
   /**
    * Производная отметка выполнения. У пункта с подпунктами это «выполнены
    * все», у остальных — собственное поле записи. Именно её показывает чекбокс,
@@ -541,8 +544,9 @@ export default function SmartList({
         orderedIds,
         isCompleted,
         parentId,
+        status,
       }: {
-        action: "toggle" | "delete" | "add" | "rename" | "move" | "reorder";
+        action: "status" | "toggle" | "delete" | "add" | "rename" | "move" | "reorder";
         itemId: string;
         itemName?: string;
         addedBy?: Item["addedBy"];
@@ -550,6 +554,7 @@ export default function SmartList({
         orderedIds?: string[];
         /** Целевая отметка для `toggle` — уже производная, а не поле записи. */
         isCompleted?: boolean;
+        status?: ItemStatus;
         /**
          * Для `add` — родитель новой записи (null — обычный пункт).
          * Для `reorder` — уровень, который переставляют.
@@ -558,6 +563,8 @@ export default function SmartList({
       },
     ) => {
       switch (action) {
+        case "status":
+          return applyItemStatus(state, itemId, status ?? "NOT_STARTED");
         case "toggle":
           // Правило синхронизации живёт в одном месте на весь проект, и
           // оптимистичное состояние применяет ровно его: иначе экран до
@@ -577,6 +584,7 @@ export default function SmartList({
               note: null,
               noteVersion: 0,
               isCompleted: false,
+              status: "NOT_STARTED" as const,
               parentId: parentId ?? null,
               addedBy: addedBy ?? null,
             },
@@ -1418,6 +1426,8 @@ export default function SmartList({
     context: RowContext,
   ) => {
     const { isCompleted, numberLabel, isSubItem } = context;
+    const status = context.status ?? getItemStatus(item);
+    const isInProgress = status === "IN_PROGRESS";
     /**
      * Запись считается "в ожидании" (pending), если её ID начинается с "temp-".
      * В этом состоянии интерактивные элементы заблокированы.
@@ -1459,8 +1469,8 @@ export default function SmartList({
 
     return (
       <>
-          <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Ручка перетаскивания. aria-hidden и tabIndex -1 намеренно:
                 жест доступен только мышью и пальцем, а с клавиатуры порядок
                 меняется пунктами «Переместить выше/ниже» в меню действий —
@@ -1527,127 +1537,142 @@ export default function SmartList({
                 await api.toggleItem(item.id, isCompleted);
               }}
             >
-              <button
-                type="submit"
-                data-testid="item-toggle"
-                data-completed={isCompleted}
-                disabled={isPending}
-                title={isPending ? t("saving") : undefined}
-                className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                  isPending
-                    ? "border-gray-300 dark:border-zinc-700 cursor-not-allowed"
-                    : isCompleted
-                      ? "bg-gray-600 border-gray-600 dark:bg-zinc-500 dark:border-zinc-500 scale-105 shadow-sm shadow-gray-200 dark:shadow-none"
-                      : "bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-600 hover:border-gray-500 dark:hover:border-zinc-400 hover:shadow-sm"
-                }`}
-              >
-                {isPending ? (
-                  // Спиннер для ожидающей записи
-                  <span className="block w-2.5 h-2.5 border-2 border-gray-400 dark:border-zinc-500 !border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  // Галочка для выполненной записи
-                  isCompleted && (
-                    <svg
-                      className="w-3 h-3 text-white"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                    >
-                      <path
-                        d="M2 6.5l3 3 5-5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+              <Tooltip label={t("inProgress")} disabled={!isInProgress || isPending}>
+                <button
+                  type="submit"
+                  data-testid="item-toggle"
+                  data-completed={isCompleted}
+                  data-status={status}
+                  role="checkbox"
+                  aria-checked={isInProgress ? "mixed" : isCompleted}
+                  aria-label={`${isInProgress ? `${t("inProgress")}. ` : ""}${t(isCompleted ? "ariaReopen" : "ariaComplete", { name: item.name })}`}
+                  disabled={isPending}
+                  title={isPending ? t("saving") : undefined}
+                  className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                    isPending
+                      ? "border-gray-300 dark:border-zinc-700 cursor-not-allowed"
+                      : isCompleted
+                        ? "bg-gray-600 border-gray-600 dark:bg-zinc-500 dark:border-zinc-500 scale-105 shadow-sm shadow-gray-200 dark:shadow-none"
+                        : isInProgress
+                          ? "bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-950 dark:border-blue-400 dark:text-blue-300"
+                          : "bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-600 hover:border-gray-500 dark:hover:border-zinc-400 hover:shadow-sm"
+                  }`}
+                >
+                  {isInProgress && !isPending ? (
+                    <svg aria-hidden data-testid="item-progress-indicator" className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+                      <path d="M8 3a5 5 0 1 0 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  )
-                )}
-              </button>
+                  ) : isPending ? (
+                    // Спиннер для ожидающей записи
+                    <span className="block w-2.5 h-2.5 border-2 border-gray-400 dark:border-zinc-500 !border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    // Галочка для выполненной записи
+                    isCompleted && (
+                      <svg
+                        className="w-3 h-3 text-white"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                      >
+                        <path
+                          d="M2 6.5l3 3 5-5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )
+                  )}
+                </button>
+              </Tooltip>
             </form>
 
-            {/* Название записи (или поле редактирования) + "Сохраняется..." */}
-            <div
-              className={`flex-1 min-w-0 flex items-center gap-1 rounded-lg px-1 -mx-1 transition-colors ${
-                !isPending && !isCompleted && editingItemId !== item.id
-                  ? "group cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 hover:ring-1 hover:ring-gray-300 dark:hover:ring-zinc-600"
-                  : ""
-              }`}
-              onClick={
-                !isPending && !isCompleted && editingItemId !== item.id
-                  ? () => {
-                      setOpenNoteItemId(null);
-                      setOpenItemActionsId(null);
-                      setEditingItemId(item.id);
-                      setEditItemName(item.name);
-                    }
-                  : undefined
-              }
-            >
-              {!isPending && editingItemId === item.id ? (
-                <textarea
-                  autoFocus
-                  autoComplete="off"
-                  data-testid="item-name-input"
-                  value={editItemName}
-                  maxLength={200}
-                  rows={1}
-                  onFocus={(e) => {
-                    e.target.select();
-                    e.target.style.height = "auto";
-                    e.target.style.height = e.target.scrollHeight + "px";
-                  }}
-                  onInput={(e) => {
-                    const el = e.currentTarget;
-                    el.style.height = "auto";
-                    el.style.height = el.scrollHeight + "px";
-                  }}
-                  onChange={(e) => setEditItemName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
+            {/* Метаданные стоят ниже: длинному названию нужна вся доступная ширина. */}
+            <div className="flex-1 min-w-0">
+              <div
+                className={`flex-1 min-w-0 flex items-center gap-1 rounded-lg px-1 -mx-1 transition-colors ${
+                  !isPending && !isCompleted && editingItemId !== item.id
+                    ? "group cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 hover:ring-1 hover:ring-gray-300 dark:hover:ring-zinc-600"
+                    : ""
+                }`}
+                onClick={
+                  !isPending && !isCompleted && editingItemId !== item.id
+                    ? () => {
+                        setOpenNoteItemId(null);
+                        setOpenItemActionsId(null);
+                        setEditingItemId(item.id);
+                        setEditItemName(item.name);
+                      }
+                    : undefined
+                }
+              >
+                {!isPending && editingItemId === item.id ? (
+                  <textarea
+                    autoFocus
+                    autoComplete="off"
+                    data-testid="item-name-input"
+                    value={editItemName}
+                    maxLength={200}
+                    rows={1}
+                    onFocus={(e) => {
+                      e.target.select();
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
+                    onInput={(e) => {
+                      const el = e.currentTarget;
+                      el.style.height = "auto";
+                      el.style.height = el.scrollHeight + "px";
+                    }}
+                    onChange={(e) => setEditItemName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleConfirmItemRename(item);
+                      }
+                      if (e.key === "Escape") {
+                        skipItemBlurRef.current = true;
+                        setEditingItemId(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (skipItemBlurRef.current) {
+                        skipItemBlurRef.current = false;
+                        return;
+                      }
                       void handleConfirmItemRename(item);
-                    }
-                    if (e.key === "Escape") {
-                      skipItemBlurRef.current = true;
-                      setEditingItemId(null);
-                    }
-                  }}
-                  onBlur={() => {
-                    if (skipItemBlurRef.current) {
-                      skipItemBlurRef.current = false;
-                      return;
-                    }
-                    void handleConfirmItemRename(item);
-                  }}
-                  className="text-sm border dark:border-zinc-600 py-2 px-1 rounded-lg bg-gray-50 dark:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-950 focus:ring-1 ring-gray-800 dark:ring-zinc-500 outline-none transition w-full min-w-0 resize-none overflow-hidden"
-                />
-              ) : isPending || !isCompleted ? (
-                <>
-                  <span className="flex-1" data-testid="item-name"><Highlight text={item.name} query={searchQuery} /></span>
-                  {!isPending && <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs flex-shrink-0">✎</span>}
-                </>
-              ) : (
-                <span
-                  data-testid="item-name"
-                  className="transition-all duration-200 line-through text-gray-400 opacity-60 cursor-default"
-                >
-                  <Highlight text={item.name} query={searchQuery} />
-                </span>
+                    }}
+                    className="text-sm border dark:border-zinc-600 py-2 px-1 rounded-lg bg-gray-50 dark:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-950 focus:ring-1 ring-gray-800 dark:ring-zinc-500 outline-none transition w-full min-w-0 resize-none overflow-hidden"
+                  />
+                ) : isPending || !isCompleted ? (
+                  <>
+                    <span className="flex-1 min-w-0 [overflow-wrap:anywhere]" data-testid="item-name"><Highlight text={item.name} query={searchQuery} /></span>
+                    {!isPending && <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs flex-shrink-0">✎</span>}
+                  </>
+                ) : (
+                  <span
+                    data-testid="item-name"
+                    className="min-w-0 [overflow-wrap:anywhere] transition-all duration-200 line-through text-gray-400 opacity-60 cursor-default"
+                  >
+                    <Highlight text={item.name} query={searchQuery} />
+                  </span>
+                )}
+
+              </div>
+
+              {!isPending && showAuthors && item.addedBy && (
+                <div className="mt-1">
+                  <span data-testid="item-author" className="min-w-0 [overflow-wrap:anywhere] text-gray-400 text-xs">
+                    {item.addedBy.id === currentUserId
+                      ? t("you")
+                      : item.addedBy.name || item.addedBy.email}
+                  </span>
+                </div>
               )}
-
             </div>
-
-            {/* Автор записи: показывается только если включён переключатель */}
-            {!isPending && showAuthors && item.addedBy && (
-              <span className="text-gray-400 text-xs shrink-0">
-                {item.addedBy.id === currentUserId
-                  ? t("you")
-                  : item.addedBy.name || item.addedBy.email}
-              </span>
-            )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             {!isPending && editingItemId === item.id ? (
               <>
                 {/* Кнопка сохранения при редактировании */}
@@ -1806,6 +1831,30 @@ export default function SmartList({
                       }}
                       className="fixed z-40 min-w-48 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/60"
                     >
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          data-testid="item-progress-action"
+                          onClick={() => {
+                            setOpenItemActionsId(null);
+                            const next: ItemStatus = isInProgress ? "NOT_STARTED" : "IN_PROGRESS";
+                            startTransition(async () => {
+                              setOptimisticItems({ action: "status", itemId: item.id, status: next });
+                              try {
+                                const result = await api.setItemStatus(item.id, next);
+                                if (!result.success) toast.error(t("errors.statusFailed"));
+                              } catch {
+                                toast.error(t("errors.statusFailed"));
+                              }
+                            });
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                        >
+                          <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center rounded border border-blue-500 text-blue-600 dark:text-blue-300">−</span>
+                          {t(isInProgress ? "resetProgress" : "startProgress")}
+                        </button>
+                      )}
                       {/* Перемещение доступно только у невыполненных
                           записей: выполненные нумерации не имеют и
                           живут отдельным блоком внизу. Подпункт двигается
@@ -2040,6 +2089,7 @@ export default function SmartList({
       const sub = subNodeById.get(subItemId);
       return {
         isCompleted: sub?.item.isCompleted ?? false,
+        status: sub ? getItemStatus(sub.item) : "NOT_STARTED",
         // Номер подпункта показывается вместе с номером родителя:
         // «3.2.» читается сразу, а «2.» посреди чужого блока — нет.
         numberLabel:
@@ -2057,6 +2107,7 @@ export default function SmartList({
       <>
         {renderItemRow(node.item, dragControls, {
           isCompleted: node.isCompleted,
+          status: node.status,
           numberLabel: node.number ? `${node.number}.` : "",
           isSubItem: false,
           canReorder: canReorderItems,
@@ -2359,7 +2410,7 @@ export default function SmartList({
             {/* Удаление пункта уносит его подпункты, и об этом нужно
                 предупредить: на экране они могут быть свёрнуты, а отменить
                 удаление нельзя. */}
-            <p className="text-sm text-gray-600 dark:text-zinc-400 mb-5">
+            <p data-testid="item-delete-body" className="text-sm [overflow-wrap:anywhere] text-gray-600 dark:text-zinc-400 mb-5">
               {itemToDeleteSubCount > 0
                 ? t("deleteModal.bodyWithSubItems", {
                     name: itemToDelete.name,
@@ -2370,6 +2421,7 @@ export default function SmartList({
             <div className="flex justify-end gap-2">
               <button
                 type="button"
+                data-testid="item-delete-cancel"
                 onClick={() => setItemToDelete(null)}
                 className="px-3 py-2 rounded-md text-sm border border-gray-300 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800"
               >

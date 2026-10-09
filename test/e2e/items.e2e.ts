@@ -174,3 +174,50 @@ test("список на потолке не принимает новую зап
     MAX_ITEMS_PER_LIST,
   );
 });
+
+test("начатый пункт сохраняет порядок и состояние после перезагрузки", async ({ page, user, db }) => {
+  const list = await makeList(db, user.id, user.defaultSpaceId);
+  const [, second] = await makeItems(db, list.id, ["Первая", "Вторая", "Третья"]);
+  await openSpace(page, user);
+  let card = listCard(page, list.id);
+  await (await openItemMenu(card, second.id)).getByTestId("item-progress-action").click();
+  await expect(itemRow(card, second.id).getByTestId("item-progress-indicator")).toBeVisible();
+  await expect(itemRow(card, second.id).getByTestId("item-toggle")).toHaveAttribute("aria-checked", "mixed");
+  await expect(card.getByTestId("item-progress-badge")).toHaveCount(0);
+  await itemRow(card, second.id).getByTestId("item-toggle").hover();
+  await expect(page.getByTestId("tooltip")).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect.poll(() => itemNames(card)).toEqual(["Первая", "Вторая", "Третья"]);
+  await expect.poll(async () => (await db.item.findUniqueOrThrow({ where: { id: second.id } })).status).toBe("IN_PROGRESS");
+  await page.reload();
+  card = listCard(page, list.id);
+  await expect(itemRow(card, second.id).getByTestId("item-progress-indicator")).toBeVisible();
+  await (await openItemMenu(card, second.id)).getByTestId("item-progress-action").click();
+  await expect(itemRow(card, second.id).getByTestId("item-progress-indicator")).toHaveCount(0);
+  await expect.poll(async () => (await db.item.findUniqueOrThrow({ where: { id: second.id } })).status).toBe("NOT_STARTED");
+  await (await openItemMenu(card, second.id)).getByTestId("item-progress-action").click();
+  await expect(itemRow(card, second.id).getByTestId("item-progress-indicator")).toBeVisible();
+  await itemRow(card, second.id).getByTestId("item-toggle").click();
+  await expect(itemRow(card, second.id).getByTestId("item-toggle")).toHaveAttribute("data-completed", "true");
+  await expect.poll(async () => (await db.item.findUniqueOrThrow({ where: { id: second.id } })).status).toBe("COMPLETED");
+  await expect(itemRow(card, second.id).getByTestId("item-progress-indicator")).toHaveCount(0);
+});
+
+test("отметка работы видна на мобильном экране в обеих темах", async ({ page, user, db }, testInfo) => {
+  const list = await makeList(db, user.id, user.defaultSpaceId);
+  const [item] = await makeItems(db, list.id, ["Подготовить материалы для встречи"]);
+  await db.item.update({ where: { id: item.id }, data: { status: "IN_PROGRESS" } });
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const theme of ["light", "dark"]) {
+    await openSpace(page, user);
+    await page.evaluate((value) => localStorage.setItem("theme", value), theme);
+    await page.reload();
+    const card = listCard(page, list.id);
+    const row = itemRow(card, item.id);
+    await expect(row.getByTestId("item-progress-indicator")).toBeVisible();
+    await expect(row.getByTestId("item-toggle")).toHaveAttribute("aria-checked", "mixed");
+    await expect(page.locator("html")).toHaveClass(new RegExp(theme));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("progress-" + theme + ".png") });
+  }
+});

@@ -40,9 +40,11 @@ import {
   moveListInGroupSchema,
   updateListNoteSchema,
   updateItemNoteSchema,
+  setItemStatusSchema,
 } from "@/lib/validations";
 import type { ListData } from "@/components/lists/ListCard";
 import type { ListsApi } from "@/components/providers/ListsApiProvider";
+import { ITEM_STATUSES, deriveParentStatus, getItemStatus } from "@/lib/item-status";
 import { randomUUID } from "@/lib/uuid";
 import { normalizeNote } from "@/lib/notes";
 
@@ -61,6 +63,7 @@ const storedSubItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   isCompleted: z.boolean(),
+  status: z.enum(ITEM_STATUSES).optional(),
   note: z.string().nullable().optional(),
   noteVersion: z.number().int().nonnegative().optional(),
 });
@@ -258,7 +261,8 @@ function locateItem(data: GuestData, itemId: string): ItemLocation | null {
  */
 function syncParentCompletion(parent: StoredItem): void {
   if (parent.subItems.length === 0) return;
-  parent.isCompleted = parent.subItems.every((subItem) => subItem.isCompleted);
+  parent.status = deriveParentStatus(parent.subItems);
+  parent.isCompleted = parent.status === "COMPLETED";
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +302,7 @@ function storedListToListData(
         id: item.id,
         name: item.name,
         isCompleted: item.isCompleted,
+        status: getItemStatus(item),
         note: item.note ?? null,
         noteVersion: item.noteVersion ?? 0,
         parentId: null,
@@ -307,6 +312,7 @@ function storedListToListData(
         id: subItem.id,
         name: subItem.name,
         isCompleted: subItem.isCompleted,
+        status: getItemStatus(subItem),
         note: subItem.note ?? null,
         noteVersion: subItem.noteVersion ?? 0,
         parentId: item.id,
@@ -476,6 +482,7 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
           id: guestId(),
           name: parsed.data.itemName,
           isCompleted: false,
+          status: "NOT_STARTED",
           note: null,
           noteVersion: 0,
         };
@@ -489,7 +496,7 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
           if (!parent) return { success: false, error: "Пункт не найден" };
           parent.subItems.push(created);
           // Новый подпункт невыполненный, значит и родитель заведомо тоже.
-          parent.isCompleted = false;
+          syncParentCompletion(parent);
           return { success: true };
         }
 
@@ -644,6 +651,7 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
             id: guestId(),
             name: item.name,
             isCompleted: false,
+            status: "NOT_STARTED",
             note: item.note ?? null,
             noteVersion: 0,
             // У копий подпунктов свои ID и своя история заметки — как у копии
@@ -652,6 +660,7 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
               id: guestId(),
               name: subItem.name,
               isCompleted: false,
+              status: "NOT_STARTED",
               note: subItem.note ?? null,
               noteVersion: 0,
             })),
@@ -667,6 +676,28 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
      * клик по нему проставляет значение всем подпунктам, а клик по подпункту
      * пересчитывает родителя.
      */
+    setItemStatus: async (itemId, status) => {
+      const parsed = setItemStatusSchema.safeParse({ itemId, status });
+      if (!parsed.success) return { success: false, error: "validationError" };
+      return mutate((data) => {
+        const location = locateItem(data, itemId);
+        if (!location) return { success: false, error: "notFound" };
+        location.item.status = parsed.data.status;
+        location.item.isCompleted = parsed.data.status === "COMPLETED";
+        if (location.parent) {
+          syncParentCompletion(location.parent);
+        } else {
+          for (const subItem of location.item.subItems) {
+            if (parsed.data.status === "IN_PROGRESS" && subItem.isCompleted) continue;
+            subItem.status = parsed.data.status;
+            subItem.isCompleted = parsed.data.status === "COMPLETED";
+          }
+          syncParentCompletion(location.item);
+        }
+        return { success: true };
+      });
+    },
+
     toggleItem: async (itemId, isCompleted) => {
       mutate((data) => {
         const location = locateItem(data, itemId);
@@ -675,12 +706,14 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
         // Сохраняем инверсию ТЕКУЩЕГО значения — как в Server Action toggleItem
         const next = !isCompleted;
         location.item.isCompleted = next;
+        location.item.status = next ? "COMPLETED" : "NOT_STARTED";
 
         if (location.parent) {
           syncParentCompletion(location.parent);
         } else {
           for (const subItem of location.item.subItems) {
             subItem.isCompleted = next;
+            subItem.status = next ? "COMPLETED" : "NOT_STARTED";
           }
         }
         return { success: true };

@@ -225,6 +225,7 @@ test("AI выключается из меню списка и кнопка ис�
   // кто инсайт не запрашивает.
   await card.getByTestId("ai-insight-button").click();
   await expect(card.getByTestId("ai-privacy-notice")).toContainText("Vertex AI");
+  await expect(card.getByTestId("ai-privacy-notice")).toContainText("work statuses");
 
   const menu = await openListMenu(card);
   await menu.getByTestId("list-ai-toggle").click();

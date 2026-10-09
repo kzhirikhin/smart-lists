@@ -178,8 +178,14 @@
       "moveToListFailed": "項目を別のリストへ移動できませんでした",
       "itemLimitReached": "このリストにはすでに項目が{max}件あります",
       "subItemLimitReached": "この項目にはすでにサブ項目が{max}件あります",
-      "dailyLimitReached": "1日の操作上限に達しました。UTCの深夜を過ぎると再び保存されます"
-    }
+      "dailyLimitReached": "1日の操作上限に達しました。UTCの深夜を過ぎると再び保存されます",
+      "statusFailed": "項目の状態を変更できませんでした"
+    },
+    "inProgress": "進行中",
+    "startProgress": "作業を開始",
+    "resetProgress": "未着手に戻す",
+    "ariaComplete": "{name}を完了にする",
+    "ariaReopen": "{name}を未着手に戻す"
   },
   "Notes": {
     "listNote": "リストのメモ",
@@ -223,7 +229,7 @@
     "analyzing": "分析中...",
     "error": "インサイトを取得できませんでした",
     "rateLimitError": "本日の上限に達しました。明日お試しください。",
-    "privacyNotice": "リスト名、その項目、共有相手を含む全員のメモ、あなたのグループ名、あなたの質問が、分析のためVertex AI（Google Cloud）へ送信されます。参加者は誰でもリストメニューからオフにできます。",
+    "privacyNotice": "リスト名、項目とサブ項目およびその進行状況、共有相手を含む全員のメモ、あなたのグループ名、あなたの質問が、分析のためVertex AI（Google Cloud）へ送信されます。参加者は誰でもリストメニューからオフにできます。",
     "disabledError": "このリストではAIがオフになっています",
     "notesContext": "送信した項目メモ: {included}件、省略: {omitted}件。"
   },

@@ -20,6 +20,7 @@ import {
   addItem,
   deleteItem,
   toggleItem,
+  setItemStatus,
   renameItem,
   moveItem,
   moveItemToList,
@@ -89,6 +90,7 @@ export default function ServerListsApiProvider({
       updateItemNote: async (itemId, note, expectedVersion) =>
         updateItemNote(buildFormData({ itemId, note, expectedVersion: expectedVersion.toString() }, spaceId)),
       deleteItem: async (itemId) => deleteItem(buildFormData({ itemId }, spaceId)),
+      setItemStatus: async (itemId, status) => setItemStatus(buildFormData({ itemId, status }, spaceId)),
       toggleItem: async (itemId, isCompleted) =>
         toggleItem(buildFormData({ itemId, isCompleted: isCompleted.toString() }, spaceId)),
       moveItem: async (itemId, previousItemId, nextItemId) =>

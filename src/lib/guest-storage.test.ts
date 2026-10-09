@@ -995,3 +995,57 @@ describe("toListData", () => {
     expect(listData.items[0].noteVersion).toBe(0);
   });
 });
+
+describe("состояние работы", () => {
+  async function seed() {
+    const api = createApi();
+    const created = await api.createList({ title: "Задачи" });
+    const listId = created.list!.id;
+    await api.addItem(listId, "Пункт");
+    return { api, listId, itemId: stored().lists[0].items[0].id };
+  }
+  it("сохраняет начало, завершение и возврат в не начатые", async () => {
+    const { api, itemId } = await seed();
+    expect(await api.setItemStatus(itemId, "IN_PROGRESS")).toEqual({ success: true });
+    expect(stored().lists[0].items[0]).toMatchObject({ status: "IN_PROGRESS", isCompleted: false });
+    expect(toListData(stored(), GUEST_NAME)[0].items[0].status).toBe("IN_PROGRESS");
+    await api.toggleItem(itemId, false);
+    expect(stored().lists[0].items[0]).toMatchObject({ status: "COMPLETED", isCompleted: true });
+    await api.toggleItem(itemId, true);
+    expect(stored().lists[0].items[0]).toMatchObject({ status: "NOT_STARTED", isCompleted: false });
+  });
+  it("начало блока не снимает выполненные подпункты", async () => {
+    const { api, listId, itemId } = await seed();
+    await api.addItem(listId, "Первый", itemId);
+    await api.addItem(listId, "Второй", itemId);
+    const subId = stored().lists[0].items[0].subItems[0].id;
+    await api.toggleItem(subId, false);
+    expect(stored().lists[0].items[0].status).toBe("IN_PROGRESS");
+    await api.setItemStatus(itemId, "IN_PROGRESS");
+    expect(stored().lists[0].items[0].subItems.map((sub) => sub.status)).toEqual(["COMPLETED", "IN_PROGRESS"]);
+    await api.setItemStatus(itemId, "NOT_STARTED");
+    expect(stored().lists[0].items[0].subItems.every((sub) => sub.status === "NOT_STARTED")).toBe(true);
+  });
+  it("перенос сохраняет состояние, копия сбрасывает", async () => {
+    const { api, itemId } = await seed();
+    const target = (await api.createList({ title: "Получатель" })).list!.id;
+    await api.setItemStatus(itemId, "IN_PROGRESS");
+    await api.moveItemToList(itemId, target, "copy");
+    expect(stored().lists.find((list) => list.id === target)!.items[0].status).toBe("NOT_STARTED");
+    await api.moveItemToList(itemId, target, "move");
+    expect(stored().lists.find((list) => list.id === target)!.items[1].status).toBe("IN_PROGRESS");
+  });
+  it("не скрывает отказ хранилища и не сохраняет оптимистичное состояние", async () => {
+    const { api, itemId } = await seed();
+    storage.failOnWrite = true;
+    expect(await api.setItemStatus(itemId, "IN_PROGRESS")).toEqual({ success: false, error: "storageFailed" });
+    storage.failOnWrite = false;
+    expect(stored().lists[0].items[0].status).toBe("NOT_STARTED");
+  });
+  it("отбивает неизвестный ID и недоверенный статус", async () => {
+    const { api, itemId } = await seed();
+    expect(await api.setItemStatus("missing", "IN_PROGRESS")).toEqual({ success: false, error: "notFound" });
+    // @ts-expect-error Проверяем вход вне TypeScript-контракта.
+    expect(await api.setItemStatus(itemId, "invalid")).toEqual({ success: false, error: "validationError" });
+  });
+});
