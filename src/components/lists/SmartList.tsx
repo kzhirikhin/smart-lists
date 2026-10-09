@@ -66,6 +66,7 @@ import {
 import { getNoteExcerpt } from "@/lib/notes";
 import { MAX_ITEMS_PER_LIST, MAX_SUB_ITEMS_PER_ITEM } from "@/lib/limits";
 import { applyCompletion, applyItemStatus, buildItemTree, type ItemNode } from "@/lib/item-tree";
+import ProgressIcon from "@/components/ui/ProgressIcon";
 import { useCollapsedItems } from "@/components/providers/CollapsedItemsProvider";
 import { getItemStatus, type ItemStatus } from "@/lib/item-status";
 import CollapseChevron from "@/components/ui/CollapseChevron";
@@ -1559,9 +1560,7 @@ export default function SmartList({
                   }`}
                 >
                   {isInProgress && !isPending ? (
-                    <svg aria-hidden data-testid="item-progress-indicator" className="h-3 w-3" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 3a5 5 0 1 0 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
+                    <ProgressIcon data-testid="item-progress-indicator" className="h-3 w-3" />
                   ) : isPending ? (
                     // Спиннер для ожидающей записи
                     <span className="block w-2.5 h-2.5 border-2 border-gray-400 dark:border-zinc-500 !border-t-transparent rounded-full animate-spin" />
@@ -1851,7 +1850,13 @@ export default function SmartList({
                           }}
                           className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
                         >
-                          <span aria-hidden className="inline-flex h-4 w-4 items-center justify-center rounded border border-blue-500 text-blue-600 dark:text-blue-300">−</span>
+                          {isInProgress ? (
+                            <span aria-hidden data-testid="item-reset-progress-icon" className="h-4 w-4 shrink-0 rounded border-2 border-gray-400 dark:border-zinc-500" />
+                          ) : (
+                            <span aria-hidden data-testid="item-start-progress-cell" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 border-gray-400 dark:border-zinc-500">
+                              <ProgressIcon data-testid="item-start-progress-icon" strokeWidth={4 / 3} className="h-3 w-3" />
+                            </span>
+                          )}
                           {t(isInProgress ? "resetProgress" : "startProgress")}
                         </button>
                       )}
