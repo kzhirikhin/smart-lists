@@ -31,6 +31,7 @@ import { useTranslations } from "next-intl";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useListsApi } from "@/components/providers/ListsApiProvider";
 import SmartList from "@/components/lists/SmartList";
+import ProgressIcon from "@/components/ui/ProgressIcon";
 import CollapseChevron from "@/components/ui/CollapseChevron";
 import Highlight from "@/components/ui/Highlight";
 import Tooltip from "@/components/ui/Tooltip";
@@ -448,8 +449,10 @@ const ListCard = memo(function ListCard({
    * производная от подпунктов, поэтому счётчик показывает ровно то же, что
    * видно в его чекбоксе.
    */
-  const { completedCount: completedItemsCount, totalCount: itemsCount } =
+  const { nodes: itemNodes, completedCount: completedItemsCount, totalCount: itemsCount } =
     buildItemTree(list.items);
+  // Используем полное дерево: фильтр поиска и устаревший кеш родителя не скрывают начатый блок.
+  const hasInProgressItems = itemNodes.some((node) => node.status === "IN_PROGRESS");
   const listProgressState = itemsCount === 0
     ? "empty"
     : completedItemsCount === itemsCount
@@ -637,6 +640,19 @@ const ListCard = memo(function ListCard({
         {/* Заполненная заметка видна отдельно; создание пустой заметки находится в меню. */}
         {!isTemp && (
           <div className="flex items-center gap-1 flex-shrink-0">
+            {hasInProgressItems && (
+              <Tooltip label={t("inProgressIndicator")}>
+                <span
+                  role="img"
+                  tabIndex={0}
+                  aria-label={t("inProgressIndicator")}
+                  data-testid="list-progress-indicator"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 focus-visible:outline-2 focus-visible:outline-blue-500"
+                >
+                  <ProgressIcon className="h-3.5 w-3.5" />
+                </span>
+              </Tooltip>
+            )}
             {/* Сводка «выполнено / всего». Стоит в шапке независимо от
                 свёрнутости и на том же месте, чтобы не прыгать при
                 сворачивании. Скрывается на время переименования: заголовок
