@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { EXPECTED_ENUM_TYPES } from "../scripts/database-role-contract.mjs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -243,4 +245,14 @@ describe("tenant enforcement contract", () => {
       resolveEnforcementTransition("rollback-space-groups", "tenant-full"),
     ).toThrow("запрещена из профиля tenant-full");
   });
+});
+
+
+it("enum-инвентарь операционных ролей совпадает с Prisma-схемой", () => {
+  // Источник набора — схема: новый enum не должен ломать конфигуратор лишь
+  // в интеграционном прогоне, оставаясь невидимым для статического gate.
+  const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
+  const enumNames = [...schema.matchAll(/^enum\s+(\w+)\s*\{/gm)].map((match) => match[1]);
+  expect(enumNames.length).toBeGreaterThan(0);
+  expect([...EXPECTED_ENUM_TYPES].sort()).toEqual(enumNames.sort());
 });

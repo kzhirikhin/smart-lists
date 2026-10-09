@@ -45,6 +45,7 @@ import {
   NoteRemoveIcon,
   TrashIcon,
 } from "@/components/lists/Notes";
+import type { ItemStatus } from "@/lib/item-status";
 import { buildItemTree } from "@/lib/item-tree";
 import { DROP_TARGET_ATTR } from "@/lib/item-drop";
 import { menuAnchorFor, sameMenuAnchor, type MenuAnchor } from "@/lib/menu-anchor";
@@ -81,6 +82,7 @@ export type Item = {
   note: string | null;
   noteVersion: number;
   isCompleted: boolean;
+  status?: ItemStatus;
   /** ID родительского пункта. null — пункт верхнего уровня. */
   parentId: string | null;
   addedBy: { id: string; name: string | null; email: string } | null;

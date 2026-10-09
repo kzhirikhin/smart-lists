@@ -113,3 +113,21 @@ test("выключенная настройка убирает гостевой 
   await expect(visible(page, "sign-in-google")).toBeVisible();
   await expect(visible(page, "sign-in-guest")).toHaveCount(0);
 });
+
+test("гость сохраняет начатый пункт и завершает его одним нажатием", async ({ page }) => {
+  await enterGuest(page);
+  await createList(page, "Начатая работа");
+  await addItem(onlyListCard(page), "Задача");
+  let card = onlyListCard(page);
+  await card.getByTestId("item-menu-trigger").click();
+  await card.getByTestId("item-progress-action").click();
+  await expect(card.getByTestId("item-progress-indicator")).toBeVisible();
+  await page.reload();
+  card = onlyListCard(page);
+  await expect(card.getByTestId("item-progress-indicator")).toBeVisible();
+  await card.getByTestId("item-toggle").click();
+  await expect(card.getByTestId("item-toggle")).toHaveAttribute("data-completed", "true");
+  await expect(card.getByTestId("item-progress-indicator")).toHaveCount(0);
+  await card.getByTestId("item-toggle").click();
+  await expect(card.getByTestId("item-toggle")).toHaveAttribute("data-status", "NOT_STARTED");
+});

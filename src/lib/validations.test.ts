@@ -13,6 +13,7 @@ import { FALLBACK_FILE_NAME, MAX_FILE_SIZE } from "@/lib/attachments";
 import { MAX_NOTE_LENGTH } from "@/lib/notes";
 import {
   createItemSchema,
+  setItemStatusSchema,
   createListSchema,
   moveGroupSchema,
   moveListInGroupSchema,
@@ -416,5 +417,18 @@ describe("схемы заметок", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("setItemStatusSchema", () => {
+  it.each(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"])("принимает %s", (status) => {
+    expect(setItemStatusSchema.safeParse({ itemId: "item-1", status }).success).toBe(true);
+  });
+  it.each(["unknown", "", null, true, { value: "IN_PROGRESS" }])("отбивает недоверенный статус %j", (status) => {
+    expect(setItemStatusSchema.safeParse({ itemId: "item-1", status }).success).toBe(false);
+  });
+  it("отбивает пустой ID и чужие поля", () => {
+    expect(setItemStatusSchema.safeParse({ itemId: "", status: "IN_PROGRESS" }).success).toBe(false);
+    expect(setItemStatusSchema.safeParse({ itemId: "a", status: "IN_PROGRESS", ownerId: "other" }).success).toBe(false);
   });
 });
