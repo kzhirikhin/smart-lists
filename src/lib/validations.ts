@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { ITEM_STATUSES } from "@/lib/item-status";
 import { MAX_FILE_SIZE, sanitizeFileName } from "@/lib/attachments";
 import { MAX_NOTE_LENGTH } from "@/lib/notes";
 
@@ -70,6 +71,12 @@ export const toggleItemSchema = z.object({
   /** Текущий статус записи (до переключения). Передаётся как boolean. */
   isCompleted: z.boolean(),
 });
+
+/** Явное целевое состояние вместо доверия к текущему состоянию клиента. */
+export const setItemStatusSchema = z.object({
+  itemId: z.string().min(1),
+  status: z.enum(ITEM_STATUSES),
+}).strict();
 
 // ---------------------------------------------------------------------------
 // Схемы для работы со списками (List)

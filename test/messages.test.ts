@@ -197,3 +197,13 @@ describe("уведомление AI о передаче данных", () => {
     expect(notice).not.toContain("Anthropic");
   });
 });
+
+
+const statusNoticeWording: Record<string, string> = {
+  ru: "статусами выполнения", en: "work statuses",
+  vi: "trạng thái thực hiện", ja: "進行状況",
+};
+it.each(localeNames)("AI-уведомление в %s раскрывает передачу статусов", (locale) => {
+  expect(Object.keys(statusNoticeWording).sort()).toEqual([...localeNames].sort());
+  expect(flat[locale].get("AiInsight.privacyNotice")).toContain(statusNoticeWording[locale]);
+});

@@ -26,12 +26,15 @@
  *      где x — номер родителя.
  */
 
+import { deriveParentStatus, getItemStatus, type ItemStatus } from "@/lib/item-status";
+
 /** Минимум полей, нужный для сборки дерева. Всё остальное едет в `item`. */
 export type ItemTreeInput = {
   id: string;
   /** ID родительского пункта. null — пункт верхнего уровня. */
   parentId: string | null;
   isCompleted: boolean;
+  status?: ItemStatus;
 };
 
 /** Подпункт в дереве. */
@@ -43,6 +46,7 @@ export type SubItemNode<T> = {
 
 /** Пункт верхнего уровня вместе со своими подпунктами. */
 export type ItemNode<T> = {
+  status: ItemStatus;
   item: T;
   /**
    * Производная отметка выполнения: при наличии подпунктов — «выполнены все»,
@@ -122,6 +126,7 @@ export function buildItemTree<T extends ItemTreeInput>(
     return {
       item,
       isCompleted,
+      status: subItems.length ? deriveParentStatus(subItems) : getItemStatus(item),
       // Номер проставляется ниже, после сортировки уровня.
       number: undefined,
       subItems: subItems.map((sub) => ({
@@ -174,24 +179,7 @@ export function applyCompletion<T extends ItemTreeInput>(
   itemId: string,
   isCompleted: boolean,
 ): T[] {
-  const target = items.find((item) => item.id === itemId);
-  if (!target) return items.slice();
-
-  // Клик по подпункту: меняется он сам, родитель пересчитывается по итогу.
-  if (target.parentId !== null) {
-    const updated = items.map((item) =>
-      item.id === itemId ? { ...item, isCompleted } : item,
-    );
-    return recomputeParent(updated, target.parentId);
-  }
-
-  // Клик по пункту: если подпункты есть, значение получают все они.
-  const hasChildren = items.some((item) => item.parentId === itemId);
-  return items.map((item) =>
-    item.id === itemId || (hasChildren && item.parentId === itemId)
-      ? { ...item, isCompleted }
-      : item,
-  );
+  return applyItemStatus(items, itemId, isCompleted ? "COMPLETED" : "NOT_STARTED");
 }
 
 /**
@@ -206,8 +194,27 @@ function recomputeParent<T extends ItemTreeInput>(items: T[], parentId: string):
 
   const allCompleted = children.every((child) => child.isCompleted);
   return items.map((item) =>
-    item.id === parentId && item.isCompleted !== allCompleted
-      ? { ...item, isCompleted: allCompleted }
+    item.id === parentId
+      ? { ...item, isCompleted: allCompleted, status: deriveParentStatus(children) }
       : item,
   );
+}
+
+/** Начало блока не снимает выполненные подпункты; сброс блока очищает все состояния. */
+export function applyItemStatus<T extends ItemTreeInput>(
+  items: readonly T[],
+  itemId: string,
+  status: ItemStatus,
+): T[] {
+  const target = items.find((item) => item.id === itemId);
+  if (!target) return items.slice();
+  const updated = items.map((item) => {
+    if (
+      item.id !== itemId &&
+      !(target.parentId === null && item.parentId === itemId)
+    ) return item;
+    if (item.id !== itemId && status === "IN_PROGRESS" && item.isCompleted) return item;
+    return { ...item, status, isCompleted: status === "COMPLETED" };
+  });
+  return recomputeParent(updated, target.parentId ?? itemId);
 }

@@ -42,6 +42,7 @@ import {
   setListAiEnabled,
   shareList,
   toggleItem,
+  setItemStatus,
   updateItemNote,
   updateListNote,
 } from "@/app/actions";
@@ -209,6 +210,7 @@ describe("действия соблюдают бюджет", () => {
    */
   const actions: Array<[string, () => Promise<{ success?: boolean; error?: string }>]> = [
     ["addItem", () => addItem(formData({}))],
+    ["setItemStatus", () => setItemStatus(formData({}))],
     ["renameItem", () => renameItem(formData({}))],
     ["moveItem", () => moveItem(formData({}))],
     ["moveItemToList", () => moveItemToList(formData({}))],

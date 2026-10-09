@@ -29,6 +29,7 @@ export const EXPECTED_ENUM_TYPES = [
   "AuditEventAction",
   "AuditEventSource",
   "FileCategory",
+  "ItemStatus",
   "ListShareRole",
 ];
 

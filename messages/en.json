@@ -178,8 +178,14 @@
       "moveToListFailed": "Failed to move the item to another list",
       "itemLimitReached": "This list already holds {max} items",
       "subItemLimitReached": "This item already holds {max} sub-items",
-      "dailyLimitReached": "Daily action limit reached — changes will save again after UTC midnight"
-    }
+      "dailyLimitReached": "Daily action limit reached — changes will save again after UTC midnight",
+      "statusFailed": "Could not change the item status"
+    },
+    "inProgress": "In progress",
+    "startProgress": "Start working",
+    "resetProgress": "Reset to not started",
+    "ariaComplete": "Mark {name} as completed",
+    "ariaReopen": "Reset {name} to not started"
   },
   "Notes": {
     "listNote": "List note",
@@ -223,7 +229,7 @@
     "analyzing": "Analyzing...",
     "error": "Failed to get the insight",
     "rateLimitError": "Daily limit reached. Try again tomorrow.",
-    "privacyNotice": "The list title, its items, notes of everyone sharing it, your group names and your question are sent to Vertex AI (Google Cloud) for analysis. Any member can turn this off in the list menu.",
+    "privacyNotice": "The list title, its items and sub-items with their work statuses, notes of everyone sharing it, your group names and your question are sent to Vertex AI (Google Cloud) for analysis. Any member can turn this off in the list menu.",
     "disabledError": "AI is turned off for this list",
     "notesContext": "Item notes sent: {included}; omitted: {omitted}."
   },

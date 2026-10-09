@@ -25,6 +25,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import type { ItemStatus } from "@/lib/item-status";
 import type { ListData, ListGroup } from "@/components/lists/ListCard";
 
 /** Базовый результат операции — контракт Server Actions. */
@@ -77,6 +78,7 @@ export type ListsApi = {
   renameItem: (itemId: string, itemName: string) => Promise<ActionResult>;
   updateItemNote: (itemId: string, note: string, expectedVersion: number) => Promise<NoteActionResult>;
   deleteItem: (itemId: string) => Promise<void>;
+  setItemStatus: (itemId: string, status: ItemStatus) => Promise<ActionResult>;
   toggleItem: (itemId: string, isCompleted: boolean) => Promise<void>;
   /**
    * Перемещает запись между двумя соседями. null означает край списка:

@@ -14,7 +14,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getListInsight } from "@/app/actions/insights";
-import { MAX_INSIGHT_GROUPS, MAX_INSIGHT_ITEMS } from "@/lib/notes";
+import type { ItemStatus } from "@/lib/item-status";
+import { MAX_INSIGHT_SUB_ITEMS, MAX_INSIGHT_GROUPS, MAX_INSIGHT_ITEMS } from "@/lib/notes";
 import { prisma, setSessionUser } from "./setup";
 import { makeItem, makeList, makeUser, shareList } from "./factories";
 
@@ -41,8 +42,9 @@ type InsightRequest = {
   items: Array<{
     name: string;
     is_completed: boolean;
+    status: ItemStatus;
     note: string | null;
-    sub_items: Array<{ name: string; is_completed: boolean; note: string | null }>;
+    sub_items: Array<{ name: string; is_completed: boolean; status: ItemStatus; note: string | null }>;
   }>;
   notes_meta: {
     list_note_included: boolean;
@@ -462,12 +464,14 @@ describe("контекст AI — границы состава", () => {
       "is_completed",
       "name",
       "note",
+      "status",
       "sub_items",
     ]);
     expect(Object.keys(body.items[0].sub_items[0]).sort()).toEqual([
       "is_completed",
       "name",
       "note",
+      "status",
     ]);
     expect(Object.keys(body.notes_meta).sort()).toEqual([
       "included_item_notes",
@@ -644,5 +648,89 @@ describe("контекст AI — группы", () => {
     await getListInsight(list.id, undefined, user.defaultSpaceId);
 
     expect(lastRequest().groups).toHaveLength(MAX_INSIGHT_GROUPS);
+  });
+});
+
+
+describe("контекст AI — состояния работы", () => {
+  it("передаёт три состояния, включая пункт из выборки заметок, и сохраняет вопрос", async () => {
+    const user = await makeUser();
+    const list = await makeList(user.id, user.defaultSpaceId);
+    await prisma.item.createMany({ data: [
+      { listId: list.id, name: "Не начато", status: "NOT_STARTED", position: 1 },
+      { listId: list.id, name: "Начато", status: "IN_PROGRESS", note: "Детали работы", noteUpdatedAt: new Date(), position: 2 },
+      { listId: list.id, name: "Готово", isCompleted: true, status: "NOT_STARTED", position: 3 },
+    ] });
+    setSessionUser(user.id);
+    await getListInsight(list.id, "Объясни заметку списка", user.defaultSpaceId);
+    const request = lastRequest();
+    expect(request.user_message).toBe("Объясни заметку списка");
+    expect(request.items.map((item) => [item.name, item.status, item.is_completed])).toEqual([
+      ["Начато", "IN_PROGRESS", false],
+      ["Не начато", "NOT_STARTED", false],
+      ["Готово", "COMPLETED", true],
+    ]);
+    expect(request.items[0].note).toBe("Детали работы");
+  });
+
+  it("выводит состояние блока из подпунктов, несмотря на устаревший кеш", async () => {
+    const user = await makeUser();
+    const list = await makeList(user.id, user.defaultSpaceId);
+    const parent = await makeItem(list.id, { name: "Блок", isCompleted: true });
+    const started = await makeItem(list.id, { name: "Начатый шаг", parentId: parent.id });
+    await prisma.item.update({ where: { id: started.id }, data: { status: "IN_PROGRESS", note: "Связанная заметка" } });
+    await makeItem(list.id, { name: "Готовый шаг", parentId: parent.id, isCompleted: true });
+    setSessionUser(user.id);
+    await getListInsight(list.id, undefined, user.defaultSpaceId);
+    const [item] = lastRequest().items;
+    expect(item).toMatchObject({ status: "IN_PROGRESS", is_completed: false });
+    expect(item.sub_items).toEqual([
+      { name: "Начатый шаг", status: "IN_PROGRESS", is_completed: false, note: "Связанная заметка" },
+      { name: "Готовый шаг", status: "COMPLETED", is_completed: true, note: null },
+    ]);
+  });
+
+  it("сохраняет начатый подпункт и его родителя за обычными границами AI-выборки", async () => {
+    const user = await makeUser();
+    const list = await makeList(user.id, user.defaultSpaceId);
+    await prisma.item.createMany({ data: Array.from({ length: MAX_INSIGHT_ITEMS }, (_, index) => ({
+      listId: list.id, name: "Обычный " + index, position: index + 1,
+    })) });
+    // Шесть полных блоков дают больше 500 подпунктов: потолок пунктов
+    // нельзя ошибочно использовать как потолок общего чтения подпунктов.
+    const fillers = await prisma.item.findMany({ where: { listId: list.id }, orderBy: { position: "asc" }, take: 6 });
+    await prisma.item.createMany({ data: Array.from({ length: 600 }, (_, index) => ({
+      listId: list.id, parentId: fillers[index % 6].id, name: "Фоновый шаг " + index, position: Math.floor(index / 6) + 1,
+    })) });
+    const parent = await makeItem(list.id, { name: "Поздний блок", position: 100, isCompleted: true });
+    await prisma.item.createMany({ data: Array.from({ length: MAX_INSIGHT_SUB_ITEMS }, (_, index) => ({
+      listId: list.id, parentId: parent.id, name: "Шаг " + index, position: index + 1,
+    })) });
+    const started = await makeItem(list.id, { name: "Начатый поздний шаг", parentId: parent.id, position: 200 });
+    await prisma.item.update({ where: { id: started.id }, data: { status: "IN_PROGRESS" } });
+    setSessionUser(user.id);
+    await getListInsight(list.id, undefined, user.defaultSpaceId);
+    const request = lastRequest();
+    expect(request.items).toHaveLength(MAX_INSIGHT_ITEMS);
+    const block = request.items.find((item) => item.name === "Поздний блок")!;
+    expect(block.status).toBe("IN_PROGRESS");
+    expect(request.items.flatMap((item) => item.sub_items)).toHaveLength(MAX_INSIGHT_SUB_ITEMS);
+    expect(block.sub_items).toContainEqual({ name: "Начатый поздний шаг", status: "IN_PROGRESS", is_completed: false, note: null });
+  });
+
+  it("считает статус родителя до усечения подпунктов", async () => {
+    const user = await makeUser();
+    const list = await makeList(user.id, user.defaultSpaceId);
+    const parent = await makeItem(list.id, { name: "Блок" });
+    await prisma.item.createMany({ data: Array.from({ length: MAX_INSIGHT_SUB_ITEMS }, (_, index) => ({
+      listId: list.id, parentId: parent.id, name: "Не начато " + index, position: index + 1,
+    })) });
+    await makeItem(list.id, { name: "Готовый шаг", parentId: parent.id, isCompleted: true });
+    setSessionUser(user.id);
+    await getListInsight(list.id, undefined, user.defaultSpaceId);
+    const [item] = lastRequest().items;
+    expect(item.status).toBe("IN_PROGRESS");
+    expect(item.is_completed).toBe(false);
+    expect(item.sub_items.every((sub) => sub.status === "NOT_STARTED")).toBe(true);
   });
 });

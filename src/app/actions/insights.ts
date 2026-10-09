@@ -31,6 +31,8 @@ import { auth } from "@/auth";
 import { listInSpaceWhere } from "@/lib/spaces";
 import { getCloudRunIdToken } from "@/lib/gcp-auth";
 import { resolveInsightsServiceUrl } from "@/lib/insights-service-url";
+import { deriveParentStatus, getItemStatus, type ItemStatus } from "@/lib/item-status";
+import { MAX_ITEMS_PER_LIST, MAX_SUB_ITEMS_PER_ITEM } from "@/lib/limits";
 import { logger, hashId } from "@/lib/logger";
 import {
   DatabaseContextError,
@@ -125,8 +127,9 @@ export async function getListInsight(
     // Заметка списка имеет отдельный гарантированный бюджет. Заметки записей
     // выбираются независимо от первых 50 обычных записей: важная заметка не
     // исчезнет только потому, что её запись находится ниже в длинном списке.
-    // Пункты и подпункты выбираются раздельно, чтобы один длинный блок не
-    // вытеснил из контекста половину списка.
+    // Читаем скалярные поля в пределах структурных потолков списка, чтобы
+    // найти начатые записи и вывести статус блока до усечения AI-контекста.
+    // Заметки по-прежнему имеют независимую ограниченную выборку.
     const [
       topLevelItems,
       subItemRows,
@@ -142,8 +145,8 @@ export async function getListInsight(
             { position: "asc" },
             { createdAt: "asc" },
           ],
-          take: MAX_INSIGHT_ITEMS,
-          select: { id: true, name: true, isCompleted: true },
+          take: MAX_ITEMS_PER_LIST,
+          select: { id: true, name: true, isCompleted: true, status: true },
         }),
         tx.item.findMany({
           where: { listId, parentId: { not: null } },
@@ -152,11 +155,12 @@ export async function getListInsight(
             { position: "asc" },
             { createdAt: "asc" },
           ],
-          take: MAX_INSIGHT_SUB_ITEMS,
+          take: MAX_ITEMS_PER_LIST * MAX_SUB_ITEMS_PER_ITEM,
           select: {
             id: true,
             name: true,
             isCompleted: true,
+            status: true,
             parentId: true,
           },
         }),
@@ -173,6 +177,7 @@ export async function getListInsight(
             id: true,
             name: true,
             isCompleted: true,
+            status: true,
             note: true,
             parentId: true,
           },
@@ -274,7 +279,7 @@ export async function getListInsight(
   // Пункты с заметками идут первыми — тот же приоритет, что и раньше.
   const selectedItems = new Map<
     string,
-    { id: string; name: string; isCompleted: boolean }
+    { id: string; name: string; isCompleted: boolean; status: ItemStatus }
   >();
   for (const item of noteCandidates) {
     if (item.parentId !== null || !noteByItemId.has(item.id)) continue;
@@ -283,9 +288,25 @@ export async function getListInsight(
       id: item.id,
       name: item.name,
       isCompleted: item.isCompleted,
+      status: item.status,
     });
   }
-  for (const item of topLevelItems) {
+  // Полная ограниченная выборка нужна до AI-усечения: начатый подпункт
+  // должен привести в контекст своего родителя, даже если кеш родителя устарел.
+  const allSubItemsByParent = new Map<string, typeof subItemRows>();
+  for (const subItem of subItemRows) {
+    if (!subItem.parentId) continue;
+    const siblings = allSubItemsByParent.get(subItem.parentId) ?? [];
+    siblings.push(subItem);
+    allSubItemsByParent.set(subItem.parentId, siblings);
+  }
+  const statusOf = (item: { id: string; isCompleted: boolean; status: ItemStatus }) => {
+    const children = allSubItemsByParent.get(item.id) ?? [];
+    return children.length ? deriveParentStatus(children) : getItemStatus(item);
+  };
+  const prioritizedItems = [...topLevelItems].sort((a, b) =>
+    Number(statusOf(b) === "IN_PROGRESS") - Number(statusOf(a) === "IN_PROGRESS"));
+  for (const item of prioritizedItems) {
     if (selectedItems.size >= MAX_INSIGHT_ITEMS) break;
     if (!selectedItems.has(item.id)) selectedItems.set(item.id, item);
   }
@@ -294,8 +315,12 @@ export async function getListInsight(
   // он бессмысленнен, а «Купить продукты» без «Приготовить ужин» ещё и
   // вводит модель в заблуждение.
   const subItemsByParent = new Map<string, typeof subItemRows>();
-  for (const subItem of subItemRows) {
-    if (!subItem.parentId || !selectedItems.has(subItem.parentId)) continue;
+  const selectedSubItems = subItemRows
+    .filter((subItem) => subItem.parentId && selectedItems.has(subItem.parentId))
+    .sort((a, b) => Number(getItemStatus(b) === "IN_PROGRESS") - Number(getItemStatus(a) === "IN_PROGRESS"))
+    .slice(0, MAX_INSIGHT_SUB_ITEMS);
+  for (const subItem of selectedSubItems) {
+    if (!subItem.parentId) continue;
     const siblings = subItemsByParent.get(subItem.parentId);
     if (siblings) {
       siblings.push(subItem);
@@ -306,18 +331,16 @@ export async function getListInsight(
 
   const contextItems = [...selectedItems.values()].map((item) => {
     const subItems = subItemsByParent.get(item.id) ?? [];
+    const status = statusOf(item);
     return {
       name: item.name.slice(0, 200),
-      // Отметка пункта с подпунктами производная — см. `src/lib/item-tree.ts`.
-      // Считается по подпунктам, а не по полю строки: в контексте для модели
-      // денормализованному кешу доверять незачем.
-      is_completed:
-        subItems.length > 0
-          ? subItems.every((subItem) => subItem.isCompleted)
-          : item.isCompleted,
+      // Статус выводится из полной выборки до усечения контекста.
+      status,
+      is_completed: status === "COMPLETED",
       note: noteByItemId.get(item.id) ?? null,
       sub_items: subItems.map((subItem) => ({
         name: subItem.name.slice(0, 200),
+        status: getItemStatus(subItem),
         is_completed: subItem.isCompleted,
         note: noteByItemId.get(subItem.id) ?? null,
       })),
