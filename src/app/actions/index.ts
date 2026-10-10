@@ -47,6 +47,7 @@ import {
 } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { deriveParentStatus } from "@/lib/item-status";
 import { auth } from "@/auth";
 import { logger, hashId } from "@/lib/logger";
 import { notifyUsers } from "@/lib/notify";
@@ -93,41 +94,23 @@ function getValidationError(error: ZodError): string {
  * пользователю не видно.
  *
  * Родитель, оставшийся вовсе без подпунктов, сохраняет прежнее значение —
- * с этого момента оно снова его собственное. Отсюда условие `some: {}` в
- * первой операции: без него удаление последнего подпункта отметило бы пункт
- * выполненным, потому что «все ноль подпунктов выполнены».
+ * с этого момента оно снова его собственное. Пустая выборка поэтому не
+ * пересчитывается: «все ноль подпунктов выполнены» не завершает родителя.
  */
 async function syncParentCompletion(
   tx: ScopedTransaction,
   parentId: string,
   listId: string,
 ) {
-  await tx.item.updateMany({
-    where: {
-      id: parentId,
-      listId,
-      children: { some: {}, none: { isCompleted: false } },
-    },
-    data: { isCompleted: true, status: "COMPLETED" },
+  const children = await tx.item.findMany({
+    where: { parentId, listId },
+    select: { isCompleted: true, status: true },
   });
+  if (children.length === 0) return;
+  const status = deriveParentStatus(children);
   await tx.item.updateMany({
-    where: {
-      id: parentId,
-      listId,
-      children: { some: { isCompleted: false } },
-    },
-    data: { isCompleted: false, status: "NOT_STARTED" },
-  });
-  await tx.item.updateMany({
-    where: {
-      id: parentId,
-      listId,
-      isCompleted: false,
-      children: {
-        some: { OR: [{ isCompleted: true }, { status: "IN_PROGRESS" }] },
-      },
-    },
-    data: { status: "IN_PROGRESS" },
+    where: { id: parentId, listId },
+    data: { status, isCompleted: status === "COMPLETED" },
   });
 }
 
@@ -567,7 +550,7 @@ export async function setItemStatus(formData: FormData) {
         where: {
           parentId: itemId,
           listId: item.listId,
-          ...(status === "IN_PROGRESS" ? { isCompleted: false } : {}),
+          ...((status === "IN_PROGRESS" || status === "DEFERRED") ? { isCompleted: false } : {}),
         },
         data,
       });

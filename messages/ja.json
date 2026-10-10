@@ -183,6 +183,8 @@
       "statusFailed": "項目の状態を変更できませんでした"
     },
     "inProgress": "進行中",
+    "deferred": "保留中",
+    "deferAction": "保留にする",
     "startProgress": "作業を開始",
     "resetProgress": "未着手に戻す",
     "ariaComplete": "{name}を完了にする",

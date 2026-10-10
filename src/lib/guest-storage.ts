@@ -688,7 +688,7 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
           syncParentCompletion(location.parent);
         } else {
           for (const subItem of location.item.subItems) {
-            if (parsed.data.status === "IN_PROGRESS" && subItem.isCompleted) continue;
+            if ((parsed.data.status === "IN_PROGRESS" || parsed.data.status === "DEFERRED") && subItem.isCompleted) continue;
             subItem.status = parsed.data.status;
             subItem.isCompleted = parsed.data.status === "COMPLETED";
           }

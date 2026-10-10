@@ -653,13 +653,14 @@ describe("контекст AI — группы", () => {
 
 
 describe("контекст AI — состояния работы", () => {
-  it("передаёт три состояния, включая пункт из выборки заметок, и сохраняет вопрос", async () => {
+  it("передаёт четыре состояния, включая пункт из выборки заметок, и сохраняет вопрос", async () => {
     const user = await makeUser();
     const list = await makeList(user.id, user.defaultSpaceId);
     await prisma.item.createMany({ data: [
       { listId: list.id, name: "Не начато", status: "NOT_STARTED", position: 1 },
       { listId: list.id, name: "Начато", status: "IN_PROGRESS", note: "Детали работы", noteUpdatedAt: new Date(), position: 2 },
       { listId: list.id, name: "Готово", isCompleted: true, status: "NOT_STARTED", position: 3 },
+      { listId: list.id, name: "Отложено", status: "DEFERRED", position: 4 },
     ] });
     setSessionUser(user.id);
     await getListInsight(list.id, "Объясни заметку списка", user.defaultSpaceId);
@@ -668,6 +669,7 @@ describe("контекст AI — состояния работы", () => {
     expect(request.items.map((item) => [item.name, item.status, item.is_completed])).toEqual([
       ["Начато", "IN_PROGRESS", false],
       ["Не начато", "NOT_STARTED", false],
+      ["Отложено", "DEFERRED", false],
       ["Готово", "COMPLETED", true],
     ]);
     expect(request.items[0].note).toBe("Детали работы");
@@ -733,4 +735,30 @@ describe("контекст AI — состояния работы", () => {
     expect(item.is_completed).toBe(false);
     expect(item.sub_items.every((sub) => sub.status === "NOT_STARTED")).toBe(true);
   });
+});
+
+
+it("AI получает отложенный статус родителя из полных подпунктов", async () => {
+  const user = await makeUser();
+  const list = await makeList(user.id, user.defaultSpaceId);
+  const parent = await makeItem(list.id, { name: "Отложенный блок", isCompleted: true });
+  const child = await makeItem(list.id, { name: "Ожидающий шаг", parentId: parent.id });
+  await prisma.item.update({ where: { id: child.id }, data: { status: "DEFERRED" } });
+  await makeItem(list.id, { parentId: parent.id, isCompleted: true });
+  setSessionUser(user.id);
+  await getListInsight(list.id, "Объясни отложенный шаг", user.defaultSpaceId);
+  const block = lastRequest().items.find(entry => entry.name === "Отложенный блок")!;
+  expect(block).toMatchObject({ status: "DEFERRED", is_completed: false });
+  expect(block.sub_items.find(entry => entry.name === "Ожидающий шаг")).toMatchObject({ status: "DEFERRED", is_completed: false });
+});
+
+it("отложенные пункты не вытесняют не начатые из AI-бюджета", async () => {
+  const user = await makeUser();
+  const list = await makeList(user.id, user.defaultSpaceId);
+  await prisma.item.createMany({ data: Array.from({ length: 50 }, (_, index) => ({ listId: list.id, name: "Отложено " + index, status: "DEFERRED" as const, position: index })) });
+  await makeItem(list.id, { name: "Актуальная задача", position: 51 });
+  setSessionUser(user.id);
+  await getListInsight(list.id, undefined, user.defaultSpaceId);
+  expect(lastRequest().items).toHaveLength(50);
+  expect(lastRequest().items[0]).toMatchObject({ name: "Актуальная задача", status: "NOT_STARTED" });
 });

@@ -421,7 +421,7 @@ describe("схемы заметок", () => {
 });
 
 describe("setItemStatusSchema", () => {
-  it.each(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"])("принимает %s", (status) => {
+  it.each(["NOT_STARTED", "IN_PROGRESS", "DEFERRED", "COMPLETED"])("принимает %s", (status) => {
     expect(setItemStatusSchema.safeParse({ itemId: "item-1", status }).success).toBe(true);
   });
   it.each(["unknown", "", null, true, { value: "IN_PROGRESS" }])("отбивает недоверенный статус %j", (status) => {

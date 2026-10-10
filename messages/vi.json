@@ -183,6 +183,8 @@
       "statusFailed": "Không thể thay đổi trạng thái mục"
     },
     "inProgress": "Đang thực hiện",
+    "deferred": "Đã hoãn",
+    "deferAction": "Hoãn lại",
     "startProgress": "Bắt đầu thực hiện",
     "resetProgress": "Chuyển về chưa bắt đầu",
     "ariaComplete": "Đánh dấu {name} đã hoàn thành",

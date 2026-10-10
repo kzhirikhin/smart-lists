@@ -183,6 +183,8 @@
       "statusFailed": "Could not change the item status"
     },
     "inProgress": "In progress",
+    "deferred": "Deferred",
+    "deferAction": "Defer",
     "startProgress": "Start working",
     "resetProgress": "Reset to not started",
     "ariaComplete": "Mark {name} as completed",

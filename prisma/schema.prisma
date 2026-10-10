@@ -319,6 +319,7 @@ enum ListShareRole {
 enum ItemStatus {
   NOT_STARTED
   IN_PROGRESS
+  DEFERRED
   COMPLETED
 }
 

@@ -137,3 +137,21 @@ test("гость сохраняет начатый пункт и заверша�
   await card.getByTestId("item-toggle").click();
   await expect(card.getByTestId("item-toggle")).toHaveAttribute("data-status", "NOT_STARTED");
 });
+
+
+test("гость откладывает пункт, сохраняет его и возвращает в работу", async ({ page }) => {
+  await enterGuest(page);
+  await createList(page, "Отложенная работа");
+  await addItem(onlyListCard(page), "Задача");
+  const card = onlyListCard(page);
+  await card.getByTestId("item-menu-trigger").click();
+  await card.getByTestId("item-defer-action").click();
+  await expect(card.getByTestId("item-toggle")).toHaveAttribute("data-status", "DEFERRED");
+  await expect(card.getByTestId("list-progress-indicator")).toHaveCount(0);
+  await page.reload();
+  await expect(card.getByTestId("item-deferred-indicator")).toBeVisible();
+  await card.getByTestId("item-menu-trigger").click();
+  await card.getByTestId("item-progress-action").click();
+  await expect(card.getByTestId("item-progress-indicator")).toBeVisible();
+  await expect(card.getByTestId("list-progress-indicator")).toBeVisible();
+});

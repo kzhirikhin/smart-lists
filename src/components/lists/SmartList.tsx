@@ -66,6 +66,7 @@ import {
 import { getNoteExcerpt } from "@/lib/notes";
 import { MAX_ITEMS_PER_LIST, MAX_SUB_ITEMS_PER_ITEM } from "@/lib/limits";
 import { applyCompletion, applyItemStatus, buildItemTree, type ItemNode } from "@/lib/item-tree";
+import PauseIcon from "@/components/ui/PauseIcon";
 import ProgressIcon from "@/components/ui/ProgressIcon";
 import { useCollapsedItems } from "@/components/providers/CollapsedItemsProvider";
 import { getItemStatus, type ItemStatus } from "@/lib/item-status";
@@ -1429,6 +1430,19 @@ export default function SmartList({
     const { isCompleted, numberLabel, isSubItem } = context;
     const status = context.status ?? getItemStatus(item);
     const isInProgress = status === "IN_PROGRESS";
+    const isDeferred = status === "DEFERRED";
+    const changeStatus = (next: ItemStatus) => {
+      setOpenItemActionsId(null);
+      startTransition(async () => {
+        setOptimisticItems({ action: "status", itemId: item.id, status: next });
+        try {
+          const result = await api.setItemStatus(item.id, next);
+          if (!result.success) toast.error(t("errors.statusFailed"));
+        } catch {
+          toast.error(t("errors.statusFailed"));
+        }
+      });
+    };
     /**
      * Запись считается "в ожидании" (pending), если её ID начинается с "temp-".
      * В этом состоянии интерактивные элементы заблокированы.
@@ -1470,7 +1484,7 @@ export default function SmartList({
 
     return (
       <>
-          <div className="flex items-start justify-between gap-2">
+          <div data-testid="item-status-row" className={`flex items-start justify-between gap-2 rounded-lg transition-colors ${isInProgress ? "bg-linear-to-r from-blue-100/70 to-blue-50/20 dark:from-blue-950/50 dark:to-blue-950/10" : isDeferred ? "bg-linear-to-r from-gray-200/70 to-gray-100/20 dark:from-zinc-800/50 dark:to-zinc-800/10" : ""}`}>
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Ручка перетаскивания. aria-hidden и tabIndex -1 намеренно:
                 жест доступен только мышью и пальцем, а с клавиатуры порядок
@@ -1515,7 +1529,7 @@ export default function SmartList({
               <span
                 aria-hidden
                 data-testid="item-number"
-                className={`-mr-1 ${numberColumn} shrink-0 text-right text-sm tabular-nums text-gray-400 dark:text-zinc-500`}
+                className={`-mr-1 ${numberColumn} shrink-0 text-right text-sm tabular-nums ${isDeferred ? "text-gray-400/80 dark:text-zinc-500" : "text-gray-400 dark:text-zinc-500"}`}
               >
                 {numberLabel}
               </span>
@@ -1538,7 +1552,7 @@ export default function SmartList({
                 await api.toggleItem(item.id, isCompleted);
               }}
             >
-              <Tooltip label={t("inProgress")} disabled={!isInProgress || isPending}>
+              <Tooltip label={t(isDeferred ? "deferred" : "inProgress")} disabled={(!isInProgress && !isDeferred) || isPending}>
                 <button
                   type="submit"
                   data-testid="item-toggle"
@@ -1546,7 +1560,7 @@ export default function SmartList({
                   data-status={status}
                   role="checkbox"
                   aria-checked={isInProgress ? "mixed" : isCompleted}
-                  aria-label={`${isInProgress ? `${t("inProgress")}. ` : ""}${t(isCompleted ? "ariaReopen" : "ariaComplete", { name: item.name })}`}
+                  aria-label={`${isInProgress || isDeferred ? `${t(isDeferred ? "deferred" : "inProgress")}. ` : ""}${t(isCompleted ? "ariaReopen" : "ariaComplete", { name: item.name })}`}
                   disabled={isPending}
                   title={isPending ? t("saving") : undefined}
                   className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
@@ -1556,11 +1570,15 @@ export default function SmartList({
                         ? "bg-gray-600 border-gray-600 dark:bg-zinc-500 dark:border-zinc-500 scale-105 shadow-sm shadow-gray-200 dark:shadow-none"
                         : isInProgress
                           ? "bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-950 dark:border-blue-400 dark:text-blue-300"
-                          : "bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-600 hover:border-gray-500 dark:hover:border-zinc-400 hover:shadow-sm"
+                          : isDeferred
+                            ? "bg-gray-50 border-gray-400 text-gray-500 dark:bg-zinc-900 dark:border-zinc-500 dark:text-zinc-400"
+                            : "bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-600 hover:border-gray-500 dark:hover:border-zinc-400 hover:shadow-sm"
                   }`}
                 >
                   {isInProgress && !isPending ? (
                     <ProgressIcon data-testid="item-progress-indicator" className="h-3 w-3" />
+                  ) : isDeferred && !isPending ? (
+                    <PauseIcon data-testid="item-deferred-indicator" className="h-3 w-3" />
                   ) : isPending ? (
                     // Спиннер для ожидающей записи
                     <span className="block w-2.5 h-2.5 border-2 border-gray-400 dark:border-zinc-500 !border-t-transparent rounded-full animate-spin" />
@@ -1645,7 +1663,7 @@ export default function SmartList({
                   />
                 ) : isPending || !isCompleted ? (
                   <>
-                    <span className="flex-1 min-w-0 [overflow-wrap:anywhere]" data-testid="item-name"><Highlight text={item.name} query={searchQuery} /></span>
+                    <span className={`flex-1 min-w-0 [overflow-wrap:anywhere] ${isDeferred ? "italic text-gray-600 dark:text-zinc-400/85" : isInProgress ? "font-medium text-blue-700 dark:text-blue-300" : ""}`} data-testid="item-name"><Highlight text={item.name} query={searchQuery} /></span>
                     {!isPending && <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs flex-shrink-0">✎</span>}
                   </>
                 ) : (
@@ -1661,7 +1679,7 @@ export default function SmartList({
 
               {!isPending && showAuthors && item.addedBy && (
                 <div className="mt-1">
-                  <span data-testid="item-author" className="min-w-0 [overflow-wrap:anywhere] text-gray-400 text-xs">
+                  <span data-testid="item-author" className={`min-w-0 [overflow-wrap:anywhere] text-xs ${isDeferred ? "text-gray-400/80 dark:text-zinc-500" : "text-gray-400"}`}>
                     {item.addedBy.id === currentUserId
                       ? t("you")
                       : item.addedBy.name || item.addedBy.email}
@@ -1835,19 +1853,7 @@ export default function SmartList({
                           type="button"
                           role="menuitem"
                           data-testid="item-progress-action"
-                          onClick={() => {
-                            setOpenItemActionsId(null);
-                            const next: ItemStatus = isInProgress ? "NOT_STARTED" : "IN_PROGRESS";
-                            startTransition(async () => {
-                              setOptimisticItems({ action: "status", itemId: item.id, status: next });
-                              try {
-                                const result = await api.setItemStatus(item.id, next);
-                                if (!result.success) toast.error(t("errors.statusFailed"));
-                              } catch {
-                                toast.error(t("errors.statusFailed"));
-                              }
-                            });
-                          }}
+                          onClick={() => changeStatus(isInProgress ? "NOT_STARTED" : "IN_PROGRESS")}
                           className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
                         >
                           {isInProgress ? (
@@ -1858,6 +1864,20 @@ export default function SmartList({
                             </span>
                           )}
                           {t(isInProgress ? "resetProgress" : "startProgress")}
+                        </button>
+                      )}
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          data-testid="item-defer-action"
+                          onClick={() => changeStatus(isDeferred ? "NOT_STARTED" : "DEFERRED")}
+                          className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                        >
+                          <span aria-hidden className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 border-gray-400 dark:border-zinc-500">
+                            {!isDeferred && <PauseIcon className="h-3 w-3" />}
+                          </span>
+                          {t(isDeferred ? "resetProgress" : "deferAction")}
                         </button>
                       )}
                       {/* Перемещение доступно только у невыполненных

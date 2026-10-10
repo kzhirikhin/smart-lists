@@ -183,6 +183,8 @@
       "statusFailed": "Не удалось изменить состояние пункта"
     },
     "inProgress": "В процессе",
+    "deferred": "Отложено",
+    "deferAction": "Отложить",
     "startProgress": "Начать выполнение",
     "resetProgress": "Вернуть в не начатые",
     "ariaComplete": "Отметить «{name}» выполненным",

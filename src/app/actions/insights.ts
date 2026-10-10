@@ -304,8 +304,10 @@ export async function getListInsight(
     const children = allSubItemsByParent.get(item.id) ?? [];
     return children.length ? deriveParentStatus(children) : getItemStatus(item);
   };
+  // В бюджет сначала входит текущая работа; отложенные остаются для конкретных вопросов.
+  const statusPriority: Record<ItemStatus, number> = { IN_PROGRESS: 3, NOT_STARTED: 2, DEFERRED: 1, COMPLETED: 0 };
   const prioritizedItems = [...topLevelItems].sort((a, b) =>
-    Number(statusOf(b) === "IN_PROGRESS") - Number(statusOf(a) === "IN_PROGRESS"));
+    statusPriority[statusOf(b)] - statusPriority[statusOf(a)]);
   for (const item of prioritizedItems) {
     if (selectedItems.size >= MAX_INSIGHT_ITEMS) break;
     if (!selectedItems.has(item.id)) selectedItems.set(item.id, item);
@@ -317,7 +319,7 @@ export async function getListInsight(
   const subItemsByParent = new Map<string, typeof subItemRows>();
   const selectedSubItems = subItemRows
     .filter((subItem) => subItem.parentId && selectedItems.has(subItem.parentId))
-    .sort((a, b) => Number(getItemStatus(b) === "IN_PROGRESS") - Number(getItemStatus(a) === "IN_PROGRESS"))
+    .sort((a, b) => statusPriority[getItemStatus(b)] - statusPriority[getItemStatus(a)])
     .slice(0, MAX_INSIGHT_SUB_ITEMS);
   for (const subItem of selectedSubItems) {
     if (!subItem.parentId) continue;
