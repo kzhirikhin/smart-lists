@@ -1014,6 +1014,22 @@ describe("состояние работы", () => {
     await api.toggleItem(itemId, true);
     expect(stored().lists[0].items[0]).toMatchObject({ status: "NOT_STARTED", isCompleted: false });
   });
+  it("отложение сохраняется на обоих уровнях и не снимает завершение", async () => {
+    const { api, listId, itemId } = await seed();
+    await api.addItem(listId, "Готово", itemId);
+    await api.addItem(listId, "Ожидает", itemId);
+    const [done, open] = stored().lists[0].items[0].subItems;
+    await api.toggleItem(done.id, false);
+    await api.setItemStatus(itemId, "DEFERRED");
+    expect(stored().lists[0].items[0]).toMatchObject({ status: "DEFERRED", isCompleted: false });
+    expect(stored().lists[0].items[0].subItems[0]).toMatchObject({ isCompleted: true });
+    expect(toListData(stored(), GUEST_NAME)[0].items.find(entry => entry.id === open.id)!.status).toBe("DEFERRED");
+    await api.setItemStatus(open.id, "IN_PROGRESS");
+    expect(stored().lists[0].items[0].status).toBe("IN_PROGRESS");
+    await api.setItemStatus(itemId, "DEFERRED");
+    await api.setItemStatus(itemId, "NOT_STARTED");
+    expect(stored().lists[0].items[0].subItems.every(sub => !sub.isCompleted && sub.status === "NOT_STARTED")).toBe(true);
+  });
   it("начало блока не снимает выполненные подпункты", async () => {
     const { api, listId, itemId } = await seed();
     await api.addItem(listId, "Первый", itemId);
