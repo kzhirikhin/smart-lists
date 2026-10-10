@@ -155,6 +155,7 @@ export default function AiInsight({ listId }: AiInsightProps) {
       {/* Кнопка запроса — полная ширина */}
       <button
         type="button"
+        data-testid="ai-insight-analyze"
         onClick={() => void handleAnalyze()}
         disabled={isLoading}
         className="w-full text-xs px-3 py-1.5 rounded-lg bg-gray-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:bg-gray-700 dark:hover:bg-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 font-medium"
@@ -185,7 +186,7 @@ export default function AiInsight({ listId }: AiInsightProps) {
 
       {/* Результат — инсайт */}
       {insight && (
-        <div className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed bg-gray-50 dark:bg-zinc-800 rounded-lg px-3 py-2.5 border border-gray-100 dark:border-zinc-700">
+        <div data-testid="ai-insight-result" className="min-w-0 text-xs text-gray-600 dark:text-zinc-300 leading-relaxed bg-gray-50 dark:bg-zinc-800 rounded-lg px-3 py-2.5 border border-gray-100 dark:border-zinc-700">
           <SafeMarkdown>{insight}</SafeMarkdown>
           {notesContext && (notesContext.includedItemNotes > 0 || notesContext.omittedItemNotes > 0) && (
             <p className="mt-2 border-t border-gray-200 pt-2 text-[10px] text-gray-400 dark:border-zinc-700 dark:text-zinc-500">

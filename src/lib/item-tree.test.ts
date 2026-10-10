@@ -211,3 +211,14 @@ describe("applyCompletion — контракт", () => {
     expect(buildItemTree(applyCompletion(next, "a", false)).nodes[0].status).toBe("NOT_STARTED");
   });
 });
+
+
+it("отложение блока сохраняет завершённые подпункты и позиции", () => {
+  const input = [item("a"), item("done", "a", true), item("open", "a"), item("other")];
+  const deferred = applyItemStatus(input, "a", "DEFERRED");
+  expect(deferred.map(entry => entry.id)).toEqual(input.map(entry => entry.id));
+  expect(deferred.find(entry => entry.id === "done")!.isCompleted).toBe(true);
+  expect(deferred.find(entry => entry.id === "open")).toMatchObject({ status: "DEFERRED" });
+  expect(buildItemTree(deferred).nodes[0]).toMatchObject({ status: "DEFERRED", isCompleted: false });
+  expect(buildItemTree(applyItemStatus(deferred, "open", "IN_PROGRESS")).nodes[0].status).toBe("IN_PROGRESS");
+});

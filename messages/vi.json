@@ -67,6 +67,7 @@
     "dragInstructions": "Để nhấc một nhóm hoặc danh sách, nhấn Space hoặc Enter. Di chuyển bằng các phím mũi tên. Nhấn Space hoặc Enter lần nữa để thả, hoặc Escape để hủy.",
     "addedToGroup": "Đã thêm danh sách vào nhóm “{name}”",
     "ariaItemsCounter": "Mục đã hoàn thành: {done} trên {total}",
+    "inProgressIndicator": "Danh sách có công việc đang thực hiện",
     "leaveModal": {
       "title": "Rời khỏi danh sách?",
       "body": "Bạn có muốn rời khỏi danh sách «{title}»? Để có lại quyền truy cập, hãy yêu cầu chủ sở hữu chia sẻ lại.",
@@ -182,6 +183,8 @@
       "statusFailed": "Không thể thay đổi trạng thái mục"
     },
     "inProgress": "Đang thực hiện",
+    "deferred": "Đã hoãn",
+    "deferAction": "Hoãn lại",
     "startProgress": "Bắt đầu thực hiện",
     "resetProgress": "Chuyển về chưa bắt đầu",
     "ariaComplete": "Đánh dấu {name} đã hoàn thành",

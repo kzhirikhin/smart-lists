@@ -67,6 +67,7 @@
     "dragInstructions": "To pick up a group or list, press Space or Enter. Move it with the arrow keys. Press Space or Enter again to drop, or Escape to cancel.",
     "addedToGroup": "List added to “{name}”",
     "ariaItemsCounter": "Completed entries: {done} of {total}",
+    "inProgressIndicator": "This list has work in progress",
     "leaveModal": {
       "title": "Leave list?",
       "body": "Do you want to leave the list \"{title}\"? To regain access, ask the owner to share it with you again.",
@@ -182,6 +183,8 @@
       "statusFailed": "Could not change the item status"
     },
     "inProgress": "In progress",
+    "deferred": "Deferred",
+    "deferAction": "Defer",
     "startProgress": "Start working",
     "resetProgress": "Reset to not started",
     "ariaComplete": "Mark {name} as completed",

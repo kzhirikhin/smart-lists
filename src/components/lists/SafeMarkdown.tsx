@@ -16,6 +16,11 @@ import ReactMarkdown, { type Components } from "react-markdown";
  * модели в разметку не попадает.
  */
 const components: Components = {
+  // Длинные URL встречаются и в fenced code: сохраняем пробелы, но разрешаем перенос.
+  pre: ({ node, ...props }) => {
+    void node;
+    return <pre className="whitespace-pre-wrap" {...props} />;
+  },
   p: ({ node, ...props }) => {
     void node;
     return <p className="mb-2 last:mb-0" {...props} />;
@@ -69,5 +74,9 @@ const components: Components = {
 };
 
 export default function SafeMarkdown({ children }: { children: string }) {
-  return <ReactMarkdown components={components}>{children}</ReactMarkdown>;
+  return (
+    <div className="min-w-0 [overflow-wrap:anywhere]" data-testid="safe-markdown">
+      <ReactMarkdown components={components}>{children}</ReactMarkdown>
+    </div>
+  );
 }

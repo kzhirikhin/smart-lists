@@ -67,6 +67,7 @@
     "dragInstructions": "グループまたはリストを持ち上げるには Space または Enter を押します。矢印キーで移動し、もう一度 Space または Enter で配置、Escape でキャンセルします。",
     "addedToGroup": "リストを「{name}」グループに追加しました",
     "ariaItemsCounter": "完了した項目: {total}件中{done}件",
+    "inProgressIndicator": "このリストには進行中のタスクがあります",
     "leaveModal": {
       "title": "リストから退出しますか？",
       "body": "リスト「{title}」から退出しますか？再度アクセスするには、オーナーに共有し直してもらってください。",
@@ -182,6 +183,8 @@
       "statusFailed": "項目の状態を変更できませんでした"
     },
     "inProgress": "進行中",
+    "deferred": "保留中",
+    "deferAction": "保留にする",
     "startProgress": "作業を開始",
     "resetProgress": "未着手に戻す",
     "ariaComplete": "{name}を完了にする",

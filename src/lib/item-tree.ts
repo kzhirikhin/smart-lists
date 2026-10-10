@@ -213,7 +213,7 @@ export function applyItemStatus<T extends ItemTreeInput>(
       item.id !== itemId &&
       !(target.parentId === null && item.parentId === itemId)
     ) return item;
-    if (item.id !== itemId && status === "IN_PROGRESS" && item.isCompleted) return item;
+    if (item.id !== itemId && (status === "IN_PROGRESS" || status === "DEFERRED") && item.isCompleted) return item;
     return { ...item, status, isCompleted: status === "COMPLETED" };
   });
   return recomputeParent(updated, target.parentId ?? itemId);

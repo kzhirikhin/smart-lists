@@ -22,27 +22,27 @@ describe("состояние записи", () => {
     await toggleItem(formData({ itemId: item.id, isCompleted: "true", spaceId: user.defaultSpaceId }));
     expect(await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({ status: "NOT_STARTED", isCompleted: false });
   });
-  it("редактор меняет состояние и уведомляет участников после commit без эха", async () => {
+  it.each(["IN_PROGRESS", "DEFERRED"])("редактор меняет состояние %s и уведомляет участников после commit без эха", async (status) => {
     const { user, list, change } = await seed();
     const editor = await makeUser();
     await shareList(list.id, editor.id);
     setSessionUser(editor.id);
     const { notifyUsers } = await import("@/lib/notify");
-    expect(await change("IN_PROGRESS", undefined, editor.defaultSpaceId)).toEqual({ success: true });
+    expect(await change(status, undefined, editor.defaultSpaceId)).toEqual({ success: true });
     expect(vi.mocked(notifyUsers)).not.toHaveBeenCalled();
     await flushAfter();
     expect(vi.mocked(notifyUsers)).toHaveBeenCalledWith([user.id, editor.id], "123.456");
   });
-  it("отказывает без сессии, чужому пользователю и через другое пространство", async () => {
+  it.each(["IN_PROGRESS", "DEFERRED"])("отказывает для %s без сессии, чужому пользователю и через другое пространство", async (status) => {
     const { user, item, change } = await seed();
     clearSession();
-    expect(await change("IN_PROGRESS")).toMatchObject({ success: false });
+    expect(await change(status)).toMatchObject({ success: false });
     const stranger = await makeUser();
     setSessionUser(stranger.id);
-    expect(await change("IN_PROGRESS", item.id, stranger.defaultSpaceId)).toMatchObject({ success: false });
+    expect(await change(status, item.id, stranger.defaultSpaceId)).toMatchObject({ success: false });
     setSessionUser(user.id);
     const otherSpace = await makeSpace(user.id, "Другое");
-    expect(await change("IN_PROGRESS", item.id, otherSpace.id)).toMatchObject({ success: false });
+    expect(await change(status, item.id, otherSpace.id)).toMatchObject({ success: false });
     expect(await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({ status: "NOT_STARTED", isCompleted: false });
   });
   it("отбивает недоверенные значения до записи", async () => {
@@ -71,6 +71,24 @@ describe("состояние записи", () => {
     expect((await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("IN_PROGRESS");
     await addItem(formData({ listId: list.id, parentItemId: item.id, itemName: "Новый", spaceId: user.defaultSpaceId }));
     expect((await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("NOT_STARTED");
+  });
+  it("отложение сохраняет позицию и завершённые подпункты; возобновление и сброс", async () => {
+    const { user, list, item, change } = await seed();
+    const done = await makeItem(list.id, { parentId: item.id, isCompleted: true });
+    const open = await makeItem(list.id, { parentId: item.id });
+    expect(await change("DEFERRED")).toEqual({ success: true });
+    expect(await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({ status: "DEFERRED", isCompleted: false, position: item.position });
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: done.id } })).isCompleted).toBe(true);
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: open.id } })).status).toBe("DEFERRED");
+    await change("IN_PROGRESS", open.id);
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("IN_PROGRESS");
+    await change("DEFERRED", open.id);
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("DEFERRED");
+    await toggleItem(formData({ itemId: open.id, isCompleted: "false", spaceId: user.defaultSpaceId }));
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).status).toBe("COMPLETED");
+    await change("DEFERRED");
+    await change("NOT_STARTED");
+    expect((await prisma.item.findMany({ where: { listId: list.id } })).every(entry => entry.status === "NOT_STARTED" && !entry.isCompleted)).toBe(true);
   });
   it("перенос сохраняет статус, копирование сбрасывает", async () => {
     const { user, item, change } = await seed();
