@@ -26,8 +26,13 @@
 сессий/контекстов и очереди есть; очищенные отчёты, точные решения/expiry и
 локальная точка сравнения реализованы. 2026-10-17 добавлен
 [независимый advisory workflow](../zap-ci.md), A105; в Actions проверены
-completed/error/incomplete/skipped и публикация; применение trusted main
-после merge ещё проверяется. Active scan и сигнала давности пока нет.
+completed/error/incomplete/skipped и публикация. PR #231 слит; main-run
+39000032408 completed, trusted policy/baseline из main, comparison available,
+три решения применены. Этап 4 завершён. [Этап 5](../zap-manual.md) проверен локально:
+internal gate и два правила/три входа, синтетические сессии, отдельные phase/source
+отчёты; completed A/B, контрольная XSS-мишень и session/precondition/budget-пробы
+прошли. Ручной Actions workflow подготовлен, но ещё не опубликован/проверен.
+Сигнала давности пока нет.
 Пилот не доказывает полноту проверки приложения и deployed-конфигурации.
 
 Принятое решение: ZAP advisory, включая High и сбои; обязательные E2E/другие
@@ -44,7 +49,7 @@ network и probe ограничивают случайный доступ к в�
 required checks и expires_at артефакта через 30 дней. Это датированное
 наблюдение, не защита от drift и не наблюдение будущего удаления. `-silent`
 устраняет внешние update/telemetry; актуальность сканера требует отдельного
-review digest/addons. Остаток: trusted main после merge ещё проверяется; нет полной
+review digest/addons. Остаток: нет полной
 проверки всех входов и контроля уведомлений. Trusted-история берётся из явно
 просмотренного Git baseline default branch, не автоматически последнего run.
 Неизвестные evidence, включая CSRF,
@@ -56,9 +61,19 @@ review digest/addons. Остаток: trusted main после merge ещё пр�
 Изоляция DAG и trusted-vs-PR проверены локально; это не sandbox для произвольного
 изменения workflow/host-кода PR и не гарантия отсутствия приватного текста в
 любых stdout. Рабочие credentials/пользовательские данные в контур не выдаются.
-Перед завершением rollout проверить trusted main после merge, перед active scan — target/egress всех
+Перед active scan проверить target/egress всех
 профилей, перед расписанием — доставку сигнала и давность. Private content
 реальных пользователей в этот локальный профиль не допускается.
+
+Новая граница TZ4/A106: active scanner → reverse proxy gate → ephemeral app.
+Gate фиксирует исходные session/Origin и RSC-служебные поля, поэтому результат
+говорит об обработке выбранного текста, не о CORS/CSRF, правах или input всех
+Actions. Заметки с optimistic concurrency, JSON/файлы и Preview не включены.
+Попытки сверх 600 и неизвестные формы блокируются до upstream; polling останавливает
+native scan дополнительно. Локально проверены 41 попытка и успешные изменения
+выбранного поля обеих Actions, XSS alert на отдельной учебной мишени, отказ
+до атак при потере сессии и отказ второй попытки при лимите 1. Это не проверка
+всех форм wire, универсальная sandbox-изоляция или гарантия cleanup при hard cancel.
 
 **Открытый вопрос CSP (confirmed, не accepted-risk).** Локальный completed-проход
 2026-10-16 подтвердил варианты 10055-4/5/6: `next.config.ts` задаёт base-uri,

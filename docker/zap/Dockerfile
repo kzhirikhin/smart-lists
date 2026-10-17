@@ -14,6 +14,6 @@ COPY test ./test
 COPY scripts ./scripts
 COPY config/zap ./config/zap
 COPY tsconfig.json next.config.ts postcss.config.mjs ./
-COPY playwright.config.ts playwright.zap.config.ts vitest.config.ts vitest.integration.config.ts vitest.security.config.ts ./
+COPY playwright.config.ts playwright.zap.config.ts playwright.zap-active.config.ts vitest.config.ts vitest.integration.config.ts vitest.security.config.ts ./
 RUN node scripts/zap/build.mjs
 CMD ["node", "-e", "setInterval(()=>{},1000)"]

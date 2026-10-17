@@ -8,6 +8,7 @@
 !postcss.config.mjs
 !playwright.config.ts
 !playwright.zap.config.ts
+!playwright.zap-active.config.ts
 !vitest.config.ts
 !vitest.integration.config.ts
 !vitest.security.config.ts

@@ -34,11 +34,23 @@ baseline — обычные Git blobs отдельного default-branch checko
 Живые Actions подтвердили error/incomplete/skipped-отчёты, read-only token,
 retention 30 дней и независимость required CI. PR-run 38998447566 completed:
 22/22, 551 запрос, pending=0, около 176 секунд анализа; основной CI зелёный.
-До закрытия этапа 4 остаётся merge и проверка trusted policy/baseline на main.
+Этап 4 завершён: PR #231 слит, main-run 39000032408 completed (22/22,
+549 запросов, pending=0). Trusted policy/baseline из main, comparison available,
+все три решения применены. Основной CI, production migration, Vercel и
+Sync Preview Proxy прошли; публичная страница отвечает 200.
 ZAP `-silent` исключает unsolicited update/telemetry, чтобы version rule не
 задерживало очередь в изолированной сети. Актуальность сканера проверяется
 отдельно при review digest/addons. Policy/baseline требуют review.
-Активный скан и расписание ещё не внедрены.
+[Этап 5](docs/zap-manual.md) реализован и проверен локально: `npm run test:zap:manual`,
+passive A перед active B, отдельные synthetic owner/recipient и захват реальных
+createList/addItem FormData. Внутренний gate фиксирует сессию/Origin/служебные
+поля и ограничивает одно текстовое поле, метод/путь и 600 попыток до upstream.
+Только 40012/40018 LOW, один поток; active/passive отчёты B отдельно от CI
+baseline. Это не тест CSRF/прав, заметок и остальных Actions. Подготовлен
+workflow_dispatch по SHA, без расписания; публикация и проверка в Actions ещё впереди.
+Локально completed A/B: 22/22, 545 пассивных запросов, pending=0, 41 активная
+попытка; обе Actions получили по 6 успешных изменённых запросов. Учебная мишень
+дала настоящий XSS alert; session/precondition/budget-пробы отказали корректно.
 
 `ItemStatus` включает `DEFERRED`: отложенный пункт остаётся на позиции,
 показывает паузу в чекбоксе, приглушённое курсивное название и более бледные

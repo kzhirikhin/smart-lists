@@ -4,7 +4,7 @@
 
 ## Карта документа
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 105 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 106 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
@@ -23,11 +23,20 @@ evidence редактируются и остаются несопоставим
 error-артефакт с retention 30 дней; ruleset не требует ZAP, обязательный CI
 38996621674 завершился успешно независимо от ZAP failure. Полный PR-run
 38998447566 completed: 22/22, 551 запрос, pending=0; CI 38998447572 зелёный.
-Применение trusted policy/baseline после merge на main ещё не проверено. Живые пробы
+PR #231 слит. Main-run 39000032408 completed: 22/22, 549 запросов, pending=0;
+trusted policy/baseline из main, comparison available, применены три решения.
+Основной CI 39000032432 и production-публикация успешны. Живые пробы
 incomplete/skipped опубликованы; ожидание update metadata правилом 10116
 устраняется штатным `-silent` без открытия egress. Актуальность сканера
 этот изолированный профиль не доказывает: digest/addons требуют отдельного review.
-Active scan и контроль давности не внедрены.
+[Этап 5](docs/zap-manual.md), A106, проверен локально: отдельный manual профиль
+после passive coverage, internal gate с allowlist одного поля и hard-budget,
+низкая сила/два правила/один поток. Completed A/B: 545 пассивных запросов,
+pending=0, 41 активная попытка; две Actions получили по 6 успешных мутаций входа.
+Контрольная мишень дала XSS alert, session/precondition/budget-пробы отказали.
+Ручной Actions workflow ещё не опубликован и не проверен. Gate фиксирует
+session/Origin/служебные поля: это не тест CORS/CSRF/обхода прав. Расписания и
+контроля давности пока нет.
 Production active scan исключён.
 
 ## Состояние доказательств
@@ -74,6 +83,9 @@ flowchart LR
     G -->|TB9: проверенный SHA| Q[Vercel Preview]
     PB[Chromium / local pilot] -->|TZ1: synthetic Session| Z[ZAP / internal network]
     Z --> LN[Next production build / local]
+    Z -->|TZ4: active / query или одно поле| WG[Внутренний gate / budget]
+    WG -->|seed Session / Origin / FormData| LN
+    WG -->|только control probe| LAB[Отдельная учебная HTTP-мишень]
     LN --> TD[Эфемерная PostgreSQL]
     Z --> C[Сборщик пилота]
     C -->|TZ2: схема / allowlist evidence| O[Локальный test-results]
@@ -98,7 +110,8 @@ flowchart LR
 | TB12 | deploy → Registry → Cloud Run | exact digest/SBOM/attestation до защищённого deploy; ручной путь не запрещён Binary Authorization |
 | TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
-| TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped подтверждены 2026-10-17; trusted main после merge ещё не проверен; A105 |
+| TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped и trusted main после merge подтверждены 2026-10-17; A105 |
+| TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions пока unknown; A106 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

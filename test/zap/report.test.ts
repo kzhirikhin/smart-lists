@@ -22,6 +22,14 @@ const decision = (subject = findings()[0]) => ({
 });
 
 describe("очистка и нормализация ZAP", () => {
+  it("показывает названия активных правил, не экспортируя их payload", () => {
+    const subject = safeSubject(message(), {}, scenarios);
+    const active = sanitizeAlerts([alert({ alertRef: "40012", evidence: "PRIVATE_PAYLOAD" }), alert({ alertRef: "40018", evidence: "PRIVATE_PAYLOAD" })], new Map([["1", subject]]));
+    const html = renderReport(buildReport(run, active, emptyPolicy())).html;
+    expect(html).toContain("Отражённый XSS");
+    expect(html).toContain("SQL-инъекция");
+    expect(html).not.toContain("PRIVATE_PAYLOAD");
+  });
   it("диагностика очереди не экспортирует имена, URL или произвольные поля задач", () => {
     const tasks = safePassiveTasks([{ name: "known", time: "6000", url: "http://PRIVATE_MARKER/", secret: "PRIVATE_MARKER" }, { name: "PRIVATE_MARKER", time: 0 }], [{ name: "known", id: "10027" }]);
     expect(tasks).toEqual([{ ruleId: "10027", durationMs: 6000 }, { ruleId: "unknown", durationMs: 0 }]);
