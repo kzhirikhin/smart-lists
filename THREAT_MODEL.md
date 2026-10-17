@@ -21,8 +21,9 @@ evidence редактируются и остаются несопоставим
 независимый advisory workflow, trusted Git-входы, publisher/точные upload paths.
 Локальная приёмка есть. Первый PR-run 38996621804 подтвердил безопасный
 error-артефакт с retention 30 дней; ruleset не требует ZAP, обязательный CI
-38996621674 завершился успешно независимо от ZAP failure. Успешный полный
-ZAP-run после исправления clean-checkout сборки ещё проверяется. Живые пробы
+38996621674 завершился успешно независимо от ZAP failure. Полный PR-run
+38998447566 completed: 22/22, 551 запрос, pending=0; CI 38998447572 зелёный.
+Применение trusted policy/baseline после merge на main ещё не проверено. Живые пробы
 incomplete/skipped опубликованы; ожидание update metadata правилом 10116
 устраняется штатным `-silent` без открытия egress. Актуальность сканера
 этот изолированный профиль не доказывает: digest/addons требуют отдельного review.
@@ -97,7 +98,7 @@ flowchart LR
 | TB12 | deploy → Registry → Cloud Run | exact digest/SBOM/attestation до защищённого deploy; ручной путь не запрещён Binary Authorization |
 | TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
-| TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. Live rollout unknown; A105 |
+| TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped подтверждены 2026-10-17; trusted main после merge ещё не проверен; A105 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

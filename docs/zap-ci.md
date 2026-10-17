@@ -152,17 +152,26 @@ Impact-check обновил TZ3 и A105. Результаты локальной
 | Реальная ошибка сборки | [Run 38996621804](https://github.com/kzhirikhin/smart-lists/actions/runs/38996621804): отсутствовал generated next-env.d.ts в clean checkout; error-сводка и артефакт опубликованы. Dockerfile исправлен без добавления generated-файла в Git |
 | Независимость обязательных проверок | [CI 38996621674](https://github.com/kzhirikhin/smart-lists/actions/runs/38996621674) зелёный при failure ZAP job; advisory workflow остаётся success |
 | Реальная незавершённая очередь | [Run 38997023674](https://github.com/kzhirikhin/smart-lists/actions/runs/38997023674): 22/22 сценария, 551 запрос, pending=4 после минуты; incomplete, сравнение unavailable, безопасные отчёты сохранены |
+| Полный успешный анализ | [Run 38998447566](https://github.com/kzhirikhin/smart-lists/actions/runs/38998447566): completed, 22/22, 551 запрос, pending=0, анализ 175.5 секунды (очередь 139.7), job около шести минут; [обязательный CI](https://github.com/kzhirikhin/smart-lists/actions/runs/38998447572) и CodeQL зелёные |
+| Содержимое успешного артефакта | Ровно четыре ожидаемых файла, схемы валидны, повторная генерация publisher совпала побайтно. Контрольные приватные маркеры/строки Authorization и connection string отсутствуют; это проверка перечисленных форм, не универсальное доказательство отсутствия утечек. 66 групп: Medium 53, Low 4, Informational 9; High 0 |
 | Docs-only | [Run 38997341189](https://github.com/kzhirikhin/smart-lists/actions/runs/38997341189), временный PR #232 с единственным изменением PROJECT_MEMORY: skipped, без Docker/сценариев. PR закрыт без merge, временная ветка удалена |
 | Права и блокировка | Лог setup job: token Contents/Metadata read; текущий Protect main не требует ZAP. CI/CodeQL прошли без обхода gates/исключений |
 | Retention | GitHub API artifact 12087805861: created_at=2026-10-17T02:53:30Z, expires_at=2026-11-16T02:53:29Z. Проверено назначение срока, фактическое удаление через 30 дней ещё не наблюдалось |
+| Retention completed | Artifact 12088565676: created_at=2026-10-17T03:27:24Z, expires_at=2026-11-16T03:27:23Z; publisher и запись в GITHUB_STEP_SUMMARY завершились success |
 | Bootstrap доверенной истории | Default main ещё без config/zap: policy/baseline unavailable, PR-кандидаты не применены. После merge источник начнёт браться из default branch; эта ветка приёмки пока не проверена в Actions |
 
 Все скачанные артефакты находятся локально в игнорируемом
 `test-results/zap-live/<run_id>/`. Это копии для проверки: GitHub retention их
 не удаляет. После проверки они удаляются владельцем рабочей копии; долгоживущие
-решения и baseline остаются в Git. Исторические локальные JSON v1 могут не
+решения и baseline остаются в Git. Дополнительный локальный прогон с `-silent`:
+completed, 22/22, 547 запросов, pending=0, 68.9 секунды. Исторические JSON v1 могут не
 читаться текущей схемой v2; HTML остаётся доступен. Актуальные проверки после
 исправлений: lint, typecheck, 740 юнит-тестов и 502 security-контракта.
+
+Приёмка PR завершена. До закрытия этапа 4 остаётся merge и проверка первого
+main-run: trusted policy/baseline должны читаться из main и применяться к
+сопоставимым находкам. Merge также запускает существующую production-публикацию;
+до её согласования этап 5 не начинается.
 
 Источники: [workflow syntax GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
 [официальный upload-artifact](https://github.com/actions/upload-artifact).

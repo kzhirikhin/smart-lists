@@ -32,7 +32,9 @@ baseline — обычные Git blobs отдельного default-branch checko
 `npm run test:zap:ci`, затем `node scripts/zap/ci.mjs publish`/`check`;
 в CI всегда вызывается publisher, upload только четырёх safe-файлов, retention 30.
 Живые Actions подтвердили error/incomplete/skipped-отчёты, read-only token,
-retention 30 дней и независимость required CI; полный completed ещё проверяется.
+retention 30 дней и независимость required CI. PR-run 38998447566 completed:
+22/22, 551 запрос, pending=0, около 176 секунд анализа; основной CI зелёный.
+До закрытия этапа 4 остаётся merge и проверка trusted policy/baseline на main.
 ZAP `-silent` исключает unsolicited update/telemetry, чтобы version rule не
 задерживало очередь в изолированной сети. Актуальность сканера проверяется
 отдельно при review digest/addons. Policy/baseline требуют review.
