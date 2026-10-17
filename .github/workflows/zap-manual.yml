@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+# Ограничиваем runtime cache token, а не только отсутствие cache-шагов.
+cache-mode: none
+
 concurrency:
   group: zap-manual
   cancel-in-progress: false

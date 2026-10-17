@@ -54,6 +54,7 @@ workflow_dispatch по SHA, без расписания; публикация и
 Manual workflow не использует общий npm/автоматический package-manager cache
 при checkout произвольного SHA. CodeQL #7 относится к намеренно уязвимой
 учебной control-мишени; исключение used in tests, правило приложения сохранено.
+`cache-mode: none` запрещает cache также на уровне runtime token.
 
 `ItemStatus` включает `DEFERRED`: отложенный пункт остаётся на позиции,
 показывает паузу в чекбоксе, приглушённое курсивное название и более бледные

@@ -40,6 +40,8 @@ session/Origin/служебные поля: это не тест CORS/CSRF/об�
 Production active scan исключён.
 Ручной checkout произвольного SHA не использует общий npm/автоматический cache
 runner: PR-проверка выявила риск cache poisoning, кеширование отключено.
+`cache-mode: none` ограничивает сам cache runtime token, в том числе для
+исполняемого кода выбранной ревизии; одного отсутствия cache-шагов недостаточно.
 CodeQL alert #7 — намеренный reflected XSS только в изолированной учебной
 мишени control, исключение used in tests; правило приложения не отключено.
 

@@ -37,6 +37,8 @@ CodeQL в PR выявил cache poisoning при checkout произвольно
 cache и автоматическое кеширование package manager выключены. Намеренный
 reflected XSS учебной control-мишени учтён отдельно (CodeQL #7, used in tests),
 а не как исправленная уязвимость приложения.
+Cache runtime token ограничен `cache-mode: none`; отсутствие cache-шагов само
+по себе не предотвращает cache poisoning исполняемым кодом выбранного SHA.
 Пилот не доказывает полноту проверки приложения и deployed-конфигурации.
 
 Принятое решение: ZAP advisory, включая High и сбои; обязательные E2E/другие
