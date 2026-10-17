@@ -33,6 +33,10 @@ internal gate и два правила/три входа, синтетическ
 отчёты; completed A/B, контрольная XSS-мишень и session/precondition/budget-пробы
 прошли. Ручной Actions workflow подготовлен, но ещё не опубликован/проверен.
 Сигнала давности пока нет.
+CodeQL в PR выявил cache poisoning при checkout произвольного SHA: общий npm
+cache и автоматическое кеширование package manager выключены. Намеренный
+reflected XSS учебной control-мишени учтён отдельно (CodeQL #7, used in tests),
+а не как исправленная уязвимость приложения.
 Пилот не доказывает полноту проверки приложения и deployed-конфигурации.
 
 Принятое решение: ZAP advisory, включая High и сбои; обязательные E2E/другие

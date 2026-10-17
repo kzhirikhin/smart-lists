@@ -47,6 +47,8 @@ test("ограниченный active scan после успешной пасс�
     const targets: { seed: ActiveTarget; session: () => Promise<boolean> }[] = [];
     if (control) {
       // Отдельная учебная мишень, не маршрут/изменение Smart Lists.
+      // Намеренный reflected XSS: CodeQL alert #7 разобран как used in tests.
+      // Только probe=control, после isolated DB/egress precondition, loopback:3101.
       training = createServer((req, res) => { res.setHeader("Content-Type", "text/html; charset=utf-8"); res.end(`<html><body>${new URL(req.url ?? "/", "http://localhost:3101").searchParams.get("zap") ?? ""}</body></html>`); });
       await new Promise<void>(resolve => training!.listen(3101, "127.0.0.1", resolve));
     }

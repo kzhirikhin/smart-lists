@@ -22,6 +22,11 @@ npm run test:zap:manual
 одноразовом runner; SHA production-коммита не означает атаку production-сайта.
 Job advisory, token read-only, checkout без сохранения credentials, без secrets,
 Environment/OIDC. Нет автоматического запуска на push/PR и нет расписания.
+Общий npm cache и автоматический package-manager cache выключены: выбранный
+произвольный SHA не должен отравлять кеш default branch. CodeQL alert #7
+(`js/reflected-xss`) относится только к намеренно уязвимой учебной мишени
+`probe=control` на loopback:3101; разобран как used in tests. Правило для
+приложения и остальные CodeQL-проверки сохранены.
 Живой запуск этого workflow требует отдельной приёмки после публикации.
 
 ## Фазы и ограничения

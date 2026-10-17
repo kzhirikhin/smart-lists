@@ -33,6 +33,8 @@ it("manual workflow не запускается автоматически и н
   expect(yaml).not.toMatch(/^\s*(schedule|pull_request|pull_request_target|push):/m);
   expect(yaml).toContain("contents: read");
   expect(yaml).toContain("persist-credentials: false");
+  expect(yaml).toContain("package-manager-cache: false");
+  expect(yaml).not.toMatch(/^\s*cache(?:-dependency-path)?:/m);
   expect(yaml).not.toMatch(/secrets\.|id-token:|environment:|write/);
   expect(yaml).toContain("continue-on-error: true");
   expect(yaml).toContain("retention-days: 30");
