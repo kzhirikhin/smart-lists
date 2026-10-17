@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { connect } from "node:net";
 import { scenarios } from "../../test/zap/manifest.ts";
 import { evaluatePilot, summarizeMessage } from "../../test/zap/evaluate.ts";
-import { boundedJson, safeSubject, sanitizeAlerts, readPolicy, buildReport, hash } from "../../test/zap/report.ts";
+import { boundedJson, safeSubject, safePassiveTasks, sanitizeAlerts, readPolicy, buildReport, hash } from "../../test/zap/report.ts";
 
 const started = Date.now();
 const scanDeadline = started + 600_000;
@@ -73,13 +73,21 @@ try {
   const tests = JSON.parse(await readFile("/tmp/zap-tests.json", "utf8"));
   report.phase = "passive-queue";
   let pending = -1;
-  const deadline = Date.now() + 60_000;
+  const queueStarted = Date.now();
+  // На GitHub runner анализ может отстать от браузера. Ожидаем в рамках
+  // общего бюджета, оставляя время на безопасный экспорт; очередь не чистим.
+  const deadline = Math.min(queueStarted + 180_000, scanDeadline - 30_000);
   // Только после завершения браузеров: новая очередь уже не добавляется.
   do {
     pending = Number((await api("pscan", "recordsToScan")).recordsToScan);
     if (pending === 0) break;
     await sleep(500);
   } while (Date.now() < deadline);
+  report.passiveWaitMs = Date.now() - queueStarted;
+  if (pending !== 0) {
+    try { report.passiveTasks = safePassiveTasks((await api("pscan", "currentTasks")).currentTasks, (await api("pscan", "scanners")).scanners); }
+    catch { report.passiveDiagnosticsUnavailable = true; }
+  }
   if (probe === "queue") pending = 1; // Явная fault injection, не реальная очередь.
   const count = Number((await api("core", "numberOfMessages")).numberOfMessages);
   if (!Number.isInteger(count) || count > 20_000) throw new Error("traffic-size-limit");

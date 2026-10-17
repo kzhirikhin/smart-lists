@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { boundedJson, buildReport, hash, readPolicy, renderReport, reportSchema, safeSubject, sanitizeAlerts, type Run, type Subject } from "./report";
+import { boundedJson, buildReport, hash, readPolicy, renderReport, reportSchema, safePassiveTasks, safeSubject, sanitizeAlerts, type Run, type Subject } from "./report";
 
 const now = "2026-10-16";
 const emptyPolicy = () => readPolicy({ version: 1, decisions: [] }, now);
@@ -22,6 +22,12 @@ const decision = (subject = findings()[0]) => ({
 });
 
 describe("очистка и нормализация ZAP", () => {
+  it("диагностика очереди не экспортирует имена, URL или произвольные поля задач", () => {
+    const tasks = safePassiveTasks([{ name: "known", time: "6000", url: "http://PRIVATE_MARKER/", secret: "PRIVATE_MARKER" }, { name: "PRIVATE_MARKER", time: 0 }], [{ name: "known", id: "10027" }]);
+    expect(tasks).toEqual([{ ruleId: "10027", durationMs: 6000 }, { ruleId: "unknown", durationMs: 0 }]);
+    expect(JSON.stringify(tasks)).not.toContain("PRIVATE_MARKER");
+    expect(() => safePassiveTasks([{ name: "known", time: "PRIVATE_MARKER" }], [])).toThrow();
+  });
   it("не публикует произвольные поля, query, cookie, body и ошибки сканера", () => {
     const secret = "PRIVATE_MARKER_DO_NOT_EXPORT";
     const subject = safeSubject(message(`/en?email=${secret}`, `Set-Cookie: NEXT_LOCALE=${secret}; SameSite=Lax\r\n`, `Cookie: authjs.session-token=${secret}\r\nAuthorization: Bearer ${secret}\r\n`), {}, scenarios);

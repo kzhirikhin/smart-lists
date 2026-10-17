@@ -77,6 +77,8 @@ export const stateSchema = z.object({
 
 const diagnosticSchema = z.object({
   status, pending: count.optional(), requests: count.optional(), durationMs: count.optional(),
+  passiveWaitMs: count.optional(), passiveDiagnosticsUnavailable: z.boolean().optional(),
+  passiveTasks: z.array(z.object({ ruleId: z.string().regex(/^(?:\d{1,6}|unknown)$/), durationMs: count }).strict()).max(100).optional(),
   zapVersion: z.string().regex(/^\d+(?:\.\d+){1,3}$/).optional(),
   zapImage: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
   addons: z.array(z.object({ id: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/), version: z.string().regex(/^[a-zA-Z0-9_.-]{1,40}$/) })).max(200).optional(),

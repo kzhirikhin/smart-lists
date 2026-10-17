@@ -71,6 +71,14 @@ const rawAlertSchema = z.object({
 });
 export const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
+/** API currentTasks содержит URL. Наружу разрешены только числовой ID правила
+ * из списка scanners и время; имя/URL/произвольные поля остаются в памяти. */
+export function safePassiveTasks(rawTasks: unknown, rawScanners: unknown) {
+  const tasks = z.array(z.object({ name: z.string().max(200), time: z.coerce.number().int().min(0).max(1_000_000) })).max(100).parse(rawTasks);
+  const scanners = z.array(z.object({ name: z.string().max(200), id: z.union([z.string().regex(/^\d{1,6}$/), z.number().int().min(0).max(999999)]) })).max(2000).parse(rawScanners);
+  return tasks.map((task) => ({ ruleId: String(scanners.find((scanner) => scanner.name === task.name)?.id ?? "unknown"), durationMs: task.time }));
+}
+
 export async function boundedJson(response: Response, maxBytes = 16_000_000): Promise<unknown> {
   if (!response.ok || !response.body) throw new Error("invalid-api-response");
   const reader = response.body.getReader();
