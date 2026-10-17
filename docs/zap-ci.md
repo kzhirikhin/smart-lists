@@ -144,7 +144,8 @@ Impact-check обновил TZ3 и A105. Результаты локальной
 
 ## Приёмка GitHub Actions 2026-10-17
 
-Публикация проверяется в [PR #231](https://github.com/kzhirikhin/smart-lists/pull/231).
+Публикация выполнена в [PR #231](https://github.com/kzhirikhin/smart-lists/pull/231),
+merge `275567a916cb923c3c4e0b5054da7a1964e4c5c3`. Этап 4 завершён.
 Условия и границы свидетельств:
 
 | Проверка | Свидетельство |
@@ -158,7 +159,11 @@ Impact-check обновил TZ3 и A105. Результаты локальной
 | Права и блокировка | Лог setup job: token Contents/Metadata read; текущий Protect main не требует ZAP. CI/CodeQL прошли без обхода gates/исключений |
 | Retention | GitHub API artifact 12087805861: created_at=2026-10-17T02:53:30Z, expires_at=2026-11-16T02:53:29Z. Проверено назначение срока, фактическое удаление через 30 дней ещё не наблюдалось |
 | Retention completed | Artifact 12088565676: created_at=2026-10-17T03:27:24Z, expires_at=2026-11-16T03:27:23Z; publisher и запись в GITHUB_STEP_SUMMARY завершились success |
-| Bootstrap доверенной истории | Default main ещё без config/zap: policy/baseline unavailable, PR-кандидаты не применены. После merge источник начнёт браться из default branch; эта ветка приёмки пока не проверена в Actions |
+| Bootstrap доверенной истории | На PR default main ещё без config/zap: policy/baseline unavailable, PR-кандидаты не применены. После merge проверен переход к trusted default branch в следующей строке |
+| Trusted main | [Run 39000032408](https://github.com/kzhirikhin/smart-lists/actions/runs/39000032408): completed, 22/22, 549 запросов, pending=0, 175.1 секунды анализа. Policy/baseline source=default-branch, trusted SHA совпадает с merge SHA, оба Changed=false, comparison available, warnings пусты |
+| Решения и история на main | 66 групп: 36 known, 30 uncompared (неизвестные evidence намеренно несопоставимы). Применены ZAP-001/002/003: 9 expected, 18 confirmed; 39 new — статус разбора, а не признак новой регрессии. CSP остаётся открытым confirmed gap. High 0; ни один неизвестный evidence автоматически не исключён |
+| Безопасный main-артефакт | Четыре ожидаемых файла, схема и побайтная повторная генерация publisher проверены; перечисленные приватные маркеры отсутствуют. Artifact 12089176077: created_at=2026-10-17T03:52:14Z, expires_at=2026-11-16T03:52:14Z |
+| Main release | [CI 39000032432](https://github.com/kzhirikhin/smart-lists/actions/runs/39000032432) зелёный, включая production migration; Vercel Production deployment 7134398226 success; публичная /ru отвечает 200. [Sync Preview Proxy 39000285747](https://github.com/kzhirikhin/smart-lists/actions/runs/39000285747) завершился до ZAP |
 
 Все скачанные артефакты находятся локально в игнорируемом
 `test-results/zap-live/<run_id>/`. Это копии для проверки: GitHub retention их
@@ -168,10 +173,9 @@ completed, 22/22, 547 запросов, pending=0, 68.9 секунды. Исто
 читаться текущей схемой v2; HTML остаётся доступен. Актуальные проверки после
 исправлений: lint, typecheck, 740 юнит-тестов и 502 security-контракта.
 
-Приёмка PR завершена. До закрытия этапа 4 остаётся merge и проверка первого
-main-run: trusted policy/baseline должны читаться из main и применяться к
-сопоставимым находкам. Merge также запускает существующую production-публикацию;
-до её согласования этап 5 не начинается.
+Приёмка PR и main завершена, доверенные решения и baseline применяются.
+Расписание, контроль давности и активный профиль остаются следующими этапами;
+этап 5 в этой задаче не начинался.
 
 Источники: [workflow syntax GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
 [официальный upload-artifact](https://github.com/actions/upload-artifact).
