@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "id": "ZAP-001",
+      "owner": "project-owner",
+      "createdAt": "2026-10-16",
+      "reviewBy": "2027-01-14",
+      "reason": "locale-cookie",
+      "reference": "docs/zap-triage.md#locale-cookie",
+      "decision": "expected",
+      "match": {
+        "rule": "10010",
+        "route": ["/en", "/ru", "/vi", "/ja"],
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "parameter": "NEXT_LOCALE",
+        "location": "cookie",
+        "risk": "Low",
+        "confidence": "Medium",
+        "evidence": { "kind": "cookie-flags", "value": "HttpOnly=false;Secure=false;SameSite=lax" }
+      }
+    },
+    {
+      "id": "ZAP-002",
+      "owner": "project-owner",
+      "createdAt": "2026-10-16",
+      "reviewBy": "2027-01-14",
+      "reason": "public-flag-image",
+      "reference": "docs/zap-triage.md#flag-image",
+      "decision": "expected",
+      "match": {
+        "rule": "90003",
+        "route": ["/en", "/ru", "/vi", "/ja", "/en/spaces/:spaceId"],
+        "method": "GET",
+        "persona": ["anonymous", "owner", "recipient"],
+        "representation": "html",
+        "operation": "none",
+        "parameter": "none",
+        "location": "document",
+        "risk": "Medium",
+        "confidence": "High",
+        "evidence": { "kind": "flag-preload", "value": "public-flag-image-preload" }
+      }
+    },
+    {
+      "id": "ZAP-003",
+      "owner": "project-owner",
+      "createdAt": "2026-10-16",
+      "reviewBy": "2027-01-14",
+      "reason": "confirmed-issue",
+      "reference": "docs/threat-model/risks.md#внедрение-zap",
+      "decision": "confirmed",
+      "match": {
+        "rule": ["10055-4", "10055-5", "10055-6"],
+        "route": ["/en", "/ru", "/vi", "/ja", "/en/spaces/:spaceId"],
+        "method": "GET",
+        "persona": ["anonymous", "owner", "recipient"],
+        "representation": "html",
+        "operation": "none",
+        "parameter": "Content-Security-Policy",
+        "location": "header",
+        "risk": "Medium",
+        "confidence": "High",
+        "evidence": { "kind": "csp", "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth" }
+      }
+    }
+  ]
+}

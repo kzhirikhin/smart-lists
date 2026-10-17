@@ -1,0 +1,1760 @@
+{
+  "run": {
+    "status": "completed",
+    "startedAt": "2026-10-16T12:11:36.492Z",
+    "revision": "4a16010a0cb335c3415ae38c96961c8561ea543c",
+    "dirty": true,
+    "image": "sha256:f33216f13de78e617b1fa98ebba1d1c431d073764716a58aa89e2aedeaf5c619",
+    "scanner": "894f0384907fcacbddd79d59e454bdba45871ca0a794dd615f3d7afb08e97b60",
+    "scope": "a71a6596236fecdbadc5d18d2bfca217f39705e9edf8ffeef1a4882ccfe38e28",
+    "target": "local-http",
+    "formatVersion": 2,
+    "normalizationVersion": 1,
+    "policyDigest": "521de9fb323844f2c3286be5ec8089d604296a8f5d97527e1c68273c5fe04e1c"
+  },
+  "findings": [
+    {
+      "identity": "01e1056289f6120d1a959f323b1d8daf202fad1d8bee16aac989835628f18008",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "01f4d216e3e83fe023662d4c83c5601ca259180248dafcb4f8782a23ce330b99",
+      "fingerprint": "43991698e6f677b917f72918a8248c0ea983b6c8f61e63d3383db88478dae97a",
+      "rule": "10044-1",
+      "risk": "Low",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "unknown",
+      "evidence": {
+        "kind": "redacted",
+        "value": "evidence-redacted"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "09e26fc5b88449c57b2e7a6730b6aed1be3406d6918702539e462a80be3f043b",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "1ee49a7f765c99ad6c7a2b57e9c4d6744f1bdccc028c3819fc36b97d1df99d0f",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "202d97503dbe4da244fe4702f9d86d723b5d6c8854011d93ebd399068d7c9a3f",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "23d1b1ee5c197bd874825a464b33666301a2efaa83f899b84e2fdc6ab2d70824",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    },
+    {
+      "identity": "256d9ce6e01ac5df72a3a84a91085a702bf5d69ec981b090319363ff60e4f97a",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "2a1bd4e7e848225627bb3abbeb4aa18ca1a47798bb9f66d7300cc669286a6d49",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "2b168a02d6ba6fe2be0c0b27c3aabf26df571667c2faf7a052c0b60486472e17",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "32c088c82ac7147276b0e496ac81bd61e9f830954d538840d313781dae346ca2",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "39ed4722639f0bfcb5dc22d97dfa1aa87e4e08c28d0c949bac5a4e5e8a01577e",
+      "fingerprint": "6f663a2a3b38d16bc6df0524d943c93d471e668fd67ded77a4f84df8633d654f",
+      "rule": "10019-1",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "redirect",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "header",
+      "evidence": {
+        "kind": "missing-header",
+        "value": "content-type"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "3eb1f0de3f8d855b11a09d18c731eed5e38fbe087667e1b87791048e5131dbae",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "42f62917195c0fa55f81dfd88c71475ff69fd8b8ef059e9be3f68ae64aa49f55",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "guest",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "44583d204654f320dbc531835e563b1fcf434510b8645cad7a41e00682dcb459",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "4577a88197ccc85155d4baa17f41147ea4136d531d0232d4d216c0a28dfe398c",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "493158d14f760c63d684d5a70994bf9027c1885a5d3fe851f6c701ebacb1f045",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "4bdef5066247021830bccad4e83e92553d474b824b5929c3f8733fa4f152b86e",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "4f246ddd53ca14c68278b87b324a1476b8b08448e4ac8c9fde0e902fa96d9364",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "53f95801c2271e9f1eb5c9e1b98f44b3fbf046df3c7fa759e2f0e85f8468235b",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "5c7433c7ceea0aa17c50765a0501731e1461add422ea6dab72bb586e234ae272",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 19,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "5f08162200679edcb1ca3e47cae317e58cb59c7f23cee0ed121fd157a8a8988b",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "61710f2edda4538ff01c2f6c68d4384cfcfafe4cd48f8a854bc07f1ba249f94d",
+      "fingerprint": "4e49de877c1e96f2392f25c27d4f0f45d64a0a7068d2725ebef0ba1eddbca058",
+      "rule": "10010",
+      "risk": "Low",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "NEXT_LOCALE",
+      "location": "cookie",
+      "evidence": {
+        "kind": "cookie-flags",
+        "value": "HttpOnly=false;Secure=false;SameSite=lax"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-001"
+    },
+    {
+      "identity": "63e11e3b5e8cfb086640048c2c5052c559caa6c9cec1399530c2f64689811155",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "66569e7e112f96ffdbf118de416e6941d29ebbf69530b552ffaa5fe720058feb",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "6befb55390728c42c7a8d0861b89e7ecdaa38bbf3b9bd5505ba609137d8ba4be",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "70952c00409e0e0f976413da9e127e4c912c3b83a5f3adf8ab4c650131970b94",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "72ced64b918149352b10bd7c1aafafc257302d747e2ac50e3f527dbcef54dd0e",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "75d56b9fafc40ca2e4a6d30ceeb681f9ecdc9eee64ef4e48280f6fad590e643f",
+      "fingerprint": "020ca69f8076b33153479502dee2788efe5f039b4c5a8eeac7e0d65f27f8affe",
+      "rule": "10112",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "POST",
+        "persona": "recipient",
+        "representation": "rsc",
+        "operation": "rememberSpace",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "header",
+      "evidence": {
+        "kind": "session-marker",
+        "value": "session-response;cookies=smart-lists-space"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "79665ef1cf158786ba1d75366e3c6ab80ea819a1780291b8909e6ad3f2d7e5ab",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 18,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "7f13702fe203eadced7d36ef2656717ca86604881ee922c0b68ea9d30f3ca7cc",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "7f23b9f5bb7d5cb37e6344760e9fc233c69ad47328cc500bd9093bd38352f8ed",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "85d68e8b32bf9116a1a760da3db268b0aad569bc2af7c768dac634a440908d66",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    },
+    {
+      "identity": "878549e49d85841e8bccd21f2ca9d107d467dffc2ccb1277f735c370ed46ea59",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "8f6871a48f867e24158fbf1c4237c7f8a4320b191b639972646d85b7d4b26e3b",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "91c4e232ddea7ed293c25a79d7a1c7902fa5d31897d74ffff336207417c57c70",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "91ee135bb9703019f0f35fc99103d2615b5fb2c778110bfd2e5dba271a7393ff",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "924b1fc7f7eb8f3eed3d9379bdddaefa83fca8b526de417dea6757cf9ade1156",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "92d18b8c31d5f060cb4dc35fd4360e0b629e2bca8d53266b83b87d29522d3011",
+      "fingerprint": "4e49de877c1e96f2392f25c27d4f0f45d64a0a7068d2725ebef0ba1eddbca058",
+      "rule": "10010",
+      "risk": "Low",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "NEXT_LOCALE",
+      "location": "cookie",
+      "evidence": {
+        "kind": "cookie-flags",
+        "value": "HttpOnly=false;Secure=false;SameSite=lax"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-001"
+    },
+    {
+      "identity": "99e0cd5b130cca0028ded250ad94bdb920c095af2618c060f04ec238f1b87d0e",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "9afcae302dbe2cc82c60c6299d9c41f46f2228ec999042c053b780eba03b5813",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "9b0a71720ba364129dc47281ee25a5070c6c4120e47cd2e083b995e85831d644",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "a8ffef58c1fa472b7ac0a663199170ff52d73b4cfc42afd868ed078f900623ab",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "a97de0ce2a9d3ca14c2745e191585aa8e9e1aa7a58278085ca46db0f2e00e655",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 18,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    },
+    {
+      "identity": "aa7e62c2fc60fb9ad404908a02a86edfa6a2018836232a513845f2ad6603b6ca",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "b13963f6a1d890eed9a980759298900837328fae345befaf9ee1ef45875d6432",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    },
+    {
+      "identity": "b2a79563deb2706aff8a47c3fb45b9a3328aae1d494980887507db7d1edfa79d",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "b9cdcc56586e5f28c030c06b995804f6a0af4cf94a757c87a1f92544e039e9eb",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-4",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "bad282243a5b4f1f1c3105dda36efa9fdad6fb2699d8015066130cfc6bd38115",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "bea887027dd8df8c3a18e6d4fd55adc888c6fb1d1ef92d7ba69ce2ab57333328",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "bff0a58105af516987b9a3d2889940f0bcf248af31e651dbeb51d1d3fc338a4b",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 18,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "c61f94c2c0b4511ee1468253ca70052ac7c9c6bb0a3d22624b9d32faae51b7ec",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "cd9400d9c75bc53c7cd553f6dc324819c24d0d47bb7a96be838cfbca09de450a",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-6",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "ce96a2f843f2f14e02655c623d2f58c695b64f7a1f3783c7517f6a2ccb2b64d0",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 18,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "cf522941d309db8839c14536e67b10af97cdcd9f2bbf9ac05b2228ff1674c83b",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "d28c784df7acd671c5e3ca0b7ac36ff39830e16a59993e03a986efde37539e5f",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "d331896aaa0ac495cdb0303cb6019593493d8d1184a9f7bf8a53dd1fb7a11a7c",
+      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "rule": "10055-5",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "Content-Security-Policy",
+      "location": "header",
+      "evidence": {
+        "kind": "csp",
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "changed",
+      "decision": "new"
+    },
+    {
+      "identity": "e34bf261da46af009b3ea13b308a64b262b5125c32a781edf6531a78e0ccd022",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "e55d9cdf8bbbf1d6e159288a7e959af6d8f509babe079b4099718cc83c6e0ac6",
+      "fingerprint": "020ca69f8076b33153479502dee2788efe5f039b4c5a8eeac7e0d65f27f8affe",
+      "rule": "10112",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "POST",
+        "persona": "owner",
+        "representation": "rsc",
+        "operation": "rememberSpace",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "header",
+      "evidence": {
+        "kind": "session-marker",
+        "value": "session-response;cookies=smart-lists-space"
+      },
+      "comparable": true,
+      "instances": 21,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "e65e3da8b707f0f47d70ac91afbf71d5bc09d3141c273df779d77483c2656a8e",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "recipient",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 2,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "eb8ac1399ae2a4f13395b5646589a085ac9abc8a1cc46c00869ab65e72cd6e54",
+      "fingerprint": "be446f508462171cb0e7e296879d68cea5767473854287d8a8c1b4dc758d83cb",
+      "rule": "10109",
+      "risk": "Informational",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "spa",
+        "value": "modern-web-application-marker"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "new"
+    },
+    {
+      "identity": "ec396281186b6063c46c64c31cc25e80ecf189aa76b0f30705e5c5d6f7dfce20",
+      "fingerprint": "4e49de877c1e96f2392f25c27d4f0f45d64a0a7068d2725ebef0ba1eddbca058",
+      "rule": "10010",
+      "risk": "Low",
+      "confidence": "Medium",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "NEXT_LOCALE",
+      "location": "cookie",
+      "evidence": {
+        "kind": "cookie-flags",
+        "value": "HttpOnly=false;Secure=false;SameSite=lax"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-001"
+    },
+    {
+      "identity": "ef50fee39a6d09648cd1de4244e4afe4644335e280fcadb00917e32bed581a04",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/en/spaces/:spaceId",
+        "method": "GET",
+        "persona": "owner",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "ef518fbcbf110248f7509b8a2f00ea7cc398e76476528c0affc20fdd8b210241",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/vi",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "f8b4d7fc39b26f68fa5c356eee99b197b190f99122ee99fcc374886d681768c1",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ru",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    },
+    {
+      "identity": "fca2f3400813e5d4be3dd5edc3d2ddb0b8e65b4f200aa9c9fa2369f603d24629",
+      "fingerprint": "6f7f4d072d64c0c68a06d3050a4785120c5d5cd34c8c3abbbefeca7aebcecca8",
+      "rule": "10202",
+      "risk": "Medium",
+      "confidence": "Low",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "csrf-unverified",
+        "value": "form-without-recognized-token;server-protection-unverified"
+      },
+      "comparable": false,
+      "instances": 1,
+      "lifecycle": "uncompared",
+      "decision": "new"
+    },
+    {
+      "identity": "fca81fb25b966f6af0cc8449a50d90f8e6e6983efa4a31da52cf7796efab92a8",
+      "fingerprint": "a02a89de18298623da81d9e5be8c3a324a0f245dc35588fdbef177acae38b2c9",
+      "rule": "90003",
+      "risk": "Medium",
+      "confidence": "High",
+      "subject": {
+        "route": "/ja",
+        "method": "GET",
+        "persona": "anonymous",
+        "representation": "html",
+        "operation": "none",
+        "query": "none",
+        "comparable": true
+      },
+      "parameter": "none",
+      "location": "document",
+      "evidence": {
+        "kind": "flag-preload",
+        "value": "public-flag-image-preload"
+      },
+      "comparable": true,
+      "instances": 1,
+      "lifecycle": "known",
+      "decision": "expected",
+      "decisionId": "ZAP-002"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "ZAP-001",
+      "reason": "locale-cookie",
+      "owner": "project-owner",
+      "reviewBy": "2027-01-14",
+      "reference": "docs/zap-triage.md#locale-cookie"
+    },
+    {
+      "id": "ZAP-002",
+      "reason": "public-flag-image",
+      "owner": "project-owner",
+      "reviewBy": "2027-01-14",
+      "reference": "docs/zap-triage.md#flag-image"
+    }
+  ],
+  "comparison": "available",
+  "warnings": []
+}
