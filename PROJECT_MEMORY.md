@@ -47,12 +47,13 @@ createList/addItem FormData. Внутренний gate фиксирует сес
 поля и ограничивает одно текстовое поле, метод/путь и 600 попыток до upstream.
 Только 40012/40018 LOW, один поток; active/passive отчёты B отдельно от CI
 baseline. Это не тест CSRF/прав, заметок и остальных Actions. Подготовлен
-workflow_dispatch по SHA, без расписания; публикация и проверка в Actions ещё впереди.
+workflow_dispatch по выбранной ветке/тегу (github.sha), без входного SHA и
+расписания; публикация и проверка в Actions ещё впереди.
 Локально completed A/B: 22/22, 545 пассивных запросов, pending=0, 41 активная
 попытка; обе Actions получили по 6 успешных изменённых запросов. Учебная мишень
 дала настоящий XSS alert; session/precondition/budget-пробы отказали корректно.
 Manual workflow не использует общий npm/автоматический package-manager cache
-при checkout произвольного SHA. CodeQL #7 относится к намеренно уязвимой
+при checkout github.sha. CodeQL #7 относится к намеренно уязвимой
 учебной control-мишени; исключение used in tests, правило приложения сохранено.
 `cache-mode: none` запрещает cache также на уровне runtime token.
 

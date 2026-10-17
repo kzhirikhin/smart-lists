@@ -18,12 +18,14 @@ npm run test:zap:manual
 `-silent` сохраняется. Никакие адреса target CLI не принимает.
 
 Подготовлен отдельный `.github/workflows/zap-manual.yml` с `workflow_dispatch`
-и необязательным полным commit SHA. Он собирает выбранную ревизию локально на
+без входного SHA: checkout закреплён за `github.sha` выбранной ветки/тега
+workflow. Он собирает эту ревизию локально на
 одноразовом runner; SHA production-коммита не означает атаку production-сайта.
 Job advisory, token read-only, checkout без сохранения credentials, без secrets,
 Environment/OIDC. Нет автоматического запуска на push/PR и нет расписания.
 Общий npm cache и автоматический package-manager cache выключены: выбранный
-произвольный SHA не должен отравлять кеш default branch. CodeQL alert #7
+выбранная ревизия не должна отравлять кеш default branch. Произвольный SHA
+через input не исполняется. CodeQL alert #7
 (`js/reflected-xss`) относится только к намеренно уязвимой учебной мишени
 `probe=control` на loopback:3101; разобран как used in tests. Правило для
 приложения и остальные CodeQL-проверки сохранены.
@@ -135,7 +137,7 @@ active alert 40012 от ZAP; простая запись строки в JSON э
 | Бюджет | incomplete / active-budget, requests=1, rejected=1; вторая wire-попытка через ZAP не прошла к upstream |
 | Publisher | Девять safe-файлов, раздельные scope, валидные схемы; повреждение JSON с приватным маркером даёт два error-файла без маркера и без старых phase-отчётов |
 | Cleanup | После завершённых проб `docker ps -a` и `docker network ls` не нашли ресурсов smart-lists-zap; hard cancel/сбой daemon не воспроизводились |
-| Статика | lint, typecheck, 771 unit, 533 static security; Gitleaks diff/new files без находок. YAML разобран js-yaml: один workflow_dispatch, read-only, 8 шагов, 9 upload-путей |
+| Статика | lint, typecheck, 771 unit, 533 static security; Gitleaks diff/new files без находок. Локальный исходный YAML разобран js-yaml; опубликованный профиль сужен до github.sha без input, 7 шагов, 9 upload-путей |
 
 Полный safe-снимок: `test-results/zap-manual/acceptance-20261017/`.
 Control: `1792233556154-control`, session: `1792233554992-session`, precondition:

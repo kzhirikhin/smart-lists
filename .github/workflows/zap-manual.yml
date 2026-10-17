@@ -3,11 +3,6 @@ name: ZAP Manual (advisory)
 # Только явный запуск. Расписание/давность относятся к следующему этапу.
 on:
   workflow_dispatch:
-    inputs:
-      revision:
-        description: Полный commit SHA (пусто — выбранная ревизия workflow)
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -26,19 +21,9 @@ jobs:
     continue-on-error: true
     timeout-minutes: 65
     steps:
-      - name: Validate revision
-        id: revision
-        env:
-          REQUESTED_REVISION: ${{ inputs.revision }}
-        shell: bash
-        run: |
-          revision="${REQUESTED_REVISION:-$GITHUB_SHA}"
-          [[ "$revision" =~ ^[a-f0-9]{40}$ ]] || exit 2
-          echo "sha=$revision" >> "$GITHUB_OUTPUT"
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.revision.outputs.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

@@ -33,6 +33,8 @@ it("manual workflow не запускается автоматически и н
   expect(yaml).not.toMatch(/^\s*(schedule|pull_request|pull_request_target|push):/m);
   expect(yaml).toContain("contents: read");
   expect(yaml).toContain("persist-credentials: false");
+  expect(yaml).toContain("ref: ${{ github.sha }}");
+  expect(yaml).not.toMatch(/inputs:|inputs\.|REQUESTED_REVISION|steps\.revision/);
   expect(yaml).toContain("package-manager-cache: false");
   expect(yaml).toMatch(/^cache-mode: none$/m);
   expect(yaml).not.toMatch(/^\s*cache(?:-dependency-path)?:/m);
