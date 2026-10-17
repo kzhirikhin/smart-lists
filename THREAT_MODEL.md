@@ -1,15 +1,34 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-14.** STRIDE по потокам/границам, LINDDUN для AI. Аудит этой даты проверяет доказательства документа; полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-17.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — CI-обвязка ZAP; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 102 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 105 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
 
 Связанные источники: [память проекта](PROJECT_MEMORY.md), [DB security](DATABASE_SECURITY.md), [секреты и доступ](SECRETS.md). Источники истины — исходники, schema, миграции и конфигурация обоих репозиториев.
+
+**Дополнение 2026-10-16: локальный ZAP.** По [спецификации](docs/zap-plan.md)
+реализован [пассивный пилот](docs/zap-pilot.md): эфемерная БД, синтетические
+сессии, internal Docker network, техническая сводка без raw-трафика. A103
+фиксирует узкое покрытие. [Этап 3](docs/zap-triage.md), A104: очищенные локальные
+отчёты, нормализация, точные решения/expiry и явная точка сравнения. Неизвестные
+evidence редактируются и остаются несопоставимыми. CSP — открытый confirmed gap.
+Обычные E2E не используют ZAP по умолчанию. [Этап 4](docs/zap-ci.md), A105:
+независимый advisory workflow, trusted Git-входы, publisher/точные upload paths.
+Локальная приёмка есть. Первый PR-run 38996621804 подтвердил безопасный
+error-артефакт с retention 30 дней; ruleset не требует ZAP, обязательный CI
+38996621674 завершился успешно независимо от ZAP failure. Полный PR-run
+38998447566 completed: 22/22, 551 запрос, pending=0; CI 38998447572 зелёный.
+Применение trusted policy/baseline после merge на main ещё не проверено. Живые пробы
+incomplete/skipped опубликованы; ожидание update metadata правилом 10116
+устраняется штатным `-silent` без открытия egress. Актуальность сканера
+этот изолированный профиль не доказывает: digest/addons требуют отдельного review.
+Active scan и контроль давности не внедрены.
+Production active scan исключён.
 
 ## Состояние доказательств
 
@@ -53,6 +72,13 @@ flowchart LR
     G -->|TB11/TB12: image / provenance / SBOM| A[Artifact Registry]
     A -->|exact digest deploy| F
     G -->|TB9: проверенный SHA| Q[Vercel Preview]
+    PB[Chromium / local pilot] -->|TZ1: synthetic Session| Z[ZAP / internal network]
+    Z --> LN[Next production build / local]
+    LN --> TD[Эфемерная PostgreSQL]
+    Z --> C[Сборщик пилота]
+    C -->|TZ2: схема / allowlist evidence| O[Локальный test-results]
+    O -->|TZ3: повторная схема / точные файлы| ZA[GitHub summary / artifacts]
+    TC[Default branch Git blobs] -->|TZ3: policy / baseline| C
 ~~~
 
 | ID | Граница | Контроль и существенный предел |
@@ -70,6 +96,9 @@ flowchart LR
 | TB10 | workflow → Neon enforcement | target guards, Environment, catalog contract, locks, транзакционный apply; среды отдельно |
 | TB11 | scanner → metadata / Registry | traffic/tagged revisions, offline evidence; read-only IAM отдельная live-проверка |
 | TB12 | deploy → Registry → Cloud Run | exact digest/SBOM/attestation до защищённого deploy; ручной путь не запрещён Binary Authorization |
+| TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
+| TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
+| TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped подтверждены 2026-10-17; trusted main после merge ещё не проверен; A105 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

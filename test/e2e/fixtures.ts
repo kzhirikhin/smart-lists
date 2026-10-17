@@ -22,6 +22,8 @@ import { createPrismaClient } from "@/lib/prisma-client";
 
 import { E2E_BASE_URL, E2E_DATABASE_URL, SESSION_COOKIE } from "./env";
 import { makeUser, type E2EUser } from "./factories";
+import { scenarioFor } from "../zap/manifest";
+import { instrumentContexts } from "../zap/context";
 
 type WorkerFixtures = {
   /** Prisma-клиент против базы E2E. Один на воркер, а не на тест. */
@@ -33,8 +35,19 @@ type TestFixtures = {
   user: E2EUser;
 };
 
+type PilotFixtures = {
+  zapPilot: void;
+};
+
 /** Прогон без сессии: экран входа, гостевой режим, редиректы неавторизованного. */
-export const anonymousTest = base.extend<object, WorkerFixtures>({
+export const anonymousTest = base.extend<PilotFixtures, WorkerFixtures>({
+  zapPilot: [async ({ browser }, use, testInfo) => {
+    if (process.env.ZAP_PILOT !== "1") return use();
+    const scenario = scenarioFor(testInfo.file, testInfo.title);
+    if (!scenario) throw new Error("Сценарий отсутствует в manifest ZAP");
+    const restore = instrumentContexts(browser, scenario.id, process.env.ZAP_PILOT_PROBE === "session");
+    try { await use(); } finally { restore(); }
+  }, { auto: true }],
   db: [
     // Playwright требует именно деструктуризацию в первом аргументе: по её
     // ключам он определяет зависимости фикстуры. Здесь зависимостей нет.

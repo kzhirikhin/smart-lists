@@ -2,7 +2,43 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-14 (структура модели угроз)
+**Последнее обновление:** 2026-10-17 (ZAP: независимый advisory workflow)
+
+Согласована [спецификация ZAP](docs/zap-plan.md). Целевой контур:
+отдельная advisory job пассивного анализа выбранных Playwright-сценариев рядом
+с обязательной E2E job; периодический обход/авторизованный проход и active scan
+изолированного окружения ежемесячно и по триггерам. Production active scan
+исключён. Фильтры с обоснованием/пересмотром, очищенные отчёты и раздельные
+статусы исполнения/находок обязательны. [Локальный пилот](docs/zap-pilot.md)
+запускается `npm run test:zap:pilot`: отдельные Docker/Chromium/ZAP и эфемерная
+БД, internal network, без host mounts/секретов и published ports. 22 сценария
+из manifest, конкретные Actions по manifest сборки, оба контекста sharing,
+проверка очереди. Обычный E2E без прокси сохранён (143 теста прошли).
+Пилот сохраняет техническую сводку и очищенные JSON/HTML/Markdown в test-results;
+этап 2 завершён: 22/22, 546 запросов, очередь 0, около 66 секунд на готовом
+стенде; четыре fault-пробы дали incomplete. [Этап 3](docs/zap-triage.md):
+конечные словари evidence, new/known/changed отдельно от решений, точные
+решения с пересмотром ≤90 дней в config/zap/decisions.json. CSP — confirmed,
+не accepted-risk; неизвестные evidence/CSRF остаются неразобранными.
+JSON v2 использует `identity` для хеша находки: прежнее имя `key` вызывало
+ложный generic-api-key Gitleaks; секретный gate не ослаблялся.
+`npm run test:zap:baseline -- test-results/zap-pilot/<run>/report.json`
+явно принимает локальный completed-отчёт в config/zap/baseline.json.
+[Этап 4](docs/zap-ci.md): `.github/workflows/zap-passive.yml` отдельно от CI,
+чтобы не задерживать также Preview workflow_run. Тот же docs-классификатор,
+read-only permissions, без production Environment/секретов. Trusted policy и
+baseline — обычные Git blobs отдельного default-branch checkout; PR-входы не
+подменяют их. Нет доверенного источника — пустая политика/сравнение unavailable.
+`npm run test:zap:ci`, затем `node scripts/zap/ci.mjs publish`/`check`;
+в CI всегда вызывается publisher, upload только четырёх safe-файлов, retention 30.
+Живые Actions подтвердили error/incomplete/skipped-отчёты, read-only token,
+retention 30 дней и независимость required CI. PR-run 38998447566 completed:
+22/22, 551 запрос, pending=0, около 176 секунд анализа; основной CI зелёный.
+До закрытия этапа 4 остаётся merge и проверка trusted policy/baseline на main.
+ZAP `-silent` исключает unsolicited update/telemetry, чтобы version rule не
+задерживало очередь в изолированной сети. Актуальность сканера проверяется
+отдельно при review digest/addons. Policy/baseline требуют review.
+Активный скан и расписание ещё не внедрены.
 
 `ItemStatus` включает `DEFERRED`: отложенный пункт остаётся на позиции,
 показывает паузу в чекбоксе, приглушённое курсивное название и более бледные
@@ -67,7 +103,7 @@ Presigned GET для text/plain объявляет `charset=utf-8` через
 у однобайтовой кодировки без BOM — принято, скачивание отдаёт байты как есть.
 
 Модель угроз: `THREAT_MODEL.md` — текущая сводка/DFD и точка входа. Реестр
-102 допущений — `docs/threat-model/assumptions.md`, риски/план — `risks.md`
+105 допущений — `docs/threat-model/assumptions.md`, риски/план — `risks.md`
 в том же каталоге. Архивы не источник текущих гарантий. Аудит 2026-10-14
 сузил 30 утверждений: обход исходников не доказывает полноту детектора или
 исполнение контроля; перенесённые строки явно не перепроверены, live-настройки

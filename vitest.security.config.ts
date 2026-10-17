@@ -33,6 +33,8 @@ export const staticSecuritySuites = [
   { path: "test/audit-retention.test.ts", controls: ["A53"] },
   { path: "test/ci-container-confinement.test.ts", controls: ["A45", "A46"] },
   { path: "test/ci-docs-fast-path.test.ts", controls: ["A55"] },
+  { path: "test/zap/ci.test.ts", controls: ["A105"] },
+  { path: "test/zap/report.test.ts", controls: ["A104"] },
   { path: "test/database-audit-workflow.test.ts", controls: ["database-audit"] },
   { path: "test/database-release-workflow.test.ts", controls: ["A13", "A31"] },
   { path: "test/dependency-install-hooks.test.ts", controls: ["A51"] },
