@@ -1,0 +1,122 @@
+name: ZAP Passive (advisory)
+
+# Самостоятельный workflow: gate/release и workflow_run CI не ждут ZAP.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-passive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 3
+    outputs:
+      mode: ${{ steps.classify.outputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Classify complete change set
+        id: classify
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_DOCS_FAST_PATH_ENABLED: ${{ vars.ENABLE_DOCS_ONLY_CI }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: node scripts/ci-policy.mjs classify
+
+  # Advisory DAST имеет свою БД/сборку и не входит в needs gate/release.
+  # always нужен для видимого error при сбое классификатора. Docs-only
+  # сохраняет skipped-сводку, но не собирает Docker и не запускает сценарии.
+  zap-passive:
+    name: ZAP passive (advisory)
+    runs-on: ubuntu-latest
+    needs: classify
+    if: ${{ always() && !cancelled() }}
+    continue-on-error: true
+    # 20 минут пилоту + cleanup/публикация. Потолок job оставляет время always-шагам.
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: app
+          persist-credentials: false
+
+      # Отдельный snapshot default branch, а не config или артефакт из PR.
+      # Его код не исполняется; читаются только фиксированные Git blobs.
+      - name: Read trusted default branch
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: .zap-trusted
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install report dependencies without hooks
+        run: npm ci --ignore-scripts
+
+      - name: Passive ZAP scenarios
+        id: zap
+        continue-on-error: true
+        timeout-minutes: 22
+        env:
+          ZAP_CI_MODE: ${{ needs.classify.outputs.mode }}
+          ZAP_CLASSIFY_RESULT: ${{ needs.classify.result }}
+        run: node scripts/zap/ci.mjs scan
+
+      - name: Publish safe ZAP summary
+        if: ${{ always() }}
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          mkdir -p app/test-results/zap-ci
+          if ! (cd app && node scripts/zap/ci.mjs publish); then
+            # Только точные имена, никакого upload каталога scan/trace или stdout.
+            rm -f app/test-results/zap-ci/{report.json,report.html,summary.md,run.json,job-summary.md}
+            printf '%s\n' '{"status":"error","reportsAvailable":false}' > app/test-results/zap-ci/run.json
+            printf '%s\n' '# ZAP passive (advisory)' '' 'Статус: **error**. Ошибка подготовки. Сравнение недоступно.' > app/test-results/zap-ci/summary.md
+            cp app/test-results/zap-ci/summary.md app/test-results/zap-ci/job-summary.md
+          fi
+          cat app/test-results/zap-ci/job-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload safe ZAP artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zap-passive-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            app/test-results/zap-ci/run.json
+            app/test-results/zap-ci/summary.md
+            app/test-results/zap-ci/report.json
+            app/test-results/zap-ci/report.html
+          if-no-files-found: error
+          retention-days: 30
+
+      # Ошибка/incomplete видны как outcome job, но job advisory; High сами по
+      # себе этот шаг не роняют. Gate и deploy результата ZAP не потребляют.
+      - name: Mark technical scan outcome
+        if: ${{ always() }}
+        run: node scripts/zap/ci.mjs check

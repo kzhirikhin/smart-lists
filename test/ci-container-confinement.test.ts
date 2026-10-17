@@ -18,8 +18,8 @@
  * по нынешним временам GHCR-namespace: аккаунт был переименован, старое имя
  * освободилось, и занять его мог кто угодно. Такой файл выполняет чужой код на
  * машине разработчика при первом же `docker compose up`. Поэтому здесь
- * разрешены только официальные образы Docker Hub — без владельца и без хоста
- * реестра в ссылке.
+ * разрешены официальные образы Docker Hub и одно явное исключение:
+ * официальный ZAP GHCR по проверенному digest, только для локального пилота.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -92,12 +92,13 @@ describe("изоляция контейнеров", () => {
     }
   });
 
-  it.each(composeFiles)("$name тянет только официальные образы", ({ body }) => {
+  it.each(composeFiles)("$name тянет только официальные образы", ({ name, body }) => {
     const images = [...body.matchAll(/^\s*image:\s*(\S+)\s*$/gm)].map(
       (match) => match[1],
     );
 
     for (const image of images) {
+      if (name === "docker-compose.zap.yml" && image === "ghcr.io/zaproxy/zaproxy@sha256:7aaa659b0d43078febd82e29bad112285c370727e86ab8340444220e17d9f0d2") continue;
       // Официальный образ Docker Hub записывается как `name:tag`, без владельца
       // и без хоста реестра. Любой слэш означает чужое пространство имён.
       expect(image).not.toContain("/");
