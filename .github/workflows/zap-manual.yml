@@ -1,0 +1,81 @@
+name: ZAP Manual (advisory)
+
+# Только явный запуск. Расписание/давность относятся к следующему этапу.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Ограничиваем runtime cache token, а не только отсутствие cache-шагов.
+cache-mode: none
+
+concurrency:
+  group: zap-manual
+  cancel-in-progress: false
+
+jobs:
+  manual:
+    name: ZAP manual isolated (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          # Произвольный SHA не должен записывать общий кеш default branch.
+          package-manager-cache: false
+
+      - name: Install dependencies without hooks
+        run: npm ci --ignore-scripts
+
+      - name: Isolated passive and active phases
+        id: scan
+        continue-on-error: true
+        timeout-minutes: 61
+        env:
+          ZAP_MANUAL_CI: "1"
+        run: npm run test:zap:manual
+
+      - name: Publish safe phase reports
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          mkdir -p test-results/zap-manual-ci
+          if ! node scripts/zap/manual-publish.mjs; then
+            rm -f test-results/zap-manual-ci/{run.json,summary.md,report.html,phase-a.json,phase-a.html,phase-b-active.json,phase-b-active.html,phase-b-passive.json,phase-b-passive.html}
+            printf '%s\n' '{"status":"error","reportsAvailable":false}' > test-results/zap-manual-ci/run.json
+            printf '%s\n' '# Ручной ZAP' '' 'Статус: **error**. Ошибка подготовки.' > test-results/zap-manual-ci/summary.md
+            cat test-results/zap-manual-ci/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload safe reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zap-manual-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            test-results/zap-manual-ci/run.json
+            test-results/zap-manual-ci/summary.md
+            test-results/zap-manual-ci/report.html
+            test-results/zap-manual-ci/phase-a.json
+            test-results/zap-manual-ci/phase-a.html
+            test-results/zap-manual-ci/phase-b-active.json
+            test-results/zap-manual-ci/phase-b-active.html
+            test-results/zap-manual-ci/phase-b-passive.json
+            test-results/zap-manual-ci/phase-b-passive.html
+
+      - name: Mark technical outcome
+        if: ${{ always() }}
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: |
+          node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('test-results/zap-manual-ci/run.json','utf8')); process.exit(r.status==='completed' && process.env.SCAN_OUTCOME==='success' ? 0 : 2)"

@@ -259,6 +259,7 @@ export function buildReport(run: Run, findings: Finding[], policy: ReturnType<ty
 }
 
 const names: Record<string, string> = {
+  "40012": "Отражённый XSS", "40018": "SQL-инъекция",
   "10010": "Cookie без HttpOnly", "10011": "Cookie без Secure", "10015": "Пересмотр кэширования", "10049": "Кэшируемый ответ", "10050": "Ответ из кэша",
   "10055": "Неполная или слабая CSP", "10098": "Широкий CORS", "10109": "Современное веб-приложение", "10112": "Признак управления сессией", "10202": "CSRF-токен не распознан", "90003": "Нет SRI", "90004": "Нет cross-origin isolation header",
 };
