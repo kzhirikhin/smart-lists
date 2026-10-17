@@ -93,7 +93,7 @@
     },
     {
       "identity": "1ee49a7f765c99ad6c7a2b57e9c4d6744f1bdccc028c3819fc36b97d1df99d0f",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -110,7 +110,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -250,7 +250,7 @@
     },
     {
       "identity": "32c088c82ac7147276b0e496ac81bd61e9f830954d538840d313781dae346ca2",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -267,7 +267,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -380,7 +380,7 @@
     },
     {
       "identity": "4577a88197ccc85155d4baa17f41147ea4136d531d0232d4d216c0a28dfe398c",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -397,7 +397,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -432,7 +432,7 @@
     },
     {
       "identity": "4bdef5066247021830bccad4e83e92553d474b824b5929c3f8733fa4f152b86e",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -449,7 +449,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -458,7 +458,7 @@
     },
     {
       "identity": "4f246ddd53ca14c68278b87b324a1476b8b08448e4ac8c9fde0e902fa96d9364",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -475,7 +475,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -510,7 +510,7 @@
     },
     {
       "identity": "5c7433c7ceea0aa17c50765a0501731e1461add422ea6dab72bb586e234ae272",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -527,7 +527,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 19,
@@ -693,7 +693,7 @@
     },
     {
       "identity": "72ced64b918149352b10bd7c1aafafc257302d747e2ac50e3f527dbcef54dd0e",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -710,7 +710,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 2,
@@ -745,7 +745,7 @@
     },
     {
       "identity": "79665ef1cf158786ba1d75366e3c6ab80ea819a1780291b8909e6ad3f2d7e5ab",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -762,7 +762,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 18,
@@ -902,7 +902,7 @@
     },
     {
       "identity": "91c4e232ddea7ed293c25a79d7a1c7902fa5d31897d74ffff336207417c57c70",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -919,7 +919,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -954,7 +954,7 @@
     },
     {
       "identity": "924b1fc7f7eb8f3eed3d9379bdddaefa83fca8b526de417dea6757cf9ade1156",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -971,7 +971,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1059,7 +1059,7 @@
     },
     {
       "identity": "9b0a71720ba364129dc47281ee25a5070c6c4120e47cd2e083b995e85831d644",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -1076,7 +1076,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 2,
@@ -1138,7 +1138,7 @@
     },
     {
       "identity": "aa7e62c2fc60fb9ad404908a02a86edfa6a2018836232a513845f2ad6603b6ca",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -1155,7 +1155,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1217,7 +1217,7 @@
     },
     {
       "identity": "b9cdcc56586e5f28c030c06b995804f6a0af4cf94a757c87a1f92544e039e9eb",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-4",
       "risk": "Medium",
       "confidence": "High",
@@ -1234,7 +1234,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1243,7 +1243,7 @@
     },
     {
       "identity": "bad282243a5b4f1f1c3105dda36efa9fdad6fb2699d8015066130cfc6bd38115",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -1260,7 +1260,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1321,7 +1321,7 @@
     },
     {
       "identity": "c61f94c2c0b4511ee1468253ca70052ac7c9c6bb0a3d22624b9d32faae51b7ec",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -1338,7 +1338,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1347,7 +1347,7 @@
     },
     {
       "identity": "cd9400d9c75bc53c7cd553f6dc324819c24d0d47bb7a96be838cfbca09de450a",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-6",
       "risk": "Medium",
       "confidence": "High",
@@ -1364,7 +1364,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 1,
@@ -1373,7 +1373,7 @@
     },
     {
       "identity": "ce96a2f843f2f14e02655c623d2f58c695b64f7a1f3783c7517f6a2ccb2b64d0",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -1390,7 +1390,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 18,
@@ -1451,7 +1451,7 @@
     },
     {
       "identity": "d331896aaa0ac495cdb0303cb6019593493d8d1184a9f7bf8a53dd1fb7a11a7c",
-      "fingerprint": "5be72e9b475889c8f2e14c8e860580f0d865f9591718d637ccec2126c59a9c81",
+      "fingerprint": "744b2f1307652a3c2c38775f1a0cc55cb66a54e04337865ff9b0f5078a1db448",
       "rule": "10055-5",
       "risk": "Medium",
       "confidence": "High",
@@ -1468,7 +1468,7 @@
       "location": "header",
       "evidence": {
         "kind": "csp",
-        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-oauth"
+        "value": "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' google-accounts"
       },
       "comparable": true,
       "instances": 2,

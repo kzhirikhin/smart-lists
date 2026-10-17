@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { boundedJson, buildReport, hash, readPolicy, renderReport, safeSubject, sanitizeAlerts, type Run, type Subject } from "./report";
+import { readFileSync } from "node:fs";
+import { boundedJson, buildReport, hash, readPolicy, renderReport, reportSchema, safeSubject, sanitizeAlerts, type Run, type Subject } from "./report";
 
 const now = "2026-10-16";
 const emptyPolicy = () => readPolicy({ version: 1, decisions: [] }, now);
@@ -92,6 +93,16 @@ describe("очистка и нормализация ZAP", () => {
 });
 
 describe("история и решения", () => {
+  it("Git baseline имеет текущую схему и воспроизводимые fingerprint нормализованных данных", () => {
+    const baseline = reportSchema.parse(JSON.parse(readFileSync(new URL("../../config/zap/baseline.json", import.meta.url), "utf8")));
+    for (const finding of baseline.findings) {
+      expect(finding.fingerprint).toBe(hash([finding.risk, finding.confidence, finding.evidence]));
+      if (finding.comparable) {
+        const subject = finding.subject;
+        expect(finding.identity).toBe(hash([finding.rule, baseline.run.target, subject.route, subject.method, subject.persona, subject.representation, subject.operation, subject.query, finding.parameter, finding.location]));
+      }
+    }
+  });
   it("первый/неполный/несовместимый прогон не объявляет отсутствие новых проблем", () => {
     const first = buildReport(run, findings(), emptyPolicy());
     expect(first.comparison).toBe("unavailable");

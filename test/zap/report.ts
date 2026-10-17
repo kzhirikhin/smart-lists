@@ -141,9 +141,9 @@ function evidenceFor(alert: z.infer<typeof rawAlertSchema>, subject: Subject) {
     const allowed = new Set(["base-uri", "object-src", "frame-ancestors", "form-action", "script-src", "style-src", "default-src", "connect-src", "img-src", "font-src", "'self'", "'none'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "*"]);
     const tokens = raw.split(/[;\s]+/).filter(Boolean);
     comparable = tokens.length > 0 && tokens.every((token) => allowed.has(token));
-    value = comparable ? raw.split(";").map((directive) => directive.trim().split(/\s+/).join(" ")).filter(Boolean).join("; ") : "csp-values-redacted";
-    // Домен — фиксированная публичная константа кода; в отчёте только метка.
-    value = value.replaceAll("https://accounts.google.com", "google-oauth");
+    // Только известные публичные CSP-источники; это признаки конфигурации,
+    // а не OAuth credentials или пароли для хеширования/проверки входа.
+    value = comparable ? raw.split(";").map((directive) => directive.trim().split(/\s+/).map((source) => source === "https://accounts.google.com" ? "google-accounts" : source).join(" ")).filter(Boolean).join("; ") : "csp-values-redacted";
   } else if (base === "10098") {
     param = "Access-Control-Allow-Origin"; kind = "cors";
     const origin = header(subject.headers, "access-control-allow-origin");

@@ -19,8 +19,11 @@
 evidence редактируются и остаются несопоставимыми. CSP — открытый confirmed gap.
 Обычные E2E не используют ZAP по умолчанию. [Этап 4](docs/zap-ci.md), A105:
 независимый advisory workflow, trusted Git-входы, publisher/точные upload paths.
-Локальная приёмка есть; реальная публикация, permissions и required checks в
-GitHub пока unknown. Active scan и контроль давности не внедрены.
+Локальная приёмка есть. Первый PR-run 38996621804 подтвердил безопасный
+error-артефакт с retention 30 дней; ruleset не требует ZAP, обязательный CI
+38996621674 завершился успешно независимо от ZAP failure. Успешный полный
+ZAP-run после исправления clean-checkout сборки ещё проверяется.
+Active scan и контроль давности не внедрены.
 Production active scan исключён.
 
 ## Состояние доказательств

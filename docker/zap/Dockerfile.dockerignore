@@ -3,7 +3,6 @@
 !package.json
 !package-lock.json
 !tsconfig.json
-!next-env.d.ts
 !next.config.ts
 !prisma.config.ts
 !postcss.config.mjs
