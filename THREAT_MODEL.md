@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-17.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — CI-обвязка ZAP; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-18.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — приёмка ручного ZAP workflow; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
 
@@ -34,7 +34,11 @@ incomplete/skipped опубликованы; ожидание update metadata п
 низкая сила/два правила/один поток. Completed A/B: 545 пассивных запросов,
 pending=0, 41 активная попытка; две Actions получили по 6 успешных мутаций входа.
 Контрольная мишень дала XSS alert, session/precondition/budget-пробы отказали.
-Ручной Actions workflow ещё не опубликован и не проверен. Gate фиксирует
+Ручной Actions workflow опубликован через PR #235: main-run 39045344867
+completed A/B, dirty=false, 546 passive/pending=0, 41 active, обе Actions по 6
+успешных изменений поля. Девять safe-файлов/схемы/точное воспроизведение проверены,
+Contents/Metadata read, API retention 30 дней; fault-пробы только локальные.
+Этап 5 завершён в этих границах. Gate фиксирует
 session/Origin/служебные поля: это не тест CORS/CSRF/обхода прав. Расписания и
 контроля давности пока нет.
 Production active scan исключён.
@@ -118,7 +122,7 @@ flowchart LR
 | TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
 | TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped и trusted main после merge подтверждены 2026-10-17; A105 |
-| TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions пока unknown; A106 |
+| TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions success run 39045344867 проверен 2026-10-18, Actions fault/forced timeout не проверены; A106 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

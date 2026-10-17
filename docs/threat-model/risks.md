@@ -31,7 +31,11 @@ completed/error/incomplete/skipped и публикация. PR #231 слит; ma
 три решения применены. Этап 4 завершён. [Этап 5](../zap-manual.md) проверен локально:
 internal gate и два правила/три входа, синтетические сессии, отдельные phase/source
 отчёты; completed A/B, контрольная XSS-мишень и session/precondition/budget-пробы
-прошли. Ручной Actions workflow подготовлен, но ещё не опубликован/проверен.
+прошли. Ручной Actions workflow опубликован через PR #235 и проверен на main:
+run 39045344867 completed A/B, 546 passive/pending=0, 41 active, dirty=false,
+по 6 успешных изменений поля обеих Actions. Девять safe-файлов точно
+воспроизведены, token read-only, API retention 30 дней. Actions fault/forced
+timeout не воспроизводились; успешная cleanup не доказательство hard cancel.
 Сигнала давности пока нет.
 CodeQL в PR выявил cache poisoning при checkout произвольного SHA: input убран,
 checkout закреплён за github.sha выбранной ветки/тега; общий npm
