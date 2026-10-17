@@ -31,8 +31,11 @@ baseline — обычные Git blobs отдельного default-branch checko
 подменяют их. Нет доверенного источника — пустая политика/сравнение unavailable.
 `npm run test:zap:ci`, затем `node scripts/zap/ci.mjs publish`/`check`;
 в CI всегда вызывается publisher, upload только четырёх safe-файлов, retention 30.
-Локальная приёмка не доказывает реальную публикацию/permissions/required checks:
-первый Actions-прогон после публикации ещё нужен. Policy/baseline требуют review.
+Живые Actions подтвердили error/incomplete/skipped-отчёты, read-only token,
+retention 30 дней и независимость required CI; полный completed ещё проверяется.
+ZAP `-silent` исключает unsolicited update/telemetry, чтобы version rule не
+задерживало очередь в изолированной сети. Актуальность сканера проверяется
+отдельно при review digest/addons. Policy/baseline требуют review.
 Активный скан и расписание ещё не внедрены.
 
 `ItemStatus` включает `DEFERRED`: отложенный пункт остаётся на позиции,

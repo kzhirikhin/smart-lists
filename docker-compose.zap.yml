@@ -33,7 +33,9 @@ services:
     # Общий namespace нужен для localhost из неизменённых E2E fixtures.
     network_mode: service:postgres
     depends_on: [pilot]
-    command: ["zap.sh", "-daemon", "-host", "127.0.0.1", "-port", "8090", "-config", "api.disablekey=true", "-config", "api.addrs.addr.name=127.0.0.1", "-config", "api.addrs.addr.regex=false", "-config", "autoupdate.checkOnStart=false"]
+    # Silent запрещает unsolicited update/telemetry: version rule иначе ждёт
+    # недоступный update endpoint на каждом сообщении изолированного скана.
+    command: ["zap.sh", "-daemon", "-silent", "-host", "127.0.0.1", "-port", "8090", "-config", "api.disablekey=true", "-config", "api.addrs.addr.name=127.0.0.1", "-config", "api.addrs.addr.regex=false", "-config", "autoupdate.checkOnStart=false"]
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/JSON/core/view/version/',timeout=3)"]
       interval: 3s

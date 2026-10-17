@@ -10,6 +10,8 @@ it("локальный Compose не публикует порты, mount, env_fi
   expect(compose).toContain("smartlists_zap_test");
   expect(compose).not.toMatch(/^\s*(ports|volumes|env_file|privileged|cap_add|devices):/m);
   expect(compose).not.toContain("host.docker.internal");
+  // checkOnStart=false не предотвращает запросы из правила актуальности ZAP.
+  expect(compose).toContain('"-daemon", "-silent"');
 });
 
 it("сборка отключает install-хуки и имеет ограниченный build context", () => {

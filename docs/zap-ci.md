@@ -29,10 +29,17 @@ High остаётся находкой completed-прогона, не превр
 `gate`, миграция production, обязательные E2E и Preview-синхронизация ZAP не ждут.
 Не назначать `ZAP passive (advisory)` required check в ruleset.
 
-Внутри 10-минутного анализа очередь ожидается до трёх минут: первая живая
-проверка показала, что минуты на GitHub runner недостаточно. Pending по истечении
+Внутри 10-минутного анализа очередь ожидается до трёх минут. Pending по истечении
 срока всё равно даёт incomplete. В диагностику выходят только ID выполняемых
 правил/время без URL и имён; очередь не очищается, правила не отключаются.
+
+ZAP запускается со штатным `-silent`: без unsolicited update/telemetry.
+Живой run 38997784225 остался incomplete (545 запросов, pending=4 за 180 секунд);
+диагностика указала в том числе 10116 — проверку актуальности самого ZAP.
+Bytecode правила в закреплённом образе подтверждает: silent без version metadata
+не обращается за ней в сеть. Изоляция сети сохраняется. Этот профиль не
+подтверждает актуальность сканера: digest/addon versions фиксируются в отчёте,
+обновление образа и пересмотр baseline выполняются отдельным review.
 
 `always()` запускает publisher и upload после обычного сбоя/timeout шага.
 Hard timeout всей job, отмена workflow, потеря runner или сбой GitHub могут
@@ -108,8 +115,8 @@ node scripts/zap/ci.mjs check
 Тесты `test/zap/ci.test.ts` проверяют фактическое чтение Git blob/отказ symlink,
 trusted-vs-PR, статусы/High, неполное покрытие/очередь, очистку вывода и известные
 формы YAML. Последний detector текстовый, не общий YAML/shell AST. Полная схема
-GitHub, реальные permissions/required checks, загрузка и retention артефакта
-требуют первого настоящего Actions-прогона после публикации изменений.
+GitHub и живые настройки нельзя доказать этими тестами: результат датированной
+проверки Actions приведён ниже, настройки могут дрейфовать независимо от Git.
 
 ## Локальная приёмка 2026-10-17
 
@@ -132,7 +139,30 @@ GitHub, реальные permissions/required checks, загрузка и retent
 lint, typecheck, 738 юнит-тестов, 500 security-контрактов; production build и
 22 E2E прошли в пилоте. Обычные 143 E2E на этом этапе не менялись и заново не
 запускались. Нет новых зависимостей и изменений runtime/Server Actions/БД.
-Impact-check обновил TZ3 и A105; живые настройки платформы остаются unknown.
+Impact-check обновил TZ3 и A105. Результаты локальной проверки не заменяют
+живую приёмку ниже.
+
+## Приёмка GitHub Actions 2026-10-17
+
+Публикация проверяется в [PR #231](https://github.com/kzhirikhin/smart-lists/pull/231).
+Условия и границы свидетельств:
+
+| Проверка | Свидетельство |
+|---|---|
+| Реальная ошибка сборки | [Run 38996621804](https://github.com/kzhirikhin/smart-lists/actions/runs/38996621804): отсутствовал generated next-env.d.ts в clean checkout; error-сводка и артефакт опубликованы. Dockerfile исправлен без добавления generated-файла в Git |
+| Независимость обязательных проверок | [CI 38996621674](https://github.com/kzhirikhin/smart-lists/actions/runs/38996621674) зелёный при failure ZAP job; advisory workflow остаётся success |
+| Реальная незавершённая очередь | [Run 38997023674](https://github.com/kzhirikhin/smart-lists/actions/runs/38997023674): 22/22 сценария, 551 запрос, pending=4 после минуты; incomplete, сравнение unavailable, безопасные отчёты сохранены |
+| Docs-only | [Run 38997341189](https://github.com/kzhirikhin/smart-lists/actions/runs/38997341189), временный PR #232 с единственным изменением PROJECT_MEMORY: skipped, без Docker/сценариев. PR закрыт без merge, временная ветка удалена |
+| Права и блокировка | Лог setup job: token Contents/Metadata read; текущий Protect main не требует ZAP. CI/CodeQL прошли без обхода gates/исключений |
+| Retention | GitHub API artifact 12087805861: created_at=2026-10-17T02:53:30Z, expires_at=2026-11-16T02:53:29Z. Проверено назначение срока, фактическое удаление через 30 дней ещё не наблюдалось |
+| Bootstrap доверенной истории | Default main ещё без config/zap: policy/baseline unavailable, PR-кандидаты не применены. После merge источник начнёт браться из default branch; эта ветка приёмки пока не проверена в Actions |
+
+Все скачанные артефакты находятся локально в игнорируемом
+`test-results/zap-live/<run_id>/`. Это копии для проверки: GitHub retention их
+не удаляет. После проверки они удаляются владельцем рабочей копии; долгоживущие
+решения и baseline остаются в Git. Исторические локальные JSON v1 могут не
+читаться текущей схемой v2; HTML остаётся доступен. Актуальные проверки после
+исправлений: lint, typecheck, 740 юнит-тестов и 502 security-контракта.
 
 Источники: [workflow syntax GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
 [официальный upload-artifact](https://github.com/actions/upload-artifact).
