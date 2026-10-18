@@ -1,10 +1,10 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-17.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — CI-обвязка ZAP; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-18.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — приёмка ручного ZAP workflow; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 106 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 107 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
@@ -34,9 +34,59 @@ incomplete/skipped опубликованы; ожидание update metadata п
 низкая сила/два правила/один поток. Completed A/B: 545 пассивных запросов,
 pending=0, 41 активная попытка; две Actions получили по 6 успешных мутаций входа.
 Контрольная мишень дала XSS alert, session/precondition/budget-пробы отказали.
-Ручной Actions workflow ещё не опубликован и не проверен. Gate фиксирует
-session/Origin/служебные поля: это не тест CORS/CSRF/обхода прав. Расписания и
-контроля давности пока нет.
+Ручной Actions workflow опубликован через PR #235: main-run 39045344867
+completed A/B, dirty=false, 546 passive/pending=0, 41 active, обе Actions по 6
+успешных изменений поля. Девять safe-файлов/схемы/точное воспроизведение проверены,
+Contents/Metadata read, API retention 30 дней; fault-пробы только локальные.
+Этап 5 завершён в этих границах. Gate фиксирует
+session/Origin/служебные поля: это не тест CORS/CSRF/обхода прав.
+[Этап 6](docs/zap-operations.md), A107: месячный скан и ежедневный
+контроллер давности/сбоев, журнал в bot Issue без срока удаления. Новая граница
+TZ5: source run/artifact → доверенный default-branch контроллер → GitHub Issue.
+Только он получает actions:read/issues:write, не source scanner. Run/attempt,
+repo/ветка/workflow перепроверяются REST; строгий JSON и успешные шаги нужны для
+обновления последнего успеха. Более 40 дней — stale; сбой не сдвигает дату.
+PR #237 слит. Live bootstrap #238, изолированные failure/stale/recovery #239
+и отсутствие повторного stale-комментария проверены. Source 39091016597
+completed A/B → workflow_run 39091399377 обновил настоящий lastSuccess;
+история содержит только настоящие completed, без записей проб. Оба workflows
+active, token контроллера read/Issues write подтверждён логом. Будущие cron и
+email не наблюдались; общий сбой Actions не обнаруживается независимым сервисом.
+High-triage здесь не автоматизируется.
+[Карта покрытия](docs/zap-coverage.md), review 2026-10-18, уточняет остаток A106:
+manual-v2 добавляет renameList/title owner и renameItem/itemName recipient
+к anonymous query и полям createList/addItem. Reflected XSS на RSC
+не проверяет выполнение сохранённого текста при последующем отображении.
+Локально A/B completed: 545 passive/pending=0, 61 active, у обеих новых целей
+по 6 успешных мутаций, persisted/rendered=true. Пять точных целей, seed success,
+оба native-правила и UI/DB-проверки обязательны в completed-схеме. Инвентарь
+Actions — разовый review, не CI-гарантия полноты. A107 сохраняет digest политики
+и проверяет точные scope фаз B: прежний lastSuccess сохраняет дату, но не
+подтверждает новое покрытие (profile-outdated). PR #241 слит; main-run 39107196382
+completed A/B, dirty=false: 559 passive/pending=0, 61 active, persisted/rendered
+новых целей true. Девять safe-файлов валидированы/воспроизведены, Gitleaks чистый.
+Контроллер 39107211069 подтвердил profile-outdated с прежней датой; workflow_run
+39107635885 обновил #238 до нового digest/healthy и даты анализа 07:25:56Z.
+Daily schedule 39107674127 success; запуск создан 07:26:36Z вместо 02:43 UTC,
+что подтверждает возможную задержку, не SLA. Будущие cron/email не гарантированы.
+Остатки CSRF/прав/полноты XSS и изоляция внешних сервисов сохранены.
+Первый PR-run manual-v2 39094262001 не считается completed: A прошла, B error
+на seed до атак, technical outcome failure; зелёная advisory-обёртка не успех.
+Подготовка ждёт HTTP 200 и запись в БД; диагностика seed — закрытые поля.
+PR-run 39095114639 подтвердил все 61 active и persisted обеих новых целей,
+но UI-проверка завершилась ошибкой чтения browser response body и не засчитана.
+Подтверждение UI-мутаций теперь использует HTTP 200 и scoped БД,
+без чтения освобождаемого Chromium body; native gate продолжает проверять RSC.
+Run 39095895555 достиг общего тайм-аута без завершения B; причина внутри ожиданий
+не локализована. UI/nav ожидания ограничены 10/20 секундами, SDK finished не нужен.
+Две фиксированные store-and-read пробы после закрытия gate используют frozen
+rename-seed вне бюджета native scan: меняется только разрешённое поле, проверяются
+RSC success, scoped БД и текст после reload. Это не полнота stored XSS.
+Веточная приёмка и артефакты — [PR #241](https://github.com/kzhirikhin/smart-lists/pull/241).
+Она проверена отдельно от описанной выше main-приёмки и обновления журнала.
+Повторная верификация временно недоступных jobs/artifact не запускает новые
+атаки. Подтверждённый тот же attempt заменяет временный отказ, сохраняя дату
+анализа; этот крайний случай проверен unit-тестом, не live-сбоем GitHub API.
 Production active scan исключён.
 Ручной checkout использует github.sha выбранной ветки/тега, без SHA input,
 и не использует общий npm/автоматический cache
@@ -98,6 +148,8 @@ flowchart LR
     C -->|TZ2: схема / allowlist evidence| O[Локальный test-results]
     O -->|TZ3: повторная схема / точные файлы| ZA[GitHub summary / artifacts]
     TC[Default branch Git blobs] -->|TZ3: policy / baseline| C
+    ZA -->|TZ5: REST / ZIP / строгий JSON| OC[Контроллер из default branch]
+    OC -->|issues write / только safe metadata| J[Bot Issue / журнал состояния]
 ~~~
 
 | ID | Граница | Контроль и существенный предел |
@@ -118,7 +170,8 @@ flowchart LR
 | TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
 | TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped и trusted main после merge подтверждены 2026-10-17; A105 |
-| TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions пока unknown; A106 |
+| TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions success run 39045344867 проверен 2026-10-18, Actions fault/forced timeout не проверены; A106 |
+| TZ5 | source run/artifact → controller → GitHub Issue | Checkout только default branch, не head_sha события; source API/attempt/ветка/собственный repo, точные имена ZIP без extraction/исполнения, строгие JSON, issues:write только контроллеру. Live bootstrap/probes/workflow_run проверены 2026-10-18. Журнал/владельцы repo доверены, будущий cron/email и общий сбой Actions не гарантируются; A107 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

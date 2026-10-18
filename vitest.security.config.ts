@@ -38,6 +38,7 @@ export const staticSecuritySuites = [
   { path: "test/zap/active-api.test.ts", controls: ["A106"] },
   { path: "test/zap/active-gate.test.ts", controls: ["A106"] },
   { path: "test/zap/manual-report.test.ts", controls: ["A106"] },
+  { path: "test/zap/operations.test.ts", controls: ["A107"] },
   { path: "test/zap/report.test.ts", controls: ["A104"] },
   { path: "test/database-audit-workflow.test.ts", controls: ["database-audit"] },
   { path: "test/database-release-workflow.test.ts", controls: ["A13", "A31"] },

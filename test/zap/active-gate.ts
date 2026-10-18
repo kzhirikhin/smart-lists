@@ -1,5 +1,5 @@
 import { createServer, request, type Server } from "node:http";
-import { activePolicy, admitMutation, assertActiveTarget, type ActiveTarget } from "./active-policy";
+import { activePolicy, admitMutation, assertActiveTarget, multipart, type ActiveTarget } from "./active-policy";
 
 /** Дополнительный reverse proxy только внутри internal namespace.
  * Бюджет и allowlist проверяются ДО передачи запроса приложению, а не polling
@@ -8,6 +8,7 @@ import { activePolicy, admitMutation, assertActiveTarget, type ActiveTarget } fr
 export function createActiveGate(limit: number = activePolicy.maxRequests, training = false) {
   if (!Number.isInteger(limit) || limit < 1 || limit > activePolicy.maxRequests) throw new Error("active-budget");
   let target: ActiveTarget | undefined;
+  let lastAcceptedValue: string | undefined;
   const stats = { requests: 0, rejected: 0, exhausted: false, redirect: false, mutations: 0, successfulMutations: 0, seedStatus: 0, seedSuccess: false };
   let open = true;
   const server: Server = createServer(async (incoming, outgoing) => {
@@ -41,6 +42,9 @@ export function createActiveGate(limit: number = activePolicy.maxRequests, train
           const result = Buffer.concat(chunks);
           if (!check.mutated) { stats.seedStatus = response.statusCode ?? 0; stats.seedSuccess = stats.seedStatus === 200 && (seed.method === "GET" || /"success":true/.test(result.toString("utf8"))); }
           if (check.mutated && (response.statusCode ?? 500) === 200 && (seed.method === "GET" || /"success":true/.test(result.toString("utf8")))) stats.successfulMutations++;
+          if (seed.method === "POST" && response.statusCode === 200 && /"success":true/.test(result.toString("utf8"))) {
+            lastAcceptedValue = multipart(body, seed.headers["content-type"]).get(seed.field);
+          }
           const safeHeaders = { ...response.headers };
           delete safeHeaders["transfer-encoding"]; delete safeHeaders["connection"]; delete safeHeaders["content-length"];
           outgoing.writeHead(response.statusCode ?? 502, safeHeaders); outgoing.end(result);
@@ -54,7 +58,9 @@ export function createActiveGate(limit: number = activePolicy.maxRequests, train
   });
   return {
     stats,
-    select(value: ActiveTarget) { assertActiveTarget(value); target = value; stats.seedStatus = 0; stats.seedSuccess = false; },
+    select(value: ActiveTarget) { assertActiveTarget(value); target = value; lastAcceptedValue = undefined; stats.seedStatus = 0; stats.seedSuccess = false; },
+    // Значение живёт только в памяти стенда; в safe-отчёт идут лишь boolean.
+    acceptedValue() { return lastAcceptedValue; },
     closeGate() { open = false; },
     async listen(port = 3102) {
       await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(port, "127.0.0.1", resolve); });

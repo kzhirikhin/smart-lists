@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { renderReport, reportSchema } from "../../test/zap/report.ts";
-import { activeRunSchema } from "../../test/zap/active-policy.ts";
+import { activePolicy, activeRunSchema } from "../../test/zap/active-policy.ts";
 import { renderManual } from "../../test/zap/manual-report.ts";
 
 // Хост передаёт Docker только имя probe, не собственный .env/ключи/каталог home.
@@ -91,7 +91,7 @@ try {
   }
   const diagnostic = JSON.parse(await readFile(path.join(output, "pilot.json"), "utf8"));
   if (manual) {
-    manualData ??= { version: 1, status: "error", phaseA: "error", phaseB: "skipped", reasons: ["active-infrastructure"], control: probe === "control", controlFound: false, requests: 0, rejected: 0, durationMs: 0, targets: [] };
+    manualData ??= { version: 1, profile: activePolicy.profile, status: "error", phaseA: "error", phaseB: "skipped", reasons: ["active-infrastructure"], control: probe === "control", controlFound: false, requests: 0, rejected: 0, durationMs: 0, targets: [] };
     if (diagnostic.status !== "completed") { manualData.status = diagnostic.status === "error" ? "error" : "incomplete"; if (diagnostic.reasons.includes("cleanup-failed")) manualData.reasons.push("cleanup-failed"); }
     if (interrupted) { manualData.status = "incomplete"; manualData.phaseB = "incomplete"; manualData.reasons = ["active-process-failed", ...(diagnostic.reasons.includes("cleanup-failed") ? ["cleanup-failed"] : [])]; }
     const rendered = renderManual(manualData);

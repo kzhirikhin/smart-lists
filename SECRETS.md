@@ -506,6 +506,13 @@ control plane синхронизирует свою копию при смене
 компрометацию отозвать немедленно в Settings → Developer settings → Tokens
 (classic). Срок ограничивает окно, но не сужает права токена (A88).
 
+Автоматизация ZAP использует временный `github.token`, а не PAT владельца:
+сканер имеет contents:read; отдельный контроллер из default branch —
+contents:read/actions:read/issues:write для журнала состояния. Токен не хранится
+в repo secrets/на диске и ограничен сроком job; боевые Environment/secrets/OIDC
+этому контроллеру не выдаются. Workflow_run/artifacts не являются доверенным
+кодом: checkout source revision в write-job запрещён (A107).
+
 **GCP.** `gcloud auth login` под задачу, `gcloud auth revoke` после — это
 настоящий отзыв на стороне Google, а не удаление локальной копии. **ADC
 (`application-default login`) не создавать:** эту копию библиотеки подхватывают
