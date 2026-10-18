@@ -6,6 +6,7 @@ import { activePolicy, activeRunSchema } from "./active-policy.ts";
 export function renderManual(raw: unknown) {
   const run = activeRunSchema.parse(raw);
   const lines = ["# Ручной двухэтапный ZAP", "", `Статус: **${run.status}**.`,
+    `Профиль: ${run.profile}; пять целей в основном контуре.`,
     `SHA: ${run.revision ?? "unknown"}; dirty: ${run.dirty ?? "unknown"}; начало UTC: ${run.startedAt ?? "unknown"}.`,
     `Фаза A: ${run.phaseA}; фаза B: ${run.phaseB}; учебная мишень: ${run.control}.`,
     `Пассивные запросы: ${run.passive?.requests ?? "unknown"}; очередь: ${run.passive?.pending ?? "unknown"}; неполные сценарии: ${run.passive?.failedScenarios.join(", ") || "нет"}.`,
@@ -19,6 +20,7 @@ export function renderManual(raw: unknown) {
     "", "Фаза A — phase-a.html. Фаза B — phase-b-active.html и phase-b-passive.html (если подготовлены).",
     "Отсутствие active-находок не подтверждает безопасность остальных Actions/ролей/векторов.",
     "Нулевой счётчик запросов правила не означает его проверку на данном входе.",
+    ...run.targets.filter(target => target.operation === "renameList" || target.operation === "renameItem").map(target => `${target.operation}: сохранение ${target.persisted === true}; текст после reload ${target.rendered === true}. Это отдельная UI-проверка, не результат reflected XSS.`),
     "Шлюз фиксирует session/Origin и служебные поля; этот профиль не проверяет CORS, CSRF или обход авторизации.",
     ...(run.control ? ["Учебная мишень отделена от Smart Lists. Результат нельзя приписывать приложению.", `Контрольная XSS обнаружена: ${run.controlFound}.`] : []), ""];
   const summary = lines.join("\n");

@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
 import { readFile, writeFile, copyFile, stat } from "node:fs/promises";
-import { activeRunSchema, summarizePassive } from "../../test/zap/active-policy.ts";
+import { activePolicy, activeRunSchema, summarizePassive } from "../../test/zap/active-policy.ts";
 
 const output = "/tmp/zap-output";
 const probe = process.env.ZAP_MANUAL_PROBE ?? "none";
 const started = Date.now();
-let result = { version: 1, status: "error", phaseA: "error", phaseB: "skipped", reasons: ["active-infrastructure"], control: probe === "control", controlFound: false, requests: 0, rejected: 0, durationMs: 0, targets: [] };
+let result = { version: 1, profile: activePolicy.profile, status: "error", phaseA: "error", phaseB: "skipped", reasons: ["active-infrastructure"], control: probe === "control", controlFound: false, requests: 0, rejected: 0, durationMs: 0, targets: [] };
 let startedB = false;
 let passive;
 const run = args => new Promise(resolve => {

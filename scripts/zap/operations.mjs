@@ -4,7 +4,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { z } from "zod";
 import { apiRunSchema, qualifies, scanWorkflow, ledgerTitle, probeTitle, assertArchiveEntries, ledgerSchema, attemptSchema,
-  mergeAttempt, readLedger, transition, validateCompletion, maxAgeMs } from "../../test/zap/operations.ts";
+  mergeAttempt, readLedger, transition, validateCompletion, maxAgeMs, activeProfile } from "../../test/zap/operations.ts";
 
 // Только доверенный default-branch checkout контроллера. Трафик/код артефакта
 // не исполняется; unzip -p читает фиксированные JSON, без извлечения путей.
@@ -84,6 +84,7 @@ async function inspect(run) {
     const known = ["run-failed", "job-invalid", "report-invalid", "artifact-unavailable"];
     if (error instanceof Error && known.includes(error.message)) reason = error.message;
     return attemptSchema.parse({ runId: run.id, attempt: run.run_attempt, revision: run.head_sha,
+      profile: activeProfile,
       completedAt: run.updated_at, result: "failure", reason });
   }
 }
@@ -118,12 +119,12 @@ try {
   let previous = realIssue ? readLedger(realIssue.body ?? "", repository, false) : null;
   let effectiveNow = now;
   if (probe !== "none") {
-    if (!ledger.lastSuccess) throw new Error("operations-probe-needs-success");
+    if (ledger.lastSuccess?.profile !== activeProfile) throw new Error("operations-probe-needs-success");
     issue = await findIssue(probeTitle);
     previous = issue ? readLedger(issue.body ?? "", repository, true) : null;
     ledger = ledgerSchema.parse({ ...ledger, probe: true, lastAttempt: ledger.lastSuccess });
     if (probe === "failure") ledger = mergeAttempt(ledger, { runId: Number(process.env.GITHUB_RUN_ID), attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
-      revision: ledger.lastSuccess.revision, completedAt: new Date(now).toISOString(), result: "failure", reason: "probe-failure" });
+      revision: ledger.lastSuccess.revision, profile: activeProfile, completedAt: new Date(now).toISOString(), result: "failure", reason: "probe-failure" });
     if (probe === "stale") effectiveNow = Date.parse(ledger.lastSuccess.completedAt) + maxAgeMs + 1;
   }
   const projected = transition(previous, ledger, issue?.state ?? "", effectiveNow);

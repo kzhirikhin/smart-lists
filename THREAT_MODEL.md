@@ -52,7 +52,18 @@ completed A/B → workflow_run 39091399377 обновил настоящий las
 история содержит только настоящие completed, без записей проб. Оба workflows
 active, token контроллера read/Issues write подтверждён логом. Будущие cron и
 email не наблюдались; общий сбой Actions не обнаруживается независимым сервисом.
-Покрытие/High-triage здесь не расширяются.
+High-triage здесь не автоматизируется.
+[Карта покрытия](docs/zap-coverage.md), review 2026-10-18, уточняет остаток A106:
+manual-v2 добавляет renameList/title owner и renameItem/itemName recipient
+к anonymous query и полям createList/addItem. Reflected XSS на RSC
+не проверяет выполнение сохранённого текста при последующем отображении.
+Локально A/B completed: 545 passive/pending=0, 61 active, у обеих новых целей
+по 6 успешных мутаций, persisted/rendered=true. Пять точных целей, seed success,
+оба native-правила и UI/DB-проверки обязательны в completed-схеме. Инвентарь
+Actions — разовый review, не CI-гарантия полноты. A107 сохраняет digest политики
+и проверяет точные scope фаз B: прежний lastSuccess сохраняет дату, но не
+подтверждает новое покрытие (profile-outdated). Живая приёмка нового main ещё
+не выполнена. Остатки CSRF/прав/полноты XSS и изоляция внешних сервисов сохранены.
 Повторная верификация временно недоступных jobs/artifact не запускает новые
 атаки. Подтверждённый тот же attempt заменяет временный отказ, сохраняя дату
 анализа; этот крайний случай проверен unit-тестом, не live-сбоем GitHub API.

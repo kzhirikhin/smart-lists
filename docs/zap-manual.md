@@ -41,9 +41,13 @@ Environment/OIDC. Нет автоматического запуска на push
    pending=0 и успешная проверка внешнего egress. Неполный результат закрывает
    фазу B; старый отчёт не используется как разрешение на новый active scan.
 2. Фаза B поднимает тот же production-сервер, создаёт отдельные synthetic
-   owner/recipient, сессии и shared list. Через браузер выполняются createList
-   владельца и addItem получателя, проверяется успешный UI/DB-поток. Их Action
+   owner/recipient, сессии и shared list. Профиль manual-v2 захватывает createList
+   и renameList владельца, addItem и renameItem получателя. Проверяется UI/DB-поток. Их Action
    ID сверяются с server-reference-manifest именно этой сборки.
+   Пятая цель — anonymous query. Для переименований сверяется последнее принятое
+   значение с БД, а после закрытия gate отдельно сохраняется контролируемый
+   HTML-текст и проверяется его отображение после reload без DOM-разметки и
+   исполнения обработчика. Это отдельная UI-проверка, не результат reflected XSS.
 3. ZAP получает захваченные multipart-запросы, а не придуманный JSON.
    Только boundary приводится к фиксированному нижнему регистру: native parser
    закреплённого ZAP иначе не атакует поля WebKit boundary. Имена и значения
@@ -81,6 +85,14 @@ Native scan останавливается
 при hard cancel/потере runner отчёты и cleanup не гарантированы.
 
 ## Отчёты
+
+Текущая схема run.json требует profile=manual-v2 и все пять целей для completed
+(control имеет отдельную единственную цель). Оба native-правила должны закончить
+работу с ненулевыми запросами на каждой цели; для переименований нужны persisted
+и rendered. Scope обеих фаз B включает весь activePolicy, включая цели/лимиты.
+Исключения параметров ZAP пересоздаются перед каждой целью через
+[excludedParams/removeExcludedParam](https://www.zaproxy.org/docs/api/), чтобы
+исключения предыдущего Action не выключали проверку следующего.
 
 Локальный каталог: `test-results/zap-manual/<timestamp>-<probe>/`:
 
@@ -125,7 +137,7 @@ exit code. Control поднимает отдельную намеренно уя
 на внутреннем 3101; Smart Lists не изменяется. Успех control требует настоящего
 active alert 40012 от ZAP; простая запись строки в JSON этим не считается.
 
-## Локальная приёмка 2026-10-17
+## Историческая приёмка manual-v1 2026-10-17
 
 | Проверка | Результат |
 |---|---|
@@ -148,7 +160,7 @@ Control: `1792233556154-control`, session: `1792233554992-session`, precondition
 
 Unit-проверки закрепляют A106 только для перечисленных форм wire и границ;
 они не доказывают настройку GitHub или отсутствие уязвимостей вне трёх входов.
-### Приёмка GitHub Actions 2026-10-18
+### Приёмка GitHub Actions manual-v1 2026-10-18
 
 [PR #235](https://github.com/kzhirikhin/smart-lists/pull/235) слит в
 `870ec341f696edc077658bd3364601d271d76263`. Обязательный PR CI и CodeQL прошли.

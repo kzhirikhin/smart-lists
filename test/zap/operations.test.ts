@@ -1,33 +1,45 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { activeRunSchema } from "./active-policy";
+import { activePolicy, activeRunSchema } from "./active-policy";
 import { buildReport, hash, readPolicy } from "./report";
-import { apiRunSchema, assertArchiveEntries, safeFiles, attemptSchema, health, ledgerSchema, maxAgeMs, mergeAttempt, qualifies, readLedger,
+import { activeProfile, apiRunSchema, assertArchiveEntries, safeFiles, attemptSchema, health, ledgerSchema, maxAgeMs, mergeAttempt, qualifies, readLedger,
   renderLedger, transition, validateCompletion } from "./operations";
 
 const now = Date.parse("2026-10-18T03:00:00Z");
 const revision = "a".repeat(40);
 const repository = "owner/project";
 const completed = attemptSchema.parse({ runId: 100, attempt: 1, revision, completedAt: new Date(now - 1000).toISOString(),
-  result: "completed", reason: "completed", passiveRequests: 546, activeRequests: 41 });
+  profile: activeProfile, result: "completed", reason: "completed", passiveRequests: 546, activeRequests: 70 });
 const empty = () => ledgerSchema.parse({ version: 1, repository, probe: false, lastSuccess: null, lastAttempt: null });
 const good = () => mergeAttempt(empty(), completed);
 const failure = (overrides = {}) => attemptSchema.parse({ ...completed, runId: 101, completedAt: new Date(now).toISOString(), result: "failure", reason: "run-failed", ...overrides });
 const source = apiRunSchema.parse({ id: 100, run_attempt: 1, workflow_id: 10, head_sha: revision, head_branch: "main",
   status: "completed", conclusion: "success", event: "workflow_dispatch", updated_at: new Date(now).toISOString(), head_repository: { full_name: repository } });
-const run = activeRunSchema.parse({ version: 1, status: "completed", phaseA: "completed", phaseB: "completed", revision, dirty: false,
+const run = activeRunSchema.parse({ version: 1, profile: activePolicy.profile, status: "completed", phaseA: "completed", phaseB: "completed", revision, dirty: false,
   passive: { status: "completed", pending: 0, requests: 546, failedScenarios: [], reasons: [] },
-  reasons: [], control: false, controlFound: false, requests: 41, rejected: 0, durationMs: 178000,
-  targets: [["anonymous", "none"], ["owner", "createList"], ["recipient", "addItem"]].map(([role, operation]) => ({ role, operation,
+  reasons: [], control: false, controlFound: false, requests: 70, rejected: 0, durationMs: 178000,
+  targets: activePolicy.targets.map(({ role, operation }) => ({ role, operation, persisted: true, rendered: true,
     requests: 10, mutations: 6, successfulMutations: 6, sessionBefore: true, sessionAfter: true, seedStatus: 200, seedSuccess: true,
     rules: [{ id: "40012", requests: 2, state: "complete" }, { id: "40018", requests: 7, state: "complete" }] })) });
 const names = ["Isolated passive and active phases", "Publish safe phase reports", "Upload safe reports", "Mark technical outcome"];
 const jobs = [{ name: "ZAP manual isolated (advisory)", conclusion: "success", steps: names.map(name => ({ name, conclusion: "success", completed_at: completed.completedAt })) }];
 const policy = readPolicy({ version: 1, decisions: [] }, "2026-10-18");
-const reports = ["a", "b", "c"].map(scope => buildReport({ status: "completed", revision, dirty: false, startedAt: completed.completedAt,
-  image: "unknown", scanner: hash("scanner"), scope: hash(scope), target: "local-http", formatVersion: 2, normalizationVersion: 1, policyDigest: policy.digest }, [], policy));
+const reports = [hash("phase-a"), hash([activePolicy, "active", false]), hash([activePolicy, "passive", false])].map(scope => buildReport({ status: "completed", revision, dirty: false, startedAt: completed.completedAt,
+  image: "unknown", scanner: hash("scanner"), scope, target: "local-http", formatVersion: 2, normalizationVersion: 1, policyDigest: policy.digest }, [], policy));
 
 describe("свежесть и журнал", () => {
+  it("старый журнал читается без потери даты, но не подтверждает новый профиль", () => {
+    const legacy = { ...completed, profile: undefined };
+    const ledger = mergeAttempt(empty(), attemptSchema.parse(legacy));
+    expect(ledger.lastSuccess?.completedAt).toBe(completed.completedAt);
+    expect(health(ledger, now)).toBe("profile-outdated");
+    const stored = readLedger(renderLedger(ledger, now).body, repository, false);
+    expect(stored.lastSuccess?.profile).toBe("manual-v1");
+    expect(transition(stored, stored, "open", now + 1000).comment).toBe(false);
+    const recovered = mergeAttempt(stored, { ...completed, runId: 102, completedAt: new Date(now).toISOString() });
+    expect(health(recovered, now)).toBe("healthy");
+    expect(mergeAttempt(recovered, { ...completed, profile: "manual-v1", runId: 103, completedAt: new Date(now + 1000).toISOString() }).lastSuccess?.runId).toBe(102);
+  });
   it("40 дней включительно свежо; следующий момент — stale", () => {
     const ledger = good();
     expect(health(ledger, Date.parse(completed.completedAt) + maxAgeMs)).toBe("healthy");
@@ -112,6 +124,9 @@ describe("доверие к завершению скана", () => {
   it.each([
     { status: "incomplete", phaseB: "incomplete" }, { dirty: true }, { control: true }, { revision: "b".repeat(40) },
     { passive: { ...run.passive, pending: 1 } }, { passive: undefined },
+    { profile: "manual-v1" }, { profile: undefined }, { targets: run.targets.slice(0, 3) },
+    { targets: run.targets.map(target => ({ ...target, persisted: false })) },
+    { targets: run.targets.map(target => ({ ...target, rendered: false })) },
     { targets: run.targets.map(target => ({ ...target, successfulMutations: 0 })) },
     { targets: run.targets.map(target => ({ ...target, rules: [{ id: "40012", requests: 2, state: "complete" }] })) },
   ])("зелёная advisory-обёртка не оправдывает неполный отчёт %j", patch => {
@@ -122,6 +137,7 @@ describe("доверие к завершению скана", () => {
     expect(() => validateCompletion(source, [], run, reports, now)).toThrow();
     expect(() => validateCompletion(source, [{ ...jobs[0], steps: jobs[0].steps.map(step => ({ ...step, conclusion: "skipped" })) }], run, reports, now)).toThrow();
     expect(() => validateCompletion(source, jobs, run, [reports[0], reports[0], reports[0]], now)).toThrow();
+    expect(() => validateCompletion(source, jobs, run, reports.map(report => ({ ...report, run: { ...report.run, scope: hash(report.run.scope) } })), now)).toThrow();
     expect(() => validateCompletion(source, jobs, run, reports.map(report => ({ ...report, run: { ...report.run, revision: "b".repeat(40) } })), now)).toThrow();
   });
 });

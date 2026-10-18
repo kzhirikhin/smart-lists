@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { zapApi, ZapApiError, startSeededScan, nativeScanFinished } from "./active-api";
+import { zapApi, ZapApiError, startSeededScan, nativeScanFinished, resetExcludedParams } from "./active-api";
 
 it("POST API использует точный Content-Type без charset, секретные параметры не в URL", async () => {
   const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ Result: "OK" }));
@@ -34,4 +34,13 @@ it("отказ ZAP API не превращается в успешную нас�
   const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ code: "content_type_not_supported", message: "ZAP_PRIVATE_NOTE" }));
   await expect(zapApi("ascan", "action", "addScanPolicy", {}, transport)).rejects.toThrow(/^active-infrastructure$/);
   await expect(zapApi("http://outside", "action", "scan", {}, transport)).rejects.toThrow(/^active-infrastructure$/);
+});
+
+it("смена Action удаляет старые исключения в обратном порядке и отказывает на неизвестной форме", async () => {
+  const api = vi.fn<typeof zapApi>().mockResolvedValueOnce({ excludedParams: [{ name: "1_title" }, { name: "1_itemName" }] }).mockResolvedValue({ Result: "OK" });
+  await resetExcludedParams(api);
+  expect(api.mock.calls).toEqual([["ascan", "view", "excludedParams"], ["ascan", "action", "removeExcludedParam", { idx: "1" }], ["ascan", "action", "removeExcludedParam", { idx: "0" }]]);
+  api.mockReset().mockResolvedValue({ excludedParams: "unknown" });
+  await expect(resetExcludedParams(api)).rejects.toThrow("active-infrastructure");
+  expect(api).toHaveBeenCalledTimes(1);
 });
