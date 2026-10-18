@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-18 (ZAP: расписание, журнал и карта покрытия)
+**Последнее обновление:** 2026-10-18 (ZAP и плановые обновления зависимостей)
 
 Согласована [спецификация ZAP](docs/zap-plan.md). Целевой контур:
 отдельная advisory job пассивного анализа выбранных Playwright-сценариев рядом
@@ -176,18 +176,28 @@ Smart Lists — локализованное веб-приложение для 
 
 ## Актуальный стек
 
-- Next.js и `eslint-config-next` `16.3.8`, App Router, Server Components и Server Actions;
-- React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.4.6` и dnd-kit;
-- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.9`;
+- Next.js и `eslint-config-next` `16.4.0`, App Router, Server Components и Server Actions;
+- React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.5.1` и dnd-kit;
+- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.10`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
-- `next-intl` `4.14.8`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
-- Pusher, приватный S3-бакет через AWS SDK `3.1143.0` и внешний FastAPI-сервис
+- `next-intl` `4.14.9`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
+- Pusher, приватный S3-бакет через AWS SDK `3.1149.0` и внешний FastAPI-сервис
   AI-инсайтов;
-- Zod, Pino, React Hot Toast, `next-themes` и `lucide-react` `1.49.0`;
-- Vitest `5.0.2` (точная версия) — юнит-тесты, статические security-контракты и интеграционные тесты; требуется Node.js >=22.12, проект использует Node 24;
+- Zod, Pino `10.4.0`, React Hot Toast, `next-themes` и `lucide-react` `1.55.0`;
+- Vitest `5.0.3` (точная версия), Playwright `1.64.0` — тестовый стек; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Next.js и его ESLint-конфигурация обновляются совместно: security-контракт
+проверяет равенство версий manifest/lock. ESLint 16.4 включает новые правила
+React Compiler; пять точечных исключений сохраняют существующую синхронизацию
+AI-флага/гидратации темы и побочные эффекты только внутри событий подпункта/DnD.
+Глобальные правила и `react/no-danger` не ослаблены. OIDC AWS provider — `3.3.11`,
+google-auth-library — `11.2.0`, pino-pretty — `13.2.0`.
+AWS provider транзитивно использует OIDC `4.0.0` с необязательным источником
+`VERCEL_OIDC_TOKEN_FILE` после request header и перед env token. Приложение
+переменную не задаёт; прямой OIDC для GCP остаётся на `3.8.10`.
 
 TypeScript 6.0.3 закреплён точно; совместимый `typescript-eslint@8` — override
 8.71.0. `ignore@7` оставлен на 7.0.5, чтобы обновление компилятора не подтянуло
