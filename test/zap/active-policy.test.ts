@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { activePolicy, activeRunSchema, admitMutation, assertActiveTarget, canonicalMultipart, multipart, summarizePassive, type ActiveTarget } from "./active-policy";
+import { activePolicy, activeRunSchema, admitMutation, assertActiveTarget, canonicalMultipart, multipart, summarizePassive, withTargetValue, type ActiveTarget } from "./active-policy";
 
 const form = (title: string, space = "space_test") => `--zapBoundary\r\nContent-Disposition: form-data; name="1_title"\r\n\r\n${title}\r\n--zapBoundary\r\nContent-Disposition: form-data; name="1_spaceId"\r\n\r\n${space}\r\n--zapBoundary--\r\n`;
 const target: ActiveTarget = { role: "owner", operation: "createList", path: "/en/spaces/space_test", method: "POST", field: "1_title", body: form("seed"), headers: { "content-type": "multipart/form-data; boundary=zapBoundary", "next-action": "a".repeat(40), cookie: "authjs.session-token=synthetic" } };
 
 describe("ограничения активной фазы", () => {
+  it("контрольный текст меняет только поле seed и сохраняет его service/space значения", () => {
+    const body = withTargetValue(target, "<svg onload=globalThis.__zapXss=1>");
+    expect(admitMutation(target, "POST", target.path, body, target.headers["content-type"])).toEqual({ allowed: true, mutated: true });
+    expect(multipart(body, target.headers["content-type"]).get("1_spaceId")).toBe("space_test");
+    expect(() => withTargetValue(target, "--zapBoundary")).toThrow();
+  });
   it.each(["renameList", "renameItem"] as const)("%s сохраняет идентификаторы и разрешённую роль", operation => {
     const field = operation === "renameList" ? "1_title" : "1_itemName";
     const id = operation === "renameList" ? "listId" : "itemId";

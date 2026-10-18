@@ -45,12 +45,12 @@ export async function resetExcludedParams(api: typeof zapApi = zapApi) {
   for (let idx = raw.length - 1; idx >= 0; idx--) await api("ascan", "action", "removeExcludedParam", { idx: String(idx) });
 }
 
-/** Chromium может освободить body RSC-ответа после навигации. Подтверждаем
- * завершение HTTP и запись в БД, не читая body браузера. Повторяются только
+/** Chromium может освободить RSC-ответ после навигации. Подтверждаем
+ * HTTP 200 и запись в БД без зависимости от lifetime response body. Повторяются только
  * чтения фикстуры; саму мутацию/атаку функция никогда не переотправляет. */
-export async function confirmBrowserMutation(response: { status(): number; finished(): Promise<Error | null> } | null,
+export async function confirmBrowserMutation(response: { status(): number } | null,
   persisted: () => Promise<boolean>, wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))) {
-  if (!response || response.status() !== 200 || await response.finished()) throw new Error("active-coverage");
+  if (!response || response.status() !== 200) throw new Error("active-coverage");
   for (let attempt = 0; attempt < 50; attempt++) {
     if (await persisted()) return;
     await wait(100);

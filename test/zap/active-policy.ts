@@ -89,6 +89,20 @@ export function admitMutation(target: ActiveTarget, method: string, path: string
   } catch { return { allowed: false, mutated: false }; }
 }
 
+/** Контрольное сохранение текста использует те же frozen поля, что native
+ * seed. Это не произвольный HTTP-клиент и не обход клиентом server validation. */
+export function withTargetValue(target: ActiveTarget, value: string) {
+  assertActiveTarget(target);
+  if (target.method !== "POST") throw new Error("active-body-refused");
+  const type = target.headers["content-type"];
+  const boundary = /boundary=([\w-]+)$/.exec(type)![1];
+  const fields = multipart(target.body, type);
+  fields.set(target.field, value);
+  const body = [...fields].map(([name, field]) => `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${field}\r\n`).join("") + `--${boundary}--\r\n`;
+  if (!admitMutation(target, target.method, target.path, body, type).allowed) throw new Error("active-body-refused");
+  return body;
+}
+
 const count = z.number().int().min(0).max(4_000_000);
 const scenarioIds = scenarios.map(scenario => scenario.id);
 const passiveSummarySchema = z.object({

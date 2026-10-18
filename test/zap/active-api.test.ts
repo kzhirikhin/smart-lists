@@ -55,11 +55,14 @@ it("подтверждает браузерную мутацию по БД пр�
 });
 it("HTTP 200 без записи в БД не даёт подтверждения", async () => {
   const persisted = vi.fn().mockResolvedValue(false);
-  await expect(confirmBrowserMutation({ status: () => 200, finished: async () => null }, persisted, async () => {})).rejects.toThrow("active-coverage");
+  await expect(confirmBrowserMutation({ status: () => 200 }, persisted, async () => {})).rejects.toThrow("active-coverage");
   expect(persisted).toHaveBeenCalledTimes(50);
 });
-it.each([400, 200])("отказывает при HTTP-ошибке или незавершённом ответе (%s)", async status => {
+it.each([400, 500])("отказывает при HTTP-ошибке (%s)", async status => {
   const persisted = vi.fn().mockResolvedValue(true);
-  await expect(confirmBrowserMutation({ status: () => status, finished: async () => Error("network") }, persisted)).rejects.toThrow("active-coverage");
+  await expect(confirmBrowserMutation({ status: () => status }, persisted)).rejects.toThrow("active-coverage");
   expect(persisted).not.toHaveBeenCalled();
+});
+it("отказывает при отсутствии HTTP-ответа", async () => {
+  await expect(confirmBrowserMutation(null, async () => true)).rejects.toThrow("active-coverage");
 });

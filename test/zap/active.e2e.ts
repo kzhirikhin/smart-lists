@@ -6,7 +6,7 @@ import { makeUser, makeList, makeItems, shareListWith } from "../e2e/factories";
 import { signInAs } from "../e2e/fixtures";
 import { addItem, createList, itemRow, listCard, openSpace } from "../e2e/helpers";
 import { E2E_DATABASE_URL } from "../e2e/env";
-import { activePolicy, activeRunSchema, assertActiveTarget, canonicalMultipart, multipart, type ActiveRun, type ActiveTarget } from "./active-policy";
+import { activePolicy, activeRunSchema, assertActiveTarget, canonicalMultipart, multipart, withTargetValue, type ActiveRun, type ActiveTarget } from "./active-policy";
 import { createActiveGate } from "./active-gate";
 import { buildReport, hash, readPolicy, safeSubject, sanitizeAlerts } from "./report";
 import { zapApi, ZapApiError, startSeededScan, nativeScanFinished, resetExcludedParams, confirmBrowserMutation } from "./active-api";
@@ -66,7 +66,7 @@ test("ограниченный active scan после успешной пасс�
     const capture = async (context: BrowserContext, operation: Exclude<ActiveTarget["operation"], "none">, action: () => Promise<void>, role: "owner" | "recipient", expectedId: string, confirmed: () => Promise<boolean>) => {
       result.seedOperation = operation; result.seedPhase = "request";
       const page = context.pages()[0];
-      const wire = page.waitForRequest(req => req.method() === "POST" && actionNames[req.headers()["next-action"]] === operation);
+      const wire = page.waitForRequest(req => req.method() === "POST" && actionNames[req.headers()["next-action"]] === operation, { timeout: 10_000 });
       await action();
       const req: Request = await wire;
       // UI helpers могут завершиться на оптимистичном состоянии. Следующая
@@ -95,18 +95,25 @@ test("ограниченный active scan после успешной пасс�
     };
     const rename = async (page: Page, scope: Locator, kind: "list" | "item", value: string, read: () => Promise<string>) => {
       const operation = kind === "list" ? "renameList" : "renameItem";
-      const done = page.waitForResponse(response => response.request().method() === "POST" && actionNames[response.request().headers()["next-action"]] === operation);
+      const done = page.waitForResponse(response => response.request().method() === "POST" && actionNames[response.request().headers()["next-action"]] === operation, { timeout: 10_000 });
       await scope.getByTestId(kind === "list" ? "list-title" : "item-name").click();
       const input = scope.getByTestId(kind === "list" ? "list-title-input" : "item-name-input");
       await input.fill(value); await input.press("Enter");
       const response = await done;
       await confirmBrowserMutation(response, async () => await read() === value);
     };
-    const renderText = async (page: Page, scope: () => Locator, kind: "list" | "item", read: () => Promise<string>) => {
+    const renderText = async (page: Page, scope: () => Locator, kind: "list" | "item", seed: ActiveTarget, read: () => Promise<string>) => {
       // Вредоносная разметка — синтетический текст только эфемерной БД.
       const value = "<svg onload=globalThis.__zapXss=1>";
-      await page.reload();
-      await rename(page, scope(), kind, value, read);
+      // После fuzzing название может быть невидимым/нулевой ширины. Повторное
+      // открытие редактора не требуется для проверки безопасного отображения.
+      const headers: Record<string, string> = { ...seed.headers, origin: activePolicy.upstream, "accept-encoding": "identity" };
+      for (const name of ["content-length", "transfer-encoding", "host"]) delete headers[name];
+      const response = await page.context().request.post(activePolicy.upstream + seed.path, {
+        headers, data: withTargetValue(seed, value), maxRedirects: 0, timeout: 10_000,
+      });
+      if (!/"success":true/.test(await response.text())) throw new Error("active-coverage");
+      await confirmBrowserMutation(response, async () => await read() === value);
       await page.reload();
       const label = scope().getByTestId(kind === "list" ? "list-title" : "item-name");
       await expect(label).toHaveText(value);
@@ -133,13 +140,13 @@ test("ограниченный active scan после успешной пасс�
       const readTitle = async () => (await db!.list.findUniqueOrThrow({ where: { id: list.id } })).title;
       const renameList = await capture(ownerContext, "renameList", () => rename(ownerPage, listCard(ownerPage, list.id), "list", "ZAP rename list", readTitle), "owner", owner.id, async () => await readTitle() === "ZAP rename list");
       renameList.verify = async accepted => accepted !== undefined && await readTitle() === accepted;
-      renameList.render = () => renderText(ownerPage, () => listCard(ownerPage, list.id), "list", readTitle);
+      renameList.render = () => renderText(ownerPage, () => listCard(ownerPage, list.id), "list", renameList.seed, readTitle);
       const row = () => itemRow(listCard(recipientPage, list.id), renameFixture.id);
       await recipientPage.reload();
       const readName = async () => (await db!.item.findUniqueOrThrow({ where: { id: renameFixture.id } })).name;
       const renameItem = await capture(recipientContext, "renameItem", () => rename(recipientPage, row(), "item", "ZAP rename item", readName), "recipient", recipient.id, async () => await readName() === "ZAP rename item");
       renameItem.verify = async accepted => accepted !== undefined && await readName() === accepted;
-      renameItem.render = () => renderText(recipientPage, row, "item", readName);
+      renameItem.render = () => renderText(recipientPage, row, "item", renameItem.seed, readName);
       if (probe === "session") await db.session.deleteMany({ where: { userId: recipient.id } });
     }
     // Ни один active запрос не начинается до проверки ВСЕХ сессий.
