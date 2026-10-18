@@ -141,10 +141,29 @@ CI 39091013205 после merge зелёные, Vercel success. Оба workflows
 | Локальные проверки | lint/typecheck, 798 unit, 560 static security; Gitleaks diff/new files без находок; валидатор дополнительно проверен на реальном старом artifact и REST jobs |
 
 Первый месячный cron ожидается 2026-11-05, 10:17 Asia/Tokyo; его фактическое
-срабатывание ещё не наблюдалось. Срабатывание daily cron тоже не подтверждено:
-в приёмке использованы workflow_dispatch и workflow_run. Email/push не проверены;
+срабатывание ещё не наблюдалось. При первоначальной приёмке использованы
+workflow_dispatch и workflow_run; один daily schedule подтверждён ниже. Email/push не проверены;
 подтверждены API-записи/assignee/упоминание в GitHub. Реальный аварийный отказ
 сканера/expiry 40 дней в Actions не вызывался: failure/stale были отдельными пробами.
 Локально проверялись схемы/известные ZIP-имена и прочитан код обработки ошибок;
 повреждённый ZIP/ошибка самого REST API не подсовывались в live. Восстановление
 того же attempt после временного отказа закреплено отдельным unit-тестом.
+
+### Миграция на manual-v2
+
+После PR #241 контроллер [39107211069](https://github.com/kzhirikhin/smart-lists/actions/runs/39107211069)
+ожидаемо завершился failure: #238 получил profile-outdated/open, сохранив
+старый lastSuccess=39091016597 и дату 2026-10-18T02:48:34Z.
+Новый [main-run 39107196382](https://github.com/kzhirikhin/smart-lists/actions/runs/39107196382)
+на SHA 85850f55a94634355436e98a1bce8886933db587 завершил A/B: 559 passive,
+pending=0, 61 active, все пять целей, persisted/rendered новых целей true.
+Девять safe-файлов воспроизведены и валидированы, API expiry 2026-11-17T07:25:57Z.
+Автоматический [workflow_run 39107635885](https://github.com/kzhirikhin/smart-lists/actions/runs/39107635885)
+success обновил #238 до healthy/closed, текущего digest и даты анализа
+2026-10-18T07:25:56Z; время проверки контроллера не подменило время анализа.
+
+[39107674127](https://github.com/kzhirikhin/smart-lists/actions/runs/39107674127)
+event=schedule, success, тот же SHA: наблюдался один запуск daily-контроллера.
+Created/started_at 2026-10-18T07:26:36Z при cron 02:43 UTC — задержка около
+4 часов 44 минут; точное время будущих запусков не гарантируется.
+Это не проверка месячного скана, доставки email или внешнего watchdog.

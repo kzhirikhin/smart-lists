@@ -154,8 +154,16 @@ pending=0, 61 active, новые цели по 6 успешных мутаций
 текста после reload прошла. Узкие active-policy/api/operations/manual-report тесты
 проверяют ограничения и миграцию: старый журнал читается с исходной датой, но
 profile-outdated до нового digest. Digest включает цели/лимиты/правила, scope B
-перепроверяется. Это не тест всех wire-форм/всего XSS/CSRF/обхода прав; приёмка
-нового main/журнала ещё не выполнена, локальный source dirty=true.
+перепроверяется. Это не тест всех wire-форм/всего XSS/CSRF/обхода прав.
+Main-приёмка после PR #241: 39107196382 completed A/B на
+85850f55a94634355436e98a1bce8886933db587, dirty=false, 559 passive/pending=0,
+61 active, по 6 успешных мутаций четырёх Actions, новые persisted/rendered=true.
+Девять safe-файлов строго проверены и воспроизведены, Gitleaks чистый, API expiry
+2026-11-17T07:25:57Z. Миграция #238 через profile-outdated (39107211069) сохранила
+прежнюю дату; workflow_run 39107635885 обновил digest/lastSuccess до main-run
+с датой анализа 2026-10-18T07:25:56Z и закрыл healthy. Daily schedule
+39107674127 success, created_at 07:26:36Z при cron 02:43 UTC: факт одного
+задержанного запуска, не гарантия будущих cron/email или удаления artifacts.
 PR-run 39094262001: A completed/546, B error на seed, 0 active; technical job
 failure и пять safe-файлов, не completed. Подготовка целей ждёт
 HTTP 200 и запись в БД, seedOperation/seedPhase/failureClass — закрытые enum без raw ошибок.
