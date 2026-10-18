@@ -27,10 +27,11 @@ it.each([["--manual", "--target=https://smart-lists-iota.vercel.app"], ["--manua
   expect(child.stdout).not.toContain("Building");
 });
 
-it("manual workflow не запускается автоматически и не получает release-полномочий", () => {
+it("двухфазный workflow запускается ежемесячно/вручную и не получает release-полномочий", () => {
   const yaml = readFileSync(new URL("../../.github/workflows/zap-manual.yml", import.meta.url), "utf8");
   expect(yaml).toContain("workflow_dispatch:");
-  expect(yaml).not.toMatch(/^\s*(schedule|pull_request|pull_request_target|push):/m);
+  expect(yaml).toContain("cron: '17 1 5 * *'");
+  expect(yaml).not.toMatch(/^\s*(pull_request|pull_request_target|push):/m);
   expect(yaml).toContain("contents: read");
   expect(yaml).toContain("persist-credentials: false");
   expect(yaml).toContain("ref: ${{ github.sha }}");

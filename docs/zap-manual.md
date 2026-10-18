@@ -22,8 +22,9 @@ npm run test:zap:manual
 workflow. Он собирает эту ревизию локально на
 одноразовом runner; SHA production-коммита не означает атаку production-сайта.
 Job advisory, token read-only, checkout без сохранения credentials, без secrets,
-Environment/OIDC. Нет автоматического запуска на push/PR и нет расписания.
-Общий npm cache и автоматический package-manager cache выключены: выбранный
+Environment/OIDC. Нет автоматического запуска на push/PR. Этап 6 добавляет
+[месячное расписание и отдельный контроль состояния](zap-operations.md).
+Общий npm cache и автоматический package-manager cache выключены:
 выбранная ревизия не должна отравлять кеш default branch. Произвольный SHA
 через input не исполняется. CodeQL alert #7
 (`js/reflected-xss`) относится только к намеренно уязвимой учебной мишени
@@ -169,7 +170,8 @@ Timeout 65/61 минут задан конфигурацией, принудит
 Fault/control-пробы остаются локальными доказательствами; в Actions проверен
 успешный профиль. Основной CI 39045331774, миграция и Vercel прошли независимо.
 
-Этап 5 завершён в этих границах. Расписание/давность — этап 6, не начат.
+Этап 5 завершён в этих границах. [Расписание/давность](zap-operations.md) —
+этап 6, реализуется отдельно, без расширения этих трёх активных входов.
 
 Источники: [политики ZAP](https://www.zaproxy.org/docs/desktop/start/features/scanpolicy/),
 [векторы](https://www.zaproxy.org/docs/desktop/ui/dialogs/options/ascaninput/),
