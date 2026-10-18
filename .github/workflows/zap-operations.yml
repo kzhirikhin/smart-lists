@@ -1,0 +1,56 @@
+name: ZAP Operations
+
+on:
+  workflow_run:
+    workflows: ["ZAP Manual (advisory)"]
+    types: [completed]
+  schedule:
+    # 11:43 Asia/Tokyo, после максимального окна месячного скана.
+    - cron: '43 2 * * *'
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: Проверка сигнала в отдельном тестовом Issue
+        type: choice
+        default: none
+        options: [none, failure, stale, recovery]
+
+permissions:
+  contents: read
+
+cache-mode: none
+
+concurrency:
+  group: zap-operations
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    # Код контроллера всегда из default branch, не из завершившегося скана.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install dependencies without hooks
+        run: npm ci --ignore-scripts
+
+      - name: Verify completion and update operational journal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZAP_OPERATIONS_PROBE: ${{ inputs.probe || 'none' }}
+          ZAP_SOURCE_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+        run: node scripts/zap/operations.mjs
