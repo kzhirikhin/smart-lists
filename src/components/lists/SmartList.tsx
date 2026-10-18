@@ -1028,6 +1028,8 @@ export default function SmartList({
     const trimmedName = newSubItemName.trim();
     if (!trimmedName) return;
 
+    // Вызывается только из submit-события формы подпункта, не при рендере.
+    // eslint-disable-next-line react-hooks/purity
     const tempId = `temp-${Date.now()}`;
 
     startTransition(() => {
@@ -1280,6 +1282,8 @@ export default function SmartList({
     // (правило — в `globals.css`). Касается любого жеста записи, не только
     // переноса в другой список.
     dragActiveRef.current = true;
+    // Обработчик начала жеста синхронизирует DOM вне React; при рендере не вызывается.
+    // eslint-disable-next-line react-hooks/immutability
     document.body.dataset.itemDragging = "true";
 
     // Цели переноса снимаются один раз на жест и только для пунктов верхнего
@@ -1340,6 +1344,8 @@ export default function SmartList({
     dropTargetIdRef.current = null;
     dragActiveRef.current = false;
     setDropHighlight(null);
+    // Обработчик конца жеста снимает тот же DOM-флаг, не изменяя props/state.
+    // eslint-disable-next-line react-hooks/immutability
     delete document.body.dataset.itemDragging;
 
     const finalOrder = dragOrder?.level === level ? dragOrder.items : null;
