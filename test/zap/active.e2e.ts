@@ -42,6 +42,7 @@ test("ограниченный active scan после успешной пасс�
       phaseA.status !== "completed" || phaseA.pending !== 0 || phaseA.coverage.length !== 22 || phaseA.egressProbe !== "external-ip-blocked") throw new Error("active-precondition-failed");
     db = createPrismaClient(E2E_DATABASE_URL);
     result.step = "seed";
+    result.seedPhase = "fixtures";
     const refs = JSON.parse(await readFile(".next/server/server-reference-manifest.json", "utf8")).node as Record<string, { exportedName: string }>;
     const actionNames = Object.fromEntries(Object.entries(refs).map(([id, value]) => [id, value.exportedName]));
     const targets: { seed: ActiveTarget; session: () => Promise<boolean>; verify?: (accepted: string | undefined) => Promise<boolean>; render?: () => Promise<boolean> }[] = [];
@@ -63,10 +64,17 @@ test("ограниченный active scan после успешной пасс�
       return context;
     };
     const capture = async (context: BrowserContext, operation: Exclude<ActiveTarget["operation"], "none">, action: () => Promise<void>, role: "owner" | "recipient", expectedId: string) => {
+      result.seedOperation = operation; result.seedPhase = "request";
       const page = context.pages()[0];
       const wire = page.waitForRequest(req => req.method() === "POST" && actionNames[req.headers()["next-action"]] === operation);
       await action();
       const req: Request = await wire;
+      // UI helpers могут завершиться на оптимистичном состоянии. Следующая
+      // операция начинается только после настоящего ответа и revalidation.
+      result.seedPhase = "response";
+      const response = await req.response();
+      if (!response || response.status() !== 200 || !/"success":true/.test(await response.text())) throw new Error("active-coverage");
+      result.seedPhase = "format";
       const headers = await req.allHeaders();
       const normalized = canonicalMultipart(req.postData() ?? "", headers["content-type"]);
       const body = normalized.body;
@@ -114,14 +122,17 @@ test("ограниченный active scan после успешной пасс�
       const ownerContext = await newContext("list-create", "1");
       const recipientContext = await newContext("share", "2");
       await signInAs(ownerContext, db, owner); await signInAs(recipientContext, db, recipient);
+      result.seedPhase = "navigation";
       const ownerPage = await ownerContext.newPage(); const recipientPage = await recipientContext.newPage();
       await openSpace(ownerPage, owner); await openSpace(recipientPage, recipient);
       await capture(ownerContext, "createList", () => createList(ownerPage, "ZAP synthetic seed"), "owner", owner.id);
       await capture(recipientContext, "addItem", () => addItem(listCard(recipientPage, list.id), "ZAP synthetic item"), "recipient", recipient.id);
+      await ownerPage.reload();
       const renameList = await capture(ownerContext, "renameList", () => rename(ownerPage, listCard(ownerPage, list.id), "list", "ZAP rename list"), "owner", owner.id);
       renameList.verify = async accepted => accepted !== undefined && (await db!.list.findUniqueOrThrow({ where: { id: list.id } })).title === accepted;
       renameList.render = () => renderText(ownerPage, () => listCard(ownerPage, list.id), "list");
       const row = () => itemRow(listCard(recipientPage, list.id), renameFixture.id);
+      await recipientPage.reload();
       const renameItem = await capture(recipientContext, "renameItem", () => rename(recipientPage, row(), "item", "ZAP rename item"), "recipient", recipient.id);
       renameItem.verify = async accepted => accepted !== undefined && (await db!.item.findUniqueOrThrow({ where: { id: renameFixture.id } })).name === accepted;
       renameItem.render = () => renderText(recipientPage, row, "item");
@@ -207,6 +218,7 @@ test("ограниченный active scan после успешной пасс�
       }
     }
     gate.closeGate();
+    result.seedPhase = "render";
     for (const check of renderChecks) await check();
     for (const { session } of targets) if (!(await session())) throw new Error("active-session-lost");
     result.step = "report";
@@ -257,7 +269,11 @@ test("ограниченный active scan после успешной пасс�
     }
     result.phaseB = "completed"; result.status = "completed"; result.step = "finished";
   } catch (error) {
+    result.failureClass = error instanceof Error && error.name === "TimeoutError" ? "timeout" : error instanceof Error && "matcherResult" in error ? "assertion" : "other";
     const message = error instanceof Error ? error.message : "";
+    const site = error instanceof Error ? /\/(active\.e2e|active-api|report)\.ts:(\d{1,4}):/.exec(error.stack ?? "") : null;
+    if (site) result.failureSite = `${site[1]}.ts:${site[2]}`;
+    result.failureHint = message === "invalid-api-response" || message === "api-size-limit" || message === "active-infrastructure" ? message : "unclassified";
     if (error instanceof ZapApiError) result.apiCode = error.code;
     const known = ["active-precondition-failed", "active-budget", "active-session-lost", "active-coverage", "active-queue"] as const;
     const reason = message === "active-body-refused" || message === "active-target-refused" ? "active-wire-format" : known.find(reason => reason === message) ?? "active-infrastructure";

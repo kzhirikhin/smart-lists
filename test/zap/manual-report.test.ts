@@ -19,6 +19,8 @@ it("ручной отчёт принимает только закрытые м�
   expect(() => renderManual({ ...run, error: "ZAP_PRIVATE_NOTE" })).toThrow();
   expect(() => renderManual({ ...run, targets: [{ ...run.targets[0], cookie: "private" }] })).toThrow();
   expect(() => renderManual({ ...run, reasons: ["<script>private</script>"] })).toThrow();
+  expect(() => renderManual({ ...run, failureClass: "ZAP_PRIVATE_NOTE" })).toThrow();
+  expect(() => renderManual({ ...run, failureSite: "private-path:1" })).toThrow();
   expect(() => renderManual({ ...run, targets: [] })).toThrow();
   expect(() => renderManual({ ...run, requests: 601 })).toThrow();
   expect(() => renderManual({ ...run, phaseA: "incomplete" })).toThrow();

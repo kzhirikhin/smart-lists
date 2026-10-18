@@ -11,6 +11,8 @@ export function renderManual(raw: unknown) {
     `Фаза A: ${run.phaseA}; фаза B: ${run.phaseB}; учебная мишень: ${run.control}.`,
     `Пассивные запросы: ${run.passive?.requests ?? "unknown"}; очередь: ${run.passive?.pending ?? "unknown"}; неполные сценарии: ${run.passive?.failedScenarios.join(", ") || "нет"}.`,
     `Последний шаг: ${run.step ?? "precondition"}.`,
+    `Подготовка: ${run.seedOperation ?? "none"}/${run.seedPhase ?? "none"}; тип отказа: ${run.failureClass ?? "нет"}.`,
+    `Место отказа: ${run.failureSite ?? "none"}; причина: ${run.failureHint ?? "none"}.`,
     `Последний API: ${run.lastApi ?? "unknown"}; отказ API: ${run.apiCode ?? "нет"}.`,
     `Запросы active: ${run.requests}/${activePolicy.maxRequests}; отклонено gate: ${run.rejected}; время: ${run.durationMs} ms.`,
     `Правила: ${activePolicy.rules.join(", ")}; сила LOW; один поток; query/multipart.`,

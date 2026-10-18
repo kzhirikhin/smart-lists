@@ -107,6 +107,11 @@ export function summarizePassive(raw: unknown) {
 export const activeRunSchema = z.object({
   version: z.literal(1), profile: z.literal(activePolicy.profile), status: z.enum(["completed", "incomplete", "error"]),
   step: z.enum(["precondition", "seed", "policy", "scan", "report", "finished"]).optional(),
+  seedOperation: z.enum(["createList", "addItem", "renameList", "renameItem"]).optional(),
+  seedPhase: z.enum(["fixtures", "navigation", "request", "response", "format", "render"]).optional(),
+  failureClass: z.enum(["timeout", "assertion", "other"]).optional(),
+  failureSite: z.string().regex(/^(?:active\.e2e|active-api|report)\.ts:\d{1,4}$/).optional(),
+  failureHint: z.enum(["invalid-api-response", "api-size-limit", "active-infrastructure", "unclassified"]).optional(),
   lastApi: z.enum(["sendRequest", "scan", "scans", "scanProgress", "status", "stop", "addScanPolicy", "disableAllScanners", "enableScanners", "setScannerAttackStrength", "setScannerAlertThreshold", "scanners", "setOptionThreadPerHost", "setOptionHostPerScan", "setOptionDelayInMs", "setOptionMaxScanDurationInMins", "setOptionMaxRuleDurationInMins", "setOptionTargetParamsInjectable", "setOptionTargetParamsEnabledRPC", "setOptionAddQueryParam", "newContext", "includeInContext", "setContextInScope", "addExcludedParam", "excludedParams", "removeExcludedParam", "recordsToScan", "numberOfMessages", "message", "messages", "alerts"]).optional(),
   apiCode: z.enum(["missing_parameter", "bad_parameter", "bad_action", "url_not_in_scope", "url_not_found", "bad_type", "bad_other", "does_not_exist", "already_exists", "illegal_parameter", "content_type_not_supported", "unknown"]).optional(),
   revision: z.string().regex(/^(?:[a-f0-9]{40}|unknown)$/).optional(), startedAt: z.iso.datetime().optional(),
