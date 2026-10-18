@@ -108,7 +108,7 @@ try {
   for (const run of candidates) {
     const same = record => record?.runId === run.id && record.attempt === run.run_attempt;
     if (same(ledger.lastSuccess)) continue;
-    if (same(ledger.lastAttempt) && ledger.lastAttempt.reason !== "artifact-unavailable") continue;
+    if (same(ledger.lastAttempt) && !["artifact-unavailable", "job-invalid"].includes(ledger.lastAttempt.reason)) continue;
     if (ledger.lastSuccess && Date.parse(run.updated_at) < Date.parse(ledger.lastSuccess.completedAt)) continue;
     if (inspections++ >= 20) break;
     ledger = mergeAttempt(ledger, await inspect(run));

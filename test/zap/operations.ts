@@ -47,10 +47,17 @@ export function mergeAttempt(ledger: Ledger, input: Attempt): Ledger {
   const record = attemptSchema.parse(input);
   const newer = (previous: Attempt | null) => !previous || Date.parse(record.completedAt) > Date.parse(previous.completedAt) ||
     (record.completedAt === previous.completedAt && (record.runId > previous.runId || (record.runId === previous.runId && record.attempt >= previous.attempt)));
-  return ledgerSchema.parse({ ...ledger,
-    lastAttempt: newer(ledger.lastAttempt) ? record : ledger.lastAttempt,
-    lastSuccess: record.result === "completed" && newer(ledger.lastSuccess) ? record : ledger.lastSuccess,
-  });
+  const same = ledger.lastAttempt?.runId === record.runId && ledger.lastAttempt.attempt === record.attempt;
+  // Временный отказ проверки хранит updated_at workflow, который позже
+  // completed_at анализа. Положительное доказательство того же attempt
+  // заменяет такой отказ, а недоступность уже проверенного artifact — нет.
+  let lastAttempt = ledger.lastAttempt;
+  if (same) {
+    if (lastAttempt?.result !== "completed" && (record.result === "completed" || newer(lastAttempt))) lastAttempt = record;
+  } else if (newer(lastAttempt)) lastAttempt = record;
+  const lastSuccess = record.result === "completed" && newer(ledger.lastSuccess) ? record : ledger.lastSuccess;
+  if (lastSuccess && lastAttempt && Date.parse(lastSuccess.completedAt) > Date.parse(lastAttempt.completedAt)) lastAttempt = lastSuccess;
+  return ledgerSchema.parse({ ...ledger, lastAttempt, lastSuccess });
 }
 
 export function health(ledger: Ledger, now: number) {
@@ -136,6 +143,7 @@ export function transition(previous: Ledger | null, next: Ledger, previousIssueS
   const current = renderLedger(next, now);
   // Предыдущее состояние берём из Issue отдельно: ежедневное увеличение now
   // иначе превратило бы вчерашнее healthy в stale ещё до сравнения.
-  const attemptChanged = JSON.stringify(previous?.lastAttempt) !== JSON.stringify(next.lastAttempt);
+  const key = (record: Attempt | null | undefined) => record ? `${record.runId}:${record.attempt}:${record.result}` : "none";
+  const attemptChanged = key(previous?.lastAttempt) !== key(next.lastAttempt);
   return { ...current, comment: !previous || attemptChanged || previous.observedState !== current.state || previousIssueState !== current.issueState };
 }

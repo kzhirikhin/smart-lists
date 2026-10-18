@@ -40,14 +40,22 @@ completed A/B, dirty=false, 546 passive/pending=0, 41 active, обе Actions п�
 Contents/Metadata read, API retention 30 дней; fault-пробы только локальные.
 Этап 5 завершён в этих границах. Gate фиксирует
 session/Origin/служебные поля: это не тест CORS/CSRF/обхода прав.
-[Этап 6](docs/zap-operations.md), A107, реализуется: месячный скан и ежедневный
+[Этап 6](docs/zap-operations.md), A107: месячный скан и ежедневный
 контроллер давности/сбоев, журнал в bot Issue без срока удаления. Новая граница
 TZ5: source run/artifact → доверенный default-branch контроллер → GitHub Issue.
 Только он получает actions:read/issues:write, не source scanner. Run/attempt,
 repo/ветка/workflow перепроверяются REST; строгий JSON и успешные шаги нужны для
 обновления последнего успеха. Более 40 дней — stale; сбой не сдвигает дату.
-Живая доставка сигнала/расписание ещё не проверены, общий сбой Actions не
-обнаруживается независимым сервисом. Покрытие/High-triage здесь не расширяются.
+PR #237 слит. Live bootstrap #238, изолированные failure/stale/recovery #239
+и отсутствие повторного stale-комментария проверены. Source 39091016597
+completed A/B → workflow_run 39091399377 обновил настоящий lastSuccess;
+история содержит только настоящие completed, без записей проб. Оба workflows
+active, token контроллера read/Issues write подтверждён логом. Будущие cron и
+email не наблюдались; общий сбой Actions не обнаруживается независимым сервисом.
+Покрытие/High-triage здесь не расширяются.
+Повторная верификация временно недоступных jobs/artifact не запускает новые
+атаки. Подтверждённый тот же attempt заменяет временный отказ, сохраняя дату
+анализа; этот крайний случай проверен unit-тестом, не live-сбоем GitHub API.
 Production active scan исключён.
 Ручной checkout использует github.sha выбранной ветки/тега, без SHA input,
 и не использует общий npm/автоматический cache
@@ -132,7 +140,7 @@ flowchart LR
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
 | TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped и trusted main после merge подтверждены 2026-10-17; A105 |
 | TZ4 | active ZAP → внутренний gate → synthetic приложение | Fixed origin/пути/методы/одно поле, hard-budget до upstream; seed session/Origin сохранены, redirect не передаются, другие Actions не сканируются. Только internal network, не production/Preview. Локальные success/control/fault-пробы прошли; Actions success run 39045344867 проверен 2026-10-18, Actions fault/forced timeout не проверены; A106 |
-| TZ5 | source run/artifact → controller → GitHub Issue | Checkout только default branch, не head_sha события; source API/attempt/ветка/собственный repo, точные имена ZIP без extraction/исполнения, строгие JSON, issues:write только контроллеру. Журнал/владельцы repo доверены, email и общий сбой Actions не гарантируются. Реализация в работе, live unknown; A107 |
+| TZ5 | source run/artifact → controller → GitHub Issue | Checkout только default branch, не head_sha события; source API/attempt/ветка/собственный repo, точные имена ZIP без extraction/исполнения, строгие JSON, issues:write только контроллеру. Live bootstrap/probes/workflow_run проверены 2026-10-18. Журнал/владельцы repo доверены, будущий cron/email и общий сбой Actions не гарантируются; A107 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
 

@@ -1,7 +1,7 @@
 # Расписание и состояние ZAP
 
-Этап 6 внедряется без расширения покрытия этапа 5. Реализация подготовлена;
-публикация и живая проверка сигналов ещё не выполнены.
+Эта часть этапа 6 внедрена без расширения покрытия этапа 5. PR #237 слит,
+живая приёмка журнала/сигналов и workflow_run выполнена 2026-10-18.
 
 ## Когда запускается
 
@@ -48,6 +48,11 @@ ZAP Manual через workflow_run и ежедневно в 11:43 Asia/Tokyo (`4
 Старое событие не откатывает более новый результат; rerun различается по attempt
 и фактическому времени завершения. Healthy означает технически полный свежий
 анализ, а не отсутствие находок/High и не безопасность всего приложения.
+Временная недоступность REST jobs/artifact перепроверяется ежедневно без новых
+атак. Положительное подтверждение того же attempt снимает временный отказ,
+сохраняя исходный completed_at анализа; уже подтверждённый attempt не становится
+failure из-за последующего истечения artifact. Уточнение причины того же отказа
+не создаёт дополнительный комментарий.
 
 ## Долговременный журнал и сигнал
 
@@ -106,3 +111,30 @@ email не выдавать за проверенные по наличию YAML
 Разбор security-находок и точные решения остаются в [zap-triage.md](zap-triage.md).
 Этот контроллер сигнализирует о выполнении/давности. Отдельная автоматизация
 новых High, увеличение покрытия и независимый внешний watchdog сюда не включены.
+
+## Приёмка 2026-10-18
+
+[PR #237](https://github.com/kzhirikhin/smart-lists/pull/237) → main
+`c0cb396ca1065776f2fb1865986b2b7b75494f36`. Required PR CI/CodeQL и основной
+CI 39091013205 после merge зелёные, Vercel success. Оба workflows API state=active.
+
+| Проба | Свидетельство |
+|---|---|
+| Настоящий bootstrap | [39091014768](https://github.com/kzhirikhin/smart-lists/actions/runs/39091014768) success, [журнал #238](https://github.com/kzhirikhin/smart-lists/issues/238) создан github-actions[bot], назначен kzhirikhin, healthy/closed; старый полный run 39045344867 подтверждён по artifact |
+| Failure | [39091092970](https://github.com/kzhirikhin/smart-lists/actions/runs/39091092970) ожидаемо failure; [тестовый #239](https://github.com/kzhirikhin/smart-lists/issues/239) open, комментарий с упоминанием владельца |
+| Stale | [39091165402](https://github.com/kzhirikhin/smart-lists/actions/runs/39091165402) ожидаемо failure; второй комментарий/stale; смоделированное время, не настоящая просрочка |
+| Повтор stale | [39091262832](https://github.com/kzhirikhin/smart-lists/actions/runs/39091262832) ожидаемо failure, комментариев осталось 2 |
+| Recovery | [39091353372](https://github.com/kzhirikhin/smart-lists/actions/runs/39091353372) success, тестовый Issue healthy/closed, 3 комментария |
+| Автоматическая цепочка | [Source 39091016597](https://github.com/kzhirikhin/smart-lists/actions/runs/39091016597) A/B completed, dirty=false, 545 passive/pending=0, 41 active; автоматически вызвал [39091399377](https://github.com/kzhirikhin/smart-lists/actions/runs/39091399377), event=workflow_run, success. Настоящий #238 получил новый lastSuccess из completed_at анализа `2026-10-18T02:48:34Z` |
+| Изоляция проб | До завершения нового source настоящий body не менялся; итоговая история #238 содержит только два настоящих completed run (39045344867, 39091016597), probe=false, без probe-failure |
+| Права и хранение | Лог bootstrap: Actions/Contents/Metadata read, Issues write. Новый source artifact 12123136362 expires_at `2026-11-17T02:48:34Z` (30 дней по API); журнал/комментарии отдельно |
+| Локальные проверки | lint/typecheck, 798 unit, 560 static security; Gitleaks diff/new files без находок; валидатор дополнительно проверен на реальном старом artifact и REST jobs |
+
+Первый месячный cron ожидается 2026-11-05, 10:17 Asia/Tokyo; его фактическое
+срабатывание ещё не наблюдалось. Срабатывание daily cron тоже не подтверждено:
+в приёмке использованы workflow_dispatch и workflow_run. Email/push не проверены;
+подтверждены API-записи/assignee/упоминание в GitHub. Реальный аварийный отказ
+сканера/expiry 40 дней в Actions не вызывался: failure/stale были отдельными пробами.
+Локально проверялись схемы/известные ZIP-имена и прочитан код обработки ошибок;
+повреждённый ZIP/ошибка самого REST API не подсовывались в live. Восстановление
+того же attempt после временного отказа закреплено отдельным unit-тестом.
