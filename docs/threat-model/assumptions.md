@@ -157,8 +157,13 @@ profile-outdated до нового digest. Digest включает цели/ли
 перепроверяется. Это не тест всех wire-форм/всего XSS/CSRF/обхода прав; приёмка
 нового main/журнала ещё не выполнена, локальный source dirty=true.
 PR-run 39094262001: A completed/546, B error на seed, 0 active; technical job
-failure и пять safe-файлов, не completed. Подготовка целей ждёт настоящий
-RSC success, seedOperation/seedPhase/failureClass — закрытые enum без raw ошибок.
+failure и пять safe-файлов, не completed. Подготовка целей ждёт завершённый
+HTTP и запись в БД, seedOperation/seedPhase/failureClass — закрытые enum без raw ошибок.
+Run 39095114639: все 61 active, persisted новых целей true, но ошибка чтения
+browser response body на UI-проверке — не completed. Подтверждение теперь
+не читает body Chromium: HTTP finished + bounded scoped DB-read; повторяется
+только чтение, не мутация. Unit active-api закрепляет отказ HTTP 200 без записи
+и работу при недоступном body; native gate по-прежнему проверяет RSC success.
 
 ## Обновление
 

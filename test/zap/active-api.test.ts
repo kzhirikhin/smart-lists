@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { zapApi, ZapApiError, startSeededScan, nativeScanFinished, resetExcludedParams } from "./active-api";
+import { zapApi, ZapApiError, startSeededScan, nativeScanFinished, resetExcludedParams, confirmBrowserMutation } from "./active-api";
 
 it("POST API использует точный Content-Type без charset, секретные параметры не в URL", async () => {
   const transport = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ Result: "OK" }));
@@ -43,4 +43,23 @@ it("смена Action удаляет старые исключения в обр
   api.mockReset().mockResolvedValue({ excludedParams: "unknown" });
   await expect(resetExcludedParams(api)).rejects.toThrow("active-infrastructure");
   expect(api).toHaveBeenCalledTimes(1);
+});
+
+it("подтверждает браузерную мутацию по БД при освобождённом body; повторяет только чтение", async () => {
+  const persisted = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValue(true);
+  const wait = vi.fn().mockResolvedValue(undefined);
+  const response = { status: () => 200, finished: async () => null, get text() { throw Error("body-unavailable"); } };
+  await confirmBrowserMutation(response, persisted, wait);
+  expect(persisted).toHaveBeenCalledTimes(3);
+  expect(wait).toHaveBeenCalledTimes(2);
+});
+it("HTTP 200 без записи в БД не даёт подтверждения", async () => {
+  const persisted = vi.fn().mockResolvedValue(false);
+  await expect(confirmBrowserMutation({ status: () => 200, finished: async () => null }, persisted, async () => {})).rejects.toThrow("active-coverage");
+  expect(persisted).toHaveBeenCalledTimes(50);
+});
+it.each([400, 200])("отказывает при HTTP-ошибке или незавершённом ответе (%s)", async status => {
+  const persisted = vi.fn().mockResolvedValue(true);
+  await expect(confirmBrowserMutation({ status: () => status, finished: async () => Error("network") }, persisted)).rejects.toThrow("active-coverage");
+  expect(persisted).not.toHaveBeenCalled();
 });
