@@ -12,10 +12,12 @@ export function ThemeToggle() {
   // resolvedTheme содержит фактическую тему ("light"/"dark"), в отличие от theme,
   // который при defaultTheme="system" может быть равен "system" и ломать переключение.
   const { resolvedTheme, setTheme } = useTheme();
-  // We use mounted state to avoid hydration mismatch
+  // Первый клиентский рендер совпадает с SSR; тема доступна после гидратации.
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    // Одноразовый переход после mount сохраняет SSR-placeholder без скачка размеров.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

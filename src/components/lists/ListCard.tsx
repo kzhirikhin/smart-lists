@@ -308,6 +308,8 @@ const ListCard = memo(function ListCard({
    */
   const [aiEnabled, setAiEnabled] = useState(list.aiEnabled);
   useEffect(() => {
+    // RSC подтверждает либо заменяет локальный оптимистичный флаг после Action.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAiEnabled(list.aiEnabled);
   }, [list.aiEnabled]);
   const actionsMenuRef = useRef<HTMLDivElement>(null);

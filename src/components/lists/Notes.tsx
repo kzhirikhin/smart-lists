@@ -203,7 +203,6 @@ function useOverflowRef<T extends HTMLElement>(enabled: boolean, content: unknow
   useLayoutEffect(() => {
     const element = ref.current;
     if (!enabled || !element) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOverflowing(false);
       return;
     }
