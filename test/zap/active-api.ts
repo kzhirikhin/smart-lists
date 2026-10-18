@@ -36,3 +36,24 @@ export function nativeScanFinished(raw: unknown, scanId: string) {
   if (!["NOT_STARTED", "RUNNING", "PAUSED", "FINISHED"].includes(scan.state)) throw new Error("active-infrastructure");
   return scan.state === "FINISHED";
 }
+
+/** Исключения ZAP глобальны: поля предыдущего Action не должны отключать
+ * изменяемое поле следующего. Индексы удаляем с конца, затем задаём новый набор. */
+export async function resetExcludedParams(api: typeof zapApi = zapApi) {
+  const raw = (await api("ascan", "view", "excludedParams")).excludedParams;
+  if (!Array.isArray(raw) || raw.length > 100) throw new Error("active-infrastructure");
+  for (let idx = raw.length - 1; idx >= 0; idx--) await api("ascan", "action", "removeExcludedParam", { idx: String(idx) });
+}
+
+/** Chromium может освободить RSC-ответ после навигации. Подтверждаем
+ * HTTP 200 и запись в БД без зависимости от lifetime response body. Повторяются только
+ * чтения фикстуры; саму мутацию/атаку функция никогда не переотправляет. */
+export async function confirmBrowserMutation(response: { status(): number } | null,
+  persisted: () => Promise<boolean>, wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))) {
+  if (!response || response.status() !== 200) throw new Error("active-coverage");
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (await persisted()) return;
+    await wait(100);
+  }
+  throw new Error("active-coverage");
+}

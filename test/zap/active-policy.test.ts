@@ -1,10 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { activePolicy, activeRunSchema, admitMutation, assertActiveTarget, canonicalMultipart, multipart, summarizePassive, type ActiveTarget } from "./active-policy";
+import { activePolicy, activeRunSchema, admitMutation, assertActiveTarget, canonicalMultipart, multipart, summarizePassive, withTargetValue, type ActiveTarget } from "./active-policy";
 
 const form = (title: string, space = "space_test") => `--zapBoundary\r\nContent-Disposition: form-data; name="1_title"\r\n\r\n${title}\r\n--zapBoundary\r\nContent-Disposition: form-data; name="1_spaceId"\r\n\r\n${space}\r\n--zapBoundary--\r\n`;
 const target: ActiveTarget = { role: "owner", operation: "createList", path: "/en/spaces/space_test", method: "POST", field: "1_title", body: form("seed"), headers: { "content-type": "multipart/form-data; boundary=zapBoundary", "next-action": "a".repeat(40), cookie: "authjs.session-token=synthetic" } };
 
 describe("ограничения активной фазы", () => {
+  it("контрольный текст меняет только поле seed и сохраняет его service/space значения", () => {
+    const body = withTargetValue(target, "<svg onload=globalThis.__zapXss=1>");
+    expect(admitMutation(target, "POST", target.path, body, target.headers["content-type"])).toEqual({ allowed: true, mutated: true });
+    expect(multipart(body, target.headers["content-type"]).get("1_spaceId")).toBe("space_test");
+    expect(() => withTargetValue(target, "--zapBoundary")).toThrow();
+  });
+  it.each(["renameList", "renameItem"] as const)("%s сохраняет идентификаторы и разрешённую роль", operation => {
+    const field = operation === "renameList" ? "1_title" : "1_itemName";
+    const id = operation === "renameList" ? "listId" : "itemId";
+    const body = form("seed").replace("1_title", field).replace("--zapBoundary--", `--zapBoundary\r\nContent-Disposition: form-data; name="1_${id}"\r\n\r\nfixed_id\r\n--zapBoundary--`);
+    const seed: ActiveTarget = { ...target, operation, role: operation === "renameList" ? "owner" : "recipient", field, body };
+    expect(() => assertActiveTarget(seed)).not.toThrow();
+    expect(() => assertActiveTarget({ ...seed, role: seed.role === "owner" ? "recipient" : "owner" })).toThrow();
+    expect(() => assertActiveTarget({ ...seed, field: "1_spaceId" })).toThrow();
+    expect(admitMutation(seed, "POST", seed.path, body.replace("seed", "changed"), seed.headers["content-type"])).toEqual({ allowed: true, mutated: true });
+    for (const changed of [body.replace("fixed_id", "other_id"), body.replace("space_test", "other_space"), body.replace(field, "1_other"), body.replace("fixed_id", "")]) {
+      expect(admitMutation(seed, "POST", seed.path, changed, seed.headers["content-type"]).allowed).toBe(false);
+    }
+  });
   it("сохраняет safe причину неполной фазы A без текста ошибки и приватных полей", () => {
     const summary = summarizePassive({ status: "incomplete", pending: 0, requests: 20, coverage: [{ id: "notes", passed: false, complete: false }], reasons: ["coverage:notes", "PRIVATE_TOKEN"], error: "PRIVATE_TOKEN" });
     expect(summary.failedScenarios).toEqual(["notes"]);

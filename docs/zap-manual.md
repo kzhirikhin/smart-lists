@@ -1,7 +1,7 @@
 # Ручной двухэтапный ZAP
 
 Этап 5 [плана](zap-plan.md): локальная реализация и приёмка выполнены 2026-10-17.
-Ручной Actions workflow подготовлен, но ещё не опубликован и не проверен в GitHub.
+Ручной Actions workflow опубликован через PR #235 и проверен 2026-10-18 (JST).
 Первый профиль — локальная production-сборка, не production URL и не Preview.
 Он не заменяет ручную проверку прав, CSRF, заметок или всех Server Actions.
 
@@ -22,8 +22,9 @@ npm run test:zap:manual
 workflow. Он собирает эту ревизию локально на
 одноразовом runner; SHA production-коммита не означает атаку production-сайта.
 Job advisory, token read-only, checkout без сохранения credentials, без secrets,
-Environment/OIDC. Нет автоматического запуска на push/PR и нет расписания.
-Общий npm cache и автоматический package-manager cache выключены: выбранный
+Environment/OIDC. Нет автоматического запуска на push/PR. Этап 6 добавляет
+[месячное расписание и отдельный контроль состояния](zap-operations.md).
+Общий npm cache и автоматический package-manager cache выключены:
 выбранная ревизия не должна отравлять кеш default branch. Произвольный SHA
 через input не исполняется. CodeQL alert #7
 (`js/reflected-xss`) относится только к намеренно уязвимой учебной мишени
@@ -31,7 +32,7 @@ Environment/OIDC. Нет автоматического запуска на push
 приложения и остальные CodeQL-проверки сохранены.
 Кроме отсутствия cache-шагов, `cache-mode: none` запрещает доступ к cache на
 уровне runtime token: одного выключения setup-node cache для этого недостаточно.
-Живой запуск этого workflow требует отдельной приёмки после публикации.
+Приёмка workflow_dispatch на main выполнена; результат и ограничения ниже.
 
 ## Фазы и ограничения
 
@@ -40,9 +41,13 @@ Environment/OIDC. Нет автоматического запуска на push
    pending=0 и успешная проверка внешнего egress. Неполный результат закрывает
    фазу B; старый отчёт не используется как разрешение на новый active scan.
 2. Фаза B поднимает тот же production-сервер, создаёт отдельные synthetic
-   owner/recipient, сессии и shared list. Через браузер выполняются createList
-   владельца и addItem получателя, проверяется успешный UI/DB-поток. Их Action
+   owner/recipient, сессии и shared list. Профиль manual-v2 захватывает createList
+   и renameList владельца, addItem и renameItem получателя. Проверяется UI/DB-поток. Их Action
    ID сверяются с server-reference-manifest именно этой сборки.
+   Пятая цель — anonymous query. Для переименований сверяется последнее принятое
+   значение с БД, а после закрытия gate отдельно сохраняется контролируемый
+   HTML-текст и проверяется его отображение после reload без DOM-разметки и
+   исполнения обработчика. Это отдельная UI-проверка, не результат reflected XSS.
 3. ZAP получает захваченные multipart-запросы, а не придуманный JSON.
    Только boundary приводится к фиксированному нижнему регистру: native parser
    закреплённого ZAP иначе не атакует поля WebKit boundary. Имена и значения
@@ -71,7 +76,14 @@ multipart дополнительно исключаются из ZAP; gate пр�
 Лимит — 600 допускаемых к обработке попыток сканера через gate, включая seed
 и отклонённые до достижения лимита запросы. После достижения новые попытки
 отклоняются без передачи приложению; они входят в rejected, а не requests.
-Подготовка браузеров и read-only проверки сессий не входят в этот счётчик.
+Подготовка браузеров, read-only проверки сессий и две фиксированные записи
+контрольного текста после закрытия gate не входят в этот счётчик. Контрольные
+записи используют захваченные rename-seed: меняется только разрешённое поле,
+сохраняются session/Origin/ID/служебные поля; произвольного HTTP-входа нет.
+Их RSC success и результат в scoped БД обязательны, затем выполняется reload
+и проверка текста без исполнения HTML. После fuzzing редактор не открывается:
+сканер мог сохранить невидимое название. APIRequestContext не зависит от
+времени жизни Chromium response body. Повторяются только чтения БД, не записи.
 Native scan останавливается
 при polling; hard-limit upstream обеспечивается gate независимо от polling.
 Предел active-фазы — 30 минут, orchestration — 60 минут, Actions job — 65 минут
@@ -80,6 +92,14 @@ Native scan останавливается
 при hard cancel/потере runner отчёты и cleanup не гарантированы.
 
 ## Отчёты
+
+Текущая схема run.json требует profile=manual-v2 и все пять целей для completed
+(control имеет отдельную единственную цель). Оба native-правила должны закончить
+работу с ненулевыми запросами на каждой цели; для переименований нужны persisted
+и rendered. Scope обеих фаз B включает весь activePolicy, включая цели/лимиты.
+Исключения параметров ZAP пересоздаются перед каждой целью через
+[excludedParams/removeExcludedParam](https://www.zaproxy.org/docs/api/), чтобы
+исключения предыдущего Action не выключали проверку следующего.
 
 Локальный каталог: `test-results/zap-manual/<timestamp>-<probe>/`:
 
@@ -124,7 +144,7 @@ exit code. Control поднимает отдельную намеренно уя
 на внутреннем 3101; Smart Lists не изменяется. Успех control требует настоящего
 active alert 40012 от ZAP; простая запись строки в JSON этим не считается.
 
-## Локальная приёмка 2026-10-17
+## Историческая приёмка manual-v1 2026-10-17
 
 | Проверка | Результат |
 |---|---|
@@ -147,8 +167,30 @@ Control: `1792233556154-control`, session: `1792233554992-session`, precondition
 
 Unit-проверки закрепляют A106 только для перечисленных форм wire и границ;
 они не доказывают настройку GitHub или отсутствие уязвимостей вне трёх входов.
-Остаток приёмки публикации — первый настоящий workflow_dispatch и проверка
-artifact/permissions/timeout на GitHub. Расписание/давность — этап 6, не начат.
+### Приёмка GitHub Actions manual-v1 2026-10-18
+
+[PR #235](https://github.com/kzhirikhin/smart-lists/pull/235) слит в
+`870ec341f696edc077658bd3364601d271d76263`. Обязательный PR CI и CodeQL прошли.
+[Ручной run 39045344867](https://github.com/kzhirikhin/smart-lists/actions/runs/39045344867)
+на этом main: workflow_dispatch, dirty=false, A/B completed, 22/22 сценария,
+546 passive, pending=0; active 41, rejected=0, по 6 успешных изменённых запросов
+обеих Actions, сессии before/after валидны. Новых active-находок в трёх входах нет.
+Фазы заняли 178.8 секунды, весь job с cold build — около 6 минут 38 секунд.
+
+Artifact `12105831069` содержит ровно девять разрешённых файлов: все схемы
+валидны, три scope различны, JSON/HTML/Markdown точно воспроизводятся publisher,
+Gitleaks без находок. Локальная копия: `test-results/zap-manual-actions/39045344867/`.
+API: created_at `2026-10-17T15:37:08Z`, expires_at `2026-11-16T15:37:07Z` —
+30 дней по метаданным, не наблюдение будущего удаления. Лог подтверждает token
+Contents/Metadata read и отключённый package-manager cache. `cache-mode: none`
+принят GitHub, но отдельная попытка записи runtime cache не выполнялась.
+Cleanup вернул success; отдельная инвентаризация уже удалённого runner недоступна.
+Timeout 65/61 минут задан конфигурацией, принудительное истечение не проверялось.
+Fault/control-пробы остаются локальными доказательствами; в Actions проверен
+успешный профиль. Основной CI 39045331774, миграция и Vercel прошли независимо.
+
+Этап 5 завершён в этих границах. [Расписание/давность](zap-operations.md) —
+этап 6, реализуется отдельно, без расширения этих трёх активных входов.
 
 Источники: [политики ZAP](https://www.zaproxy.org/docs/desktop/start/features/scanpolicy/),
 [векторы](https://www.zaproxy.org/docs/desktop/ui/dialogs/options/ascaninput/),

@@ -4,13 +4,21 @@ import { scenarios } from "./manifest.ts";
 
 // Первый профиль намеренно узкий: никаких RCE, time-based SQL или persistent XSS.
 export const activePolicy = Object.freeze({
+  profile: "manual-v2" as const,
+  targets: [
+    { role: "anonymous", operation: "none", field: "zap" },
+    { role: "owner", operation: "createList", field: "title" },
+    { role: "recipient", operation: "addItem", field: "itemName" },
+    { role: "owner", operation: "renameList", field: "title" },
+    { role: "recipient", operation: "renameItem", field: "itemName" },
+  ] as const,
   origin: "http://localhost:3102", upstream: "http://localhost:3100",
   rules: ["40012", "40018"], strength: "LOW", threshold: "MEDIUM",
   maxRequests: 600, maxBodyBytes: 64_000, maxActiveMs: 30 * 60_000,
 });
 export type ActiveTarget = {
   role: "anonymous" | "owner" | "recipient";
-  operation: "none" | "createList" | "addItem";
+  operation: typeof activePolicy.targets[number]["operation"];
   path: string; method: "GET" | "POST"; field: string;
   body: string; headers: Record<string, string>;
 };
@@ -23,12 +31,13 @@ export function assertActiveTarget(target: ActiveTarget) {
     if (target.role !== "anonymous" || target.operation !== "none" || target.path !== "/en?zap=baseline" || target.field !== "zap") throw new Error("active-target-refused");
   } else {
     if (!/^\/en\/spaces\/[a-zA-Z0-9_-]+$/.test(target.path) ||
-      !((target.role === "owner" && target.operation === "createList") || (target.role === "recipient" && target.operation === "addItem")) ||
+      !activePolicy.targets.some(entry => entry.operation !== "none" && entry.role === target.role && entry.operation === target.operation) ||
       !/^[a-f0-9]{40,64}$/.test(target.headers["next-action"] ?? "") ||
       !/multipart\/form-data;\s*boundary=[\w-]+$/.test(target.headers["content-type"] ?? "") ||
       !target.headers.cookie?.includes("authjs.session-token=")) throw new Error("active-target-refused");
     const fields = multipart(target.body, target.headers["content-type"]);
-    if (!fields.has(target.field) || !target.field.endsWith(target.operation === "createList" ? "_title" : "_itemName")) throw new Error("active-target-refused");
+    const entry = activePolicy.targets.find(entry => entry.role === target.role && entry.operation === target.operation);
+    if (!entry || !fields.has(target.field) || !target.field.endsWith(`_${entry.field}`)) throw new Error("active-target-refused");
   }
   if (Buffer.byteLength(target.body) > activePolicy.maxBodyBytes) throw new Error("active-target-refused");
 }
@@ -80,6 +89,20 @@ export function admitMutation(target: ActiveTarget, method: string, path: string
   } catch { return { allowed: false, mutated: false }; }
 }
 
+/** Контрольное сохранение текста использует те же frozen поля, что native
+ * seed. Это не произвольный HTTP-клиент и не обход клиентом server validation. */
+export function withTargetValue(target: ActiveTarget, value: string) {
+  assertActiveTarget(target);
+  if (target.method !== "POST") throw new Error("active-body-refused");
+  const type = target.headers["content-type"];
+  const boundary = /boundary=([\w-]+)$/.exec(type)![1];
+  const fields = multipart(target.body, type);
+  fields.set(target.field, value);
+  const body = [...fields].map(([name, field]) => `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${field}\r\n`).join("") + `--${boundary}--\r\n`;
+  if (!admitMutation(target, target.method, target.path, body, type).allowed) throw new Error("active-body-refused");
+  return body;
+}
+
 const count = z.number().int().min(0).max(4_000_000);
 const scenarioIds = scenarios.map(scenario => scenario.id);
 const passiveSummarySchema = z.object({
@@ -96,9 +119,14 @@ export function summarizePassive(raw: unknown) {
     reasons: source.reasons.map(reason => reason.startsWith("coverage:") ? "coverage" : ["scenario-process-failed", "passive-queue-not-drained"].includes(reason) ? reason : "other") });
 }
 export const activeRunSchema = z.object({
-  version: z.literal(1), status: z.enum(["completed", "incomplete", "error"]),
+  version: z.literal(1), profile: z.literal(activePolicy.profile), status: z.enum(["completed", "incomplete", "error"]),
   step: z.enum(["precondition", "seed", "policy", "scan", "report", "finished"]).optional(),
-  lastApi: z.enum(["sendRequest", "scan", "scans", "scanProgress", "status", "stop", "addScanPolicy", "disableAllScanners", "enableScanners", "setScannerAttackStrength", "setScannerAlertThreshold", "scanners", "setOptionThreadPerHost", "setOptionHostPerScan", "setOptionDelayInMs", "setOptionMaxScanDurationInMins", "setOptionMaxRuleDurationInMins", "setOptionTargetParamsInjectable", "setOptionTargetParamsEnabledRPC", "setOptionAddQueryParam", "newContext", "includeInContext", "setContextInScope", "addExcludedParam", "recordsToScan", "numberOfMessages", "message", "messages", "alerts"]).optional(),
+  seedOperation: z.enum(["createList", "addItem", "renameList", "renameItem"]).optional(),
+  seedPhase: z.enum(["fixtures", "navigation", "request", "response", "format", "render"]).optional(),
+  failureClass: z.enum(["timeout", "assertion", "other"]).optional(),
+  failureSite: z.string().regex(/^(?:active\.e2e|active-api|report)\.ts:\d{1,4}$/).optional(),
+  failureHint: z.enum(["invalid-api-response", "api-size-limit", "active-infrastructure", "unclassified"]).optional(),
+  lastApi: z.enum(["sendRequest", "scan", "scans", "scanProgress", "status", "stop", "addScanPolicy", "disableAllScanners", "enableScanners", "setScannerAttackStrength", "setScannerAlertThreshold", "scanners", "setOptionThreadPerHost", "setOptionHostPerScan", "setOptionDelayInMs", "setOptionMaxScanDurationInMins", "setOptionMaxRuleDurationInMins", "setOptionTargetParamsInjectable", "setOptionTargetParamsEnabledRPC", "setOptionAddQueryParam", "newContext", "includeInContext", "setContextInScope", "addExcludedParam", "excludedParams", "removeExcludedParam", "recordsToScan", "numberOfMessages", "message", "messages", "alerts"]).optional(),
   apiCode: z.enum(["missing_parameter", "bad_parameter", "bad_action", "url_not_in_scope", "url_not_found", "bad_type", "bad_other", "does_not_exist", "already_exists", "illegal_parameter", "content_type_not_supported", "unknown"]).optional(),
   revision: z.string().regex(/^(?:[a-f0-9]{40}|unknown)$/).optional(), startedAt: z.iso.datetime().optional(),
   dirty: z.boolean().optional(),
@@ -106,19 +134,23 @@ export const activeRunSchema = z.object({
   phaseA: z.enum(["completed", "incomplete", "error"]), phaseB: z.enum(["completed", "incomplete", "error", "skipped"]),
   reasons: z.array(z.enum(["phase-a-incomplete", "active-process-failed", "active-precondition-failed", "active-budget", "active-session-lost", "active-coverage", "active-queue", "active-wire-format", "active-infrastructure", "cleanup-failed"])).max(20),
   control: z.boolean(), controlFound: z.boolean(), requests: count, rejected: count, durationMs: count,
-  targets: z.array(z.object({ role: z.enum(["anonymous", "owner", "recipient"]), operation: z.enum(["none", "createList", "addItem"]),
+  targets: z.array(z.object({ role: z.enum(["anonymous", "owner", "recipient"]), operation: z.enum(["none", "createList", "addItem", "renameList", "renameItem"]),
     requests: count, mutations: count, successfulMutations: count, sessionBefore: z.boolean(), sessionAfter: z.boolean(),
     seedStatus: count.optional(), seedSuccess: z.boolean().optional(),
+    persisted: z.boolean().optional(), rendered: z.boolean().optional(),
     rules: z.array(z.object({ id: z.enum(["40012", "40018"]), requests: count, state: z.enum(["complete", "skipped", "other"]) }).strict()).max(2).optional(),
-  }).strict()).max(3),
+  }).strict()).max(5),
 }).strict().superRefine((run, context) => {
   if (run.requests > activePolicy.maxRequests) context.addIssue({ code: "custom", message: "request-budget" });
   if (run.status !== "completed") return;
-  const expected = run.control ? ["anonymous:none"] : ["anonymous:none", "owner:createList", "recipient:addItem"];
+  const expected = (run.control ? activePolicy.targets.slice(0, 1) : activePolicy.targets).map(target => `${target.role}:${target.operation}`);
   if (run.phaseA !== "completed" || run.phaseB !== "completed" || run.reasons.length || !run.requests ||
     run.targets.length !== expected.length || (run.control && !run.controlFound) ||
     !expected.every(key => run.targets.filter(target => `${target.role}:${target.operation}` === key).length === 1) ||
     run.targets.some(target => !target.requests || !target.mutations || !target.successfulMutations || !target.sessionBefore || !target.sessionAfter) ||
+    run.targets.some(target => target.seedStatus !== 200 || !target.seedSuccess || target.rules?.length !== 2 ||
+      !activePolicy.rules.every(id => target.rules?.filter(rule => rule.id === id && rule.state === "complete" && rule.requests > 0).length === 1) ||
+      ((target.operation === "renameList" || target.operation === "renameItem") && (!target.persisted || !target.rendered))) ||
     run.targets.reduce((total, target) => total + target.requests, 0) > run.requests) {
     context.addIssue({ code: "custom", message: "active-incomplete-coverage" });
   }

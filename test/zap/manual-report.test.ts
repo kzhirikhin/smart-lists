@@ -2,18 +2,25 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { expect, it } from "vitest";
 import { renderManual } from "./manual-report";
+import { activePolicy } from "./active-policy";
 
-const run = { version: 1, status: "completed", phaseA: "completed", phaseB: "completed", reasons: [], control: false, controlFound: false, requests: 60, rejected: 0, durationMs: 175_000,
-  targets: [["anonymous", "none"], ["owner", "createList"], ["recipient", "addItem"]].map(([role, operation]) => ({ role, operation, requests: 20, mutations: 10, successfulMutations: 3, sessionBefore: true, sessionAfter: true })) };
+const run = { version: 1, profile: activePolicy.profile, status: "completed", phaseA: "completed", phaseB: "completed", reasons: [], control: false, controlFound: false, requests: 100, rejected: 0, durationMs: 175_000,
+  targets: activePolicy.targets.map(({ role, operation }) => ({ role, operation, requests: 20, mutations: 10, successfulMutations: 3, sessionBefore: true, sessionAfter: true,
+    persisted: true, rendered: true, seedStatus: 200, seedSuccess: true,
+    rules: activePolicy.rules.map(id => ({ id, requests: 3, state: "complete" })) })) };
 
 it("ручной отчёт принимает только закрытые метаданные и разделяет фазы", () => {
   const report = renderManual(run);
   expect(report.summary).toContain("phase-b-active.html");
   expect(report.summary).toContain("phase-b-passive.html");
   expect(report.summary).toContain("не проверяет CORS");
+  expect(report.summary).toContain("manual-v2");
+  expect(report.summary).toContain("renameItem: сохранение true; текст после reload true");
   expect(() => renderManual({ ...run, error: "ZAP_PRIVATE_NOTE" })).toThrow();
   expect(() => renderManual({ ...run, targets: [{ ...run.targets[0], cookie: "private" }] })).toThrow();
   expect(() => renderManual({ ...run, reasons: ["<script>private</script>"] })).toThrow();
+  expect(() => renderManual({ ...run, failureClass: "ZAP_PRIVATE_NOTE" })).toThrow();
+  expect(() => renderManual({ ...run, failureSite: "private-path:1" })).toThrow();
   expect(() => renderManual({ ...run, targets: [] })).toThrow();
   expect(() => renderManual({ ...run, requests: 601 })).toThrow();
   expect(() => renderManual({ ...run, phaseA: "incomplete" })).toThrow();
@@ -27,10 +34,11 @@ it.each([["--manual", "--target=https://smart-lists-iota.vercel.app"], ["--manua
   expect(child.stdout).not.toContain("Building");
 });
 
-it("manual workflow не запускается автоматически и не получает release-полномочий", () => {
+it("двухфазный workflow запускается ежемесячно/вручную и не получает release-полномочий", () => {
   const yaml = readFileSync(new URL("../../.github/workflows/zap-manual.yml", import.meta.url), "utf8");
   expect(yaml).toContain("workflow_dispatch:");
-  expect(yaml).not.toMatch(/^\s*(schedule|pull_request|pull_request_target|push):/m);
+  expect(yaml).toContain("cron: '17 1 5 * *'");
+  expect(yaml).not.toMatch(/^\s*(pull_request|pull_request_target|push):/m);
   expect(yaml).toContain("contents: read");
   expect(yaml).toContain("persist-credentials: false");
   expect(yaml).toContain("ref: ${{ github.sha }}");
