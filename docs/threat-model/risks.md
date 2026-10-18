@@ -36,13 +36,20 @@ run 39045344867 completed A/B, 546 passive/pending=0, 41 active, dirty=false,
 по 6 успешных изменений поля обеих Actions. Девять safe-файлов точно
 воспроизведены, token read-only, API retention 30 дней. Actions fault/forced
 timeout не воспроизводились; успешная cleanup не доказательство hard cancel.
-[Этап 6](../zap-operations.md) реализуется: месячный скан 5-го числа в 10:17
+[Этап 6](../zap-operations.md): месячный скан 5-го числа в 10:17
 Asia/Tokyo, ежедневный контроллер и workflow_run, журнал в bot Issue. Source
 scanner read-only; только контроллер из default branch имеет issues:write,
 проверяет REST provenance/строгие отчёты и сохраняет последний полный анализ.
 Порог 40 дней, failure не обновляет успех; пробы пишут отдельный тестовый Issue.
-Живая приёмка сигнала ещё не выполнена. Будущий cron/email не доказаны;
+PR #237 слит, оба workflows active. Bootstrap журнала #238, изолированные
+failure/stale/recovery-пробы #239 и отсутствие дублирующего комментария
+проверены. Новый source 39091016597 A/B completed автоматически вызвал
+workflow_run 39091399377; настоящий lastSuccess обновлён, проб в истории нет.
+Будущий cron/email не доказаны;
 общий сбой/отключение GitHub Actions не обнаруживается внешним наблюдателем.
+Временные отказы проверки jobs/artifact повторно читаются без атак; подтверждение
+того же attempt снимает отказ без сдвига даты анализа. Регрессия закреплена
+unit-тестом; сбой самого REST API в live не вызывался.
 CodeQL в PR выявил cache poisoning при checkout произвольного SHA: input убран,
 checkout закреплён за github.sha выбранной ветки/тега; общий npm
 cache и автоматическое кеширование package manager выключены. Намеренный

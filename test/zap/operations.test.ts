@@ -49,6 +49,17 @@ describe("свежесть и журнал", () => {
     expect(mergeAttempt(ledger, { ...completed, runId: 90, attempt: 3, completedAt: new Date(now + 1000).toISOString() }).lastSuccess?.attempt).toBe(3);
     expect(mergeAttempt(ledger, failure({ completedAt: new Date(now - 10_000).toISOString() })).lastAttempt?.result).toBe("completed");
   });
+  it("подтверждение того же attempt снимает временный отказ, не сдвигая дату анализа", () => {
+    const provisional = mergeAttempt(empty(), failure({ runId: completed.runId, reason: "artifact-unavailable" }));
+    const verified = mergeAttempt(provisional, completed);
+    expect(verified.lastAttempt).toEqual(completed);
+    expect(verified.lastSuccess?.completedAt).toBe(completed.completedAt);
+    expect(health(verified, now)).toBe("healthy");
+    const unavailableAgain = mergeAttempt(verified, failure({ runId: completed.runId, reason: "artifact-unavailable", completedAt: new Date(now + 1000).toISOString() }));
+    expect(unavailableAgain.lastAttempt).toEqual(completed);
+    expect(health(unavailableAgain, now + 1000)).toBe("healthy");
+    expect(health(mergeAttempt(verified, failure({ runId: completed.runId, attempt: 2 })), now)).toBe("failure");
+  });
   it("журнал сохраняется независимо от срока artifact и не принимает чужой/тестовый/приватный JSON", () => {
     const rendered = renderLedger(good(), now);
     const read = readLedger(rendered.body, repository, false);
@@ -71,6 +82,11 @@ describe("свежесть и журнал", () => {
     expect(transition(stored, stored, "closed", now + maxAgeMs + 2000).comment).toBe(true);
     const failed = readLedger(renderLedger(mergeAttempt(good(), failure()), now).body, repository, false);
     expect(transition(failed, failed, "open", now + maxAgeMs + 1).comment).toBe(true);
+  });
+  it("уточнение причины того же отказа не создаёт ещё один комментарий", () => {
+    const failed = readLedger(renderLedger(mergeAttempt(good(), failure({ reason: "artifact-unavailable" })), now).body, repository, false);
+    const refined = mergeAttempt(failed, failure({ reason: "job-invalid" }));
+    expect(transition(failed, refined, "open", now).comment).toBe(false);
   });
 });
 
