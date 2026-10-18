@@ -52,7 +52,32 @@ completed A/B → workflow_run 39091399377 обновил настоящий las
 история содержит только настоящие completed, без записей проб. Оба workflows
 active, token контроллера read/Issues write подтверждён логом. Будущие cron и
 email не наблюдались; общий сбой Actions не обнаруживается независимым сервисом.
-Покрытие/High-triage здесь не расширяются.
+High-triage здесь не автоматизируется.
+[Карта покрытия](docs/zap-coverage.md), review 2026-10-18, уточняет остаток A106:
+manual-v2 добавляет renameList/title owner и renameItem/itemName recipient
+к anonymous query и полям createList/addItem. Reflected XSS на RSC
+не проверяет выполнение сохранённого текста при последующем отображении.
+Локально A/B completed: 545 passive/pending=0, 61 active, у обеих новых целей
+по 6 успешных мутаций, persisted/rendered=true. Пять точных целей, seed success,
+оба native-правила и UI/DB-проверки обязательны в completed-схеме. Инвентарь
+Actions — разовый review, не CI-гарантия полноты. A107 сохраняет digest политики
+и проверяет точные scope фаз B: прежний lastSuccess сохраняет дату, но не
+подтверждает новое покрытие (profile-outdated). Живая приёмка нового main ещё
+не выполнена. Остатки CSRF/прав/полноты XSS и изоляция внешних сервисов сохранены.
+Первый PR-run manual-v2 39094262001 не считается completed: A прошла, B error
+на seed до атак, technical outcome failure; зелёная advisory-обёртка не успех.
+Подготовка ждёт HTTP 200 и запись в БД; диагностика seed — закрытые поля.
+PR-run 39095114639 подтвердил все 61 active и persisted обеих новых целей,
+но UI-проверка завершилась ошибкой чтения browser response body и не засчитана.
+Подтверждение UI-мутаций теперь использует HTTP 200 и scoped БД,
+без чтения освобождаемого Chromium body; native gate продолжает проверять RSC.
+Run 39095895555 достиг общего тайм-аута без завершения B; причина внутри ожиданий
+не локализована. UI/nav ожидания ограничены 10/20 секундами, SDK finished не нужен.
+Две фиксированные store-and-read пробы после закрытия gate используют frozen
+rename-seed вне бюджета native scan: меняется только разрешённое поле, проверяются
+RSC success, scoped БД и текст после reload. Это не полнота stored XSS.
+Текущая веточная приёмка и артефакты — [PR #241](https://github.com/kzhirikhin/smart-lists/pull/241).
+Веточный успех не подтверждает main/журнал; прежняя дата успеха сохраняется.
 Повторная верификация временно недоступных jobs/artifact не запускает новые
 атаки. Подтверждённый тот же attempt заменяет временный отказ, сохраняя дату
 анализа; этот крайний случай проверен unit-тестом, не live-сбоем GitHub API.

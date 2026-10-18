@@ -347,7 +347,7 @@ export const renameItemSchema = z.object({
   itemId: z.string(),
   /**
    * Новое название записи.
-   * Обязательное поле. Максимум 100 символов.
+   * Обязательное поле. Максимум 200 символов.
    */
   itemName: z
     .string()

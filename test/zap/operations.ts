@@ -1,15 +1,17 @@
 import { z } from "zod";
 // Node 24 запускает контроллер напрямую с type stripping, без TS loader.
 // @ts-expect-error Явный .ts нужен Node; проектный tsc работает с bundler resolution.
-import { activeRunSchema } from "./active-policy.ts";
+import { activePolicy, activeRunSchema } from "./active-policy.ts";
 // @ts-expect-error Тот же прямой Node entrypoint, без изменения tsconfig приложения.
-import { reportSchema } from "./report.ts";
+import { hash, reportSchema } from "./report.ts";
 
 export const scanWorkflow = "zap-manual.yml";
 export const scanWorkflowName = "ZAP Manual (advisory)";
 export const scanCron = "17 1 5 * *";
 export const monitorCron = "43 2 * * *";
 export const maxAgeMs = 40 * 86_400_000;
+// Идентичность включает сами цели и лимиты, а не только ручную метку версии.
+export const activeProfile = hash(activePolicy);
 export const ledgerTitle = "[ZAP] Состояние периодического скана";
 export const probeTitle = "[ZAP] Проверка эксплуатационных сигналов (тест)";
 export const safeFiles = ["run.json", "summary.md", "report.html", "phase-a.json", "phase-a.html", "phase-b-active.json", "phase-b-active.html", "phase-b-passive.json", "phase-b-passive.html"].sort();
@@ -21,6 +23,7 @@ const time = z.iso.datetime();
 export const attemptSchema = z.object({
   runId: integer, attempt: integer, revision: z.string().regex(/^[a-f0-9]{40}$/), completedAt: time,
   result: z.enum(["completed", "failure"]),
+  profile: z.union([z.literal("manual-v1"), z.string().regex(/^[a-f0-9]{64}$/)]).default("manual-v1"),
   reason: z.enum(["completed", "run-failed", "job-invalid", "artifact-unavailable", "report-invalid", "probe-failure"]),
   passiveRequests: z.number().int().min(0).max(4_000_000).optional(),
   activeRequests: z.number().int().min(1).max(600).optional(),
@@ -33,7 +36,7 @@ export const attemptSchema = z.object({
 export type Attempt = z.infer<typeof attemptSchema>;
 export const ledgerSchema = z.object({
   version: z.literal(1), repository: z.string().regex(/^[\w.-]+\/[\w.-]+$/), probe: z.boolean(),
-  observedState: z.enum(["healthy", "failure", "stale", "no-success"]).default("no-success"),
+  observedState: z.enum(["healthy", "failure", "stale", "no-success", "profile-outdated"]).default("no-success"),
   lastSuccess: attemptSchema.nullable(), lastAttempt: attemptSchema.nullable(),
 }).strict().superRefine((ledger, context) => {
   if (ledger.lastSuccess && ledger.lastSuccess.result !== "completed") context.addIssue({ code: "custom", message: "invalid-success" });
@@ -55,7 +58,9 @@ export function mergeAttempt(ledger: Ledger, input: Attempt): Ledger {
   if (same) {
     if (lastAttempt?.result !== "completed" && (record.result === "completed" || newer(lastAttempt))) lastAttempt = record;
   } else if (newer(lastAttempt)) lastAttempt = record;
-  const lastSuccess = record.result === "completed" && newer(ledger.lastSuccess) ? record : ledger.lastSuccess;
+  const compatible = record.profile === activeProfile || ledger.lastSuccess?.profile !== activeProfile;
+  const lastSuccess = record.result === "completed" && compatible && (newer(ledger.lastSuccess) ||
+    (record.profile === activeProfile && ledger.lastSuccess?.profile !== activeProfile)) ? record : ledger.lastSuccess;
   if (lastSuccess && lastAttempt && Date.parse(lastSuccess.completedAt) > Date.parse(lastAttempt.completedAt)) lastAttempt = lastSuccess;
   return ledgerSchema.parse({ ...ledger, lastAttempt, lastSuccess });
 }
@@ -63,6 +68,7 @@ export function mergeAttempt(ledger: Ledger, input: Attempt): Ledger {
 export function health(ledger: Ledger, now: number) {
   if (!Number.isFinite(now)) throw new Error("operations-invalid-time");
   if (!ledger.lastSuccess) return "no-success" as const;
+  if (ledger.lastSuccess.profile !== activeProfile) return "profile-outdated" as const;
   const age = now - Date.parse(ledger.lastSuccess.completedAt);
   if (age < -60_000) throw new Error("operations-future-success");
   if (age > maxAgeMs) return "stale" as const;
@@ -106,8 +112,10 @@ export function validateCompletion(run: ApiRun, rawJobs: unknown, raw: unknown, 
       new Set(target.rules.map(rule => rule.id)).size !== 2 || target.rules.some(rule => rule.state !== "complete" || !rule.requests))) throw new Error("report-invalid");
   const phases = z.array(reportSchema).length(3).parse(rawReports);
   if (phases.some(phase => phase.run.status !== "completed" || phase.run.dirty || phase.run.revision !== run.head_sha) ||
-    new Set(phases.map(phase => phase.run.scope)).size !== 3) throw new Error("report-invalid");
+    new Set(phases.map(phase => phase.run.scope)).size !== 3 ||
+    phases[1].run.scope !== hash([activePolicy, "active", false]) || phases[2].run.scope !== hash([activePolicy, "passive", false])) throw new Error("report-invalid");
   return attemptSchema.parse({ runId: run.id, attempt: run.run_attempt, revision: run.head_sha, completedAt,
+    profile: activeProfile,
     result: "completed", reason: "completed", passiveRequests: report.passive.requests, activeRequests: report.requests });
 }
 
@@ -129,8 +137,9 @@ export function renderLedger(input: Ledger, now: number) {
   const latest = ledger.lastAttempt;
   const body = ["## Периодический ZAP", ledger.probe ? "**ТЕСТ СИГНАЛА. Не состояние настоящего скана. Время проверки может быть смоделировано.**" : "Журнал технического состояния; отсутствие находок не означает полноту проверки приложения.",
     `Состояние: **${state}**. Проверено: ${new Date(now).toISOString()}.`,
+    `Требуемый профиль: ${activePolicy.profile}, digest \`${activeProfile}\`. profile-outdated означает: нужен полный запуск нового профиля, дата прежнего анализа сохранена.`,
     "Расписание: 5-го числа, 10:17 Asia/Tokyo; просрочка — более 40 дней без полного анализа.",
-    success ? `Последний полный анализ: ${link(success)}, ${success.completedAt}, SHA \`${success.revision}\`. A/B completed, passive ${success.passiveRequests}, active ${success.activeRequests}.` : "Подтверждённого полного анализа нет.",
+    success ? `Последний подтверждённый анализ (${success.profile}): ${link(success)}, ${success.completedAt}, SHA \`${success.revision}\`. A/B completed, passive ${success.passiveRequests}, active ${success.activeRequests}.` : "Подтверждённого полного анализа нет.",
     latest ? `Последняя попытка: ${link(latest)}, **${latest.result}**, причина \`${latest.reason}\`.` : "Попыток пока нет.",
     "При сбое: открыть run, устранить причину, затем Actions → ZAP Manual (advisory) → Run workflow → main. Автоматических повторных атак нет.",
     "Подробные отчёты: artifact выбранного run, 30 дней. Этот журнал/история комментариев сохраняются до ручного удаления Issue.",
