@@ -48,8 +48,8 @@
     "@vercel/oidc-aws-credentials-provider": "^3.3.11",
     "dotenv": "^17.2.3",
     "framer-motion": "^13.5.1",
-    "google-auth-library": "^11.2.0",
-    "lucide-react": "^1.55.0",
+    "google-auth-library": "^11.3.0",
+    "lucide-react": "^1.56.0",
     "next": "16.4.0",
     "next-auth": "^5.0.0-beta.32",
     "next-intl": "^4.14.9",
@@ -62,7 +62,7 @@
     "react-dom": "19.3.0",
     "react-hot-toast": "^2.6.1",
     "react-markdown": "^10.1.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
