@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-18.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — приёмка ручного ZAP workflow; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение 2026-10-22 — подготовка backup (A108); приёмка ручного ZAP workflow — 2026-10-18; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
 
@@ -25,7 +25,7 @@ runtime-конфигурации, не к пользовательскому в�
 отказ при отсутствии файла (без платформенных credentials/сетевых вызовов).
 Новая граница или доступ не вводятся; принятые риски сохраняются.
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 107 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 108 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
@@ -183,7 +183,7 @@ flowchart LR
 | TB5-legacy | прежний Anthropic | код удалён; одно rule архивировано по сообщению владельца. Другие каналы не инвентаризированы (A93) |
 | TB6 | Next.js → Neon | verify-full, runtime-роль, scoped context/RLS/guards; deployed каталог требует live audit |
 | TB7 | пользователь/пространство A ↔ B | listInSpaceWhere, scoped транзакции/DB enforcement; логическая граница внутри потока |
-| TB8 | backup workflow → S3 | OIDC/ограниченная роль; external trust/bucket policy unknown |
+| TB8 | backup workflow → S3 | OIDC/ограниченная роль; клиент PGDG по HTTPS с отдельным signed-by (A108). External trust/bucket policy unknown |
 | TB9 | main CI → preview → Vercel | защищённый workflow синхронизирует проверенный SHA; branch/rulesets unknown |
 | TB10 | workflow → Neon enforcement | target guards, Environment, catalog contract, locks, транзакционный apply; среды отдельно |
 | TB11 | scanner → metadata / Registry | traffic/tagged revisions, offline evidence; read-only IAM отдельная live-проверка |
@@ -195,6 +195,14 @@ flowchart LR
 | TZ5 | source run/artifact → controller → GitHub Issue | Checkout только default branch, не head_sha события; source API/attempt/ветка/собственный repo, точные имена ZIP без extraction/исполнения, строгие JSON, issues:write только контроллеру. Live bootstrap/probes/workflow_run проверены 2026-10-18. Журнал/владельцы repo доверены, будущий cron/email и общий сбой Actions не гарантируются; A107 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
+
+Подготовка backup (2026-10-22): ключ PGDG ограничен одной APT source через
+`signed-by`, загрузка по HTTPS с отказом на HTTP-ошибку. Глобальное доверие
+через `apt-key` снято. Актив — полный дамп БД; установка пакетов остаётся
+доверенным кодом раннера. TLS БД, Environment Backup, OIDC и путь S3
+сохранены; новая внешняя платформа или credential не вводятся. Статический
+контракт A108 не доказывает доступность PGDG, отсутствие закладки или
+восстановимость дампа; live bucket policy и restore остаются unknown.
 
 ## Контроли, которые нужно сохранять
 

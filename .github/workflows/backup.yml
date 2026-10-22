@@ -26,11 +26,22 @@ jobs:
     steps:
       - name: Install PostgreSQL client
         run: |
-          sudo apt-get install -y wget gnupg
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates
+          # Ключ доверен только PGDG: apt-key удалён в Ubuntu 26.04,
+          # а глобальный trusted.gpg дал бы ему права на остальные репозитории.
+          sudo install -d -m 0755 /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --silent --location \
+            --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo chmod 0644 /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_restore --version
 
       # Строку подключения нельзя ни прочитать, ни провести через ревью: она
       # живёт в secret. Здесь клиент — настоящий libpq, для которого `require`
