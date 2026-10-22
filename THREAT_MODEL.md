@@ -1,8 +1,25 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение 2026-10-22 — подготовка backup (A108) и устранение Critical certifi FastAPI (A109); приёмка ручного ZAP workflow — 2026-10-18; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
+
+**Image review 2026-10-22, TB11/A66/A100.** Artifact scan `39732626472`
+для serving `b36483f…96c4c9b` проверен по SHA-256: 55 advisory High по 14 CVE,
+Critical=0, VEX/waiver=0. Четыре CVE без прежнего review изучены по upstream.
+Новые проверки strfmon, libstdc++ и Pod::Text в FastAPI PR #89 локально
+подтверждены на exact serving rootfs: PASS 29 checks, 30 candidates, 752 ELF,
+без запуска контейнера. PR #89 слит;
+[main-scan 39783031067](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/39783031067)
+подтвердил provenance/evidence/policy PASS, те же 29 checks/30 candidates,
+Critical=0, 55 advisory High и VEX/waiver=0.
+PBDS erase_if — header-only; отсутствие динамической
+libstdc++ не исключает статически встроенный шаблон. Sdist шести native-
+зависимостей не содержит известных PBDS-маркеров; соответствие wheel и
+полнота native build inputs не доказаны. Новых исключений/waiver нет,
+политика A100 и её принятый остаток сохраняются. Read-only Cloud Run API
+подтвердил тот же digest, 100% трафика и отсутствие command/volume overrides;
+это ручная проверка на дату, не CI-контроль конфигурации.
 
 **Dependency review 2026-10-18:** плановые minor/patch-обновления прямых зависимостей AWS SDK,
 Next.js/ESLint, OIDC, Google Auth, UI/i18n, логирования и тестового стека.
