@@ -140,8 +140,8 @@ A109 закрепляет отсутствие exact DER root в requests/httpx;
 всех TLS consumers/окружения или свидетельство отсутствия MITM.
 Из локального production-образа с новым certifi проверены HTTPS к Google signing
 keys (200, непустой набор) и Vertex endpoint (TLS/404, без credentials/модели).
-Анонимные внешние health/insights Cloud Run дают IAM 403. Авторизованный AI-flow
-после релиза не проверен: browser runtime недоступен; эти пробы его не заменяют.
+Анонимные внешние health/insights Cloud Run дают IAM 403. Владелец 2026-10-22 подтвердил работу AI-инсайта в production UI. Это общая
+ручная UI-проверка, не все AI-сценарии; browser runtime агента недоступен.
 Остальные 55 High advisory не пересматриваются этой задачей.
 
 ## Состояние доказательств
