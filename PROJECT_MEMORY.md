@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-22 (установка клиента для backup)
+**Последнее обновление:** 2026-10-22 (backup и разбор advisory High FastAPI)
 
 Согласована [спецификация ZAP](docs/zap-plan.md). Целевой контур:
 отдельная advisory job пассивного анализа выбранных Playwright-сценариев рядом
@@ -874,8 +874,9 @@ UPLOADED сохранены. Живая проверка вложений вып
   реальному удалению.
 - Еженедельный `image-scan.yml` FastAPI-репозитория читает фактически
   обслуживающие traffic/tagged revisions Cloud Run и сканирует каждый
-  уникальный immutable digest свежей базой Grype. High/Critical и техническая
-  ошибка делают job красной; JSON-отчёты хранятся 30 дней. Для job создан
+  уникальный immutable digest свежей базой Grype. Critical, исправимые/неясные
+  High и техническая ошибка делают job красной; not-fixed/wont-fix High
+  остаются advisory по A100. JSON-отчёты хранятся 30 дней. Для job создан
   keyless `github-image-scanner`: только `run.viewer` и repository-level
   `artifactregistry.reader`, без deploy/write.
 - Перед Grype тот же job без запуска контейнера получает `docker image inspect`
@@ -883,8 +884,20 @@ UPLOADED сохранены. Живая проверка вложений вып
   `amd64`, `appuser`, Uvicorn CMD, dpkg status, релевантные Perl-модули и AST
   `/app/app/*.py`; для glibc дополнительно разбирает undefined dynamic symbols
   всех ELF64 exact rootfs и проверяет условия трёх advisory. JSON сохраняется
-  в общем artifact. Автоматические checks поддерживают разбор 21 CVE, но сами
+  в общем artifact. В scan 39732626472 checks поддерживают разбор 27 CVE, но сами
   ничего не подавляют.
+- Review 2026-10-22 по artifact 39732626472: serving `b36483f…96c4c9b`,
+  Critical=0, 55 advisory High по 14 CVE, VEX/waiver=0. У десяти есть прежние
+  разборы; четыре дополнительно изучены по upstream. Для strfmon, aligned new
+  и Pod::Text добавлены candidate checks в FastAPI PR #89; локально exact
+  rootfs PASS: 29 checks, 30 candidates, 752 ELF. Cloud Run read-only
+  подтвердил ту же ревизию/digest, 100% трафика, отсутствие command/volume
+  overrides. PR #89 слит; main-scan 39783031067 подтвердил provenance,
+  evidence и policy PASS: 29 checks/30 candidates, Critical=0, 55 advisory High,
+  VEX/waiver=0. PBDS erase_if находится
+  в header-only шаблоне: отсутствие libstdc++ не доказывает отсутствия
+  статической копии. В шести sdist native-зависимостей PBDS не найден, но
+  соответствие sdist байтам wheel не доказано; эта CVE остаётся без VEX.
 - Production run `33297043344` развернул `sha256:082760…52fe3`, после чего
   контрольный image-scan `33297174858` подтвердил evidence `PASS`: 18/18 checks,
   18/18 candidate claims, `amd64`, `appuser`, 15 Python-файлов и отсутствие
