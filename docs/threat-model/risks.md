@@ -10,7 +10,6 @@
 
 | Приоритет | Пробел | Для закрытия |
 |---|---|---|
-| 0 | FastAPI serving certifi 2026.7.22: Critical GHSA-6q48-6c7w-9gw2 (A109), скомпрометированный CA | Точечное обновление до 2026.10.19, тесты CA, проверенный deploy и serving scan. До их успеха риск открыт; остальные 55 High вне задачи. |
 | 1 | A29/A74: неполный разбор exports, текст не исполнение auth/бюджета | AST/реальные exports, fail-closed неподдерживаемых форм, сценарии отказа/бюджета и альтернативного синтаксиса |
 | 1 | A56/A68: частичный network detector/file allowlist | Инвентарь клиентов/каждого call, aliases, SDK/ADC-пути, пробы нового call/формы |
 | 2 | A51/A71/A79: command/guard/имя без полной связи с исполнением | Уточнить shell/YAML-область, scripts и конкретных потребителей |
@@ -18,6 +17,16 @@
 | 2 | Внешний drift unknown: IAM/caps/env/roles/buckets/protection/rulesets/cron | Целевая инвентаризация/проба с датой/scope, доступ по SECRETS.md |
 | 2 | A90 caps — историческое console-наблюдение, не hard limit | Повторная сверка scope/сервиса/суммы/срабатывания; alert не cap |
 | 3 | Retry/time-budget AI SDK A16 и containment после смены провайдера не оценены | Текущие SDK/timeout/retry/все адресаты, затем решение |
+
+## Закрыто в проверенном serving-образе
+
+2026-10-22: Critical GHSA-6q48-6c7w-9gw2 устранён обновлением certifi до
+2026.10.19 (FastAPI PR #86, A109). Deploy 39732206290 и serving scan 39732626472
+подтвердили новую ревизию, provenance/evidence и policy PASS: Critical=0,
+certifi matches=0, VEX/waiver=0. Это состояние exact serving digest на дату
+проверки; 55 High advisory не закрываются и не пересматриваются этой задачей.
+Владелец 2026-10-22 подтвердил работу AI-инсайта в production UI; это общая
+ручная проверка, не полный набор AI-сценариев.
 
 ## Внедрение ZAP
 

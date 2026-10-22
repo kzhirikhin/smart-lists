@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение 2026-10-22 — подготовка backup (A108); приёмка ручного ZAP workflow — 2026-10-18; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение 2026-10-22 — подготовка backup (A108) и устранение Critical certifi FastAPI (A109); приёмка ручного ZAP workflow — 2026-10-18; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 ## Карта документа
 
@@ -123,14 +123,25 @@ Serving image scan [39569700298](https://github.com/kzhirikhin/smart-lists-fasta
 заблокирован GHSA-6q48-6c7w-9gw2: certifi 2026.7.22 доверяет emSign ECC Root CA - G3
 с скомпрометированными промежуточными CA. Затронуты получение Google signing keys
 в TB4 и исходящий TLS TB5. Успех scan 2026-10-14 не описывает текущую базу уязвимостей.
-Подготовлен точечный pin certifi 2026.10.19 и пересборка обоих locks с hashes;
-до deploy и нового serving scan production считается уязвимым.
+Исправление certifi 2026.10.19 опубликовано FastAPI PR #86, commit
+`24dbe7b6924da0bfe603537bd209b7bde9dfb328`. Deploy `39732206290` прошёл gates;
+ревизия `insights-api-00068-mdn` получает 100% трафика. Serving scan
+[39732626472](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/39732626472)
+подтвердил exact provenance/evidence и policy PASS: Critical=0, certifi matches=0,
+VEX/waiver=0. Parent OCI `sha256:9a8508060c8286fc7bfd676284e366f5030ed59d2b825b23e3d30575d7ccf78b`,
+serving child `sha256:b36483f57518b5b9889b97f6323186763ffe24cb869689b6e9ee9100096c4c9b`.
+Critical закрыт для проверенного serving digest; это датированная M, не гарантия
+будущего rollout или отсутствия других уязвимостей.
 Wheel сверён с PyPI SHA-256 и всеми файлами upstream commit
 `662df63d7906df66f1f07c0751a3dfe9da14d914`; из CA-набора удалён один root,
 новых roots нет. Runtime-код core.py не меняется. Срочное исключение A52
 из семидневной выдержки соответствует приоритету владельца; gates не ослабляются.
 A109 закрепляет отсутствие exact DER root в requests/httpx; это не проверка
 всех TLS consumers/окружения или свидетельство отсутствия MITM.
+Из локального production-образа с новым certifi проверены HTTPS к Google signing
+keys (200, непустой набор) и Vertex endpoint (TLS/404, без credentials/модели).
+Анонимные внешние health/insights Cloud Run дают IAM 403. Владелец 2026-10-22 подтвердил работу AI-инсайта в production UI. Это общая
+ручная UI-проверка, не все AI-сценарии; browser runtime агента недоступен.
 Остальные 55 High advisory не пересматриваются этой задачей.
 
 ## Состояние доказательств
