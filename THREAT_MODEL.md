@@ -1,6 +1,37 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-22.** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-05.** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+
+**Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
+[Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
+успешно проверил provenance/evidence прежнего serving `sha256:b36483f5…96c4c9b`,
+но заблокировал Python 3.14.9 / CVE-2026-115557 (Critical) и четыре исправимых
+High pyasn1 0.6.4; 60 неисправимых High остаются advisory по A100. Certifi-фикс
+A109 остаётся действующим, но не покрывает runtime-level distrust eMudhra
+intermediate CA keys. Затронуты TB4/TB5 (TLS и зависимости проверки вызывающего).
+FastAPI закрепляет Python 3.14.10 в builder/runtime/трёх workflow и
+pyasn1 0.6.5 в обоих hash-lock; другие Python-версии пакетов не изменены.
+299 тестов без сети, pip check, production build и health/auth/TLS smoke прошли.
+Локальный Grype 0.117.0 со свежей базой: PASS, Critical=0, блокирующих High=0,
+advisory High=60, VEX/waiver=0; это не serving/provenance-проверка production.
+Минимальные установленные версии и равенство patch pins проверяет CI-контракт;
+он не доказывает TLS-handshake distrust или недостижимость ASN.1 DoS во всех
+SDK/ADC-путях. Новых границ, IAM-прав, секретов или состава AI-данных нет;
+колёса/хеши, fail-closed scan, OIDC/WIF, квоты и прежние риски сохранены.
+Исправление опубликовано [FastAPI PR #96](https://github.com/kzhirikhin/smart-lists-fastapi-service/pull/96),
+commit `d8140c23dbd4a2f627b4ff7e603c8a5ce9769541`.
+[Deploy 41958660134](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41958660134)
+прошёл test, provenance, attestation, SBOM и pre-deploy Grype; ревизия
+`insights-api-00069-5fl` получает 100% трафика по результату deploy.
+[Serving scan 41959094732](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41959094732)
+подтвердил provenance/evidence и policy PASS: Critical=0, блокирующих High=0,
+advisory High=60, VEX/waiver=0. Parent OCI
+`sha256:b2c70a6841c62706164434f218c5e2a8db624991e36b7cc090f47a74e4e24ced`,
+serving child
+`sha256:5839780ab8f1207495c4511400c3b5fc0a4c2010bbc75d529d0daa2f82c06e8a`.
+Внешние health/insights без токена дают ожидаемый IAM 403. Ручная проверка
+реального AI-инсайта через production UI пока не выполнена в этой задаче.
+Подробный review: FastAPI `security/reviews/2026-11-05-image-scan.md`.
 
 ## Карта документа
 
@@ -42,7 +73,7 @@ runtime-конфигурации, не к пользовательскому в�
 отказ при отсутствии файла (без платформенных credentials/сетевых вызовов).
 Новая граница или доступ не вводятся; принятые риски сохраняются.
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 109 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 110 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
