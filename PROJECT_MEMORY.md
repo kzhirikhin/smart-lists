@@ -2,7 +2,20 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-10-22 (backup и разбор advisory High FastAPI)
+**Последнее обновление:** 2026-11-05 (выкладка security-версий FastAPI)
+
+Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
+Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
+и четырьмя исправимыми High pyasn1 0.6.4. Это не повторное появление certifi-CVE:
+фикс certifi 2026.10.19 сохранён. FastAPI закрепляет Python 3.14.10
+в обеих стадиях Docker и трёх workflow, pyasn1 0.6.5 — в исходном .in и обоих
+пересобранных hash-lock. 299 тестов без сети, pip check, build и auth/health/TLS
+smoke прошли; свежий локальный Grype PASS (Critical=0, блокирующих High=0,
+VEX/waiver=0). FastAPI PR #96 слит; deploy 41958660134 переключил 100% трафика
+на insights-api-00069-5fl. Serving scan 41959094732 подтвердил provenance/evidence
+и PASS (Critical=0, блокирующих High=0, advisory High=60, VEX/waiver=0).
+A110/risks фиксирует закрытие пяти находок для нового serving digest.
+Реальный AI-инсайт через production UI в этой задаче пока не проверен.
 
 Согласована [спецификация ZAP](docs/zap-plan.md). Целевой контур:
 отдельная advisory job пассивного анализа выбранных Playwright-сценариев рядом

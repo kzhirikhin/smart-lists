@@ -20,6 +20,15 @@
 
 ## Закрыто в проверенном serving-образе
 
+2026-11-05: CVE-2026-115557 и четыре High pyasn1 устранены обновлением
+Python до 3.14.10 и pyasn1 до 0.6.5 (FastAPI PR #96, A110). Deploy 41958660134
+и независимый serving scan 41959094732 подтвердили новую ревизию,
+provenance/evidence и policy PASS: Critical=0, блокирующих High=0,
+VEX/waiver=0. Закрытие относится к child `sha256:5839780a…2c06e8a` на дату
+проверки; 60 advisory High остаются принятым остатком A100. Внешние запросы
+без токена отклонены IAM 403. Ручная функциональная проверка AI-инсайта через
+production UI пока ожидается; отсутствие уязвимых версий её не заменяет.
+
 2026-10-22: Critical GHSA-6q48-6c7w-9gw2 устранён обновлением certifi до
 2026.10.19 (FastAPI PR #86, A109). Deploy 39732206290 и serving scan 39732626472
 подтвердили новую ревизию, provenance/evidence и policy PASS: Critical=0,
