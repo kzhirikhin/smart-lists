@@ -15,7 +15,8 @@ VEX/waiver=0). FastAPI PR #96 слит; deploy 41958660134 переключил 
 на insights-api-00069-5fl. Serving scan 41959094732 подтвердил provenance/evidence
 и PASS (Critical=0, блокирующих High=0, advisory High=60, VEX/waiver=0).
 A110/risks фиксирует закрытие пяти находок для нового serving digest.
-Реальный AI-инсайт через production UI в этой задаче пока не проверен.
+Владелец 2026-11-05 подтвердил получение реального AI-инсайта через production UI
+после выкладки. Это общая ручная проверка, не полный набор AI-сценариев.
 
 Согласована [спецификация ZAP](docs/zap-plan.md). Целевой контур:
 отдельная advisory job пассивного анализа выбранных Playwright-сценариев рядом
