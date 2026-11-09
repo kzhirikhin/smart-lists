@@ -33,6 +33,30 @@ serving child
 после выкладки. Это общая ручная проверка, не полный набор AI-сценариев.
 Подробный review: FastAPI `security/reviews/2026-11-05-image-scan.md`.
 
+## Security-обновление Next.js (2026-11-09, A52/A58)
+
+Next.js и `eslint-config-next` обновлены с 16.4.0 до 16.4.5:
+[октябрьский релиз](https://nextjs.org/blog/nextjs-security-update-october-14-2026)
+закрывает RCE в Cache Components/оптимизации изображений и DoS через Server Actions;
+[16.4.5](https://github.com/vercel/next.js/releases/tag/v16.4.5) включает семь
+ноябрьских advisory. App Router и Server Actions используются, поэтому октябрьский
+DoS применим к прежней версии независимо от отсутствия `use cache`/`next/image`.
+Затронута реализация TB1 и доступность приложения; новых активов, прав,
+границ доверия, credentials или внешних сервисов нет. Прикладные auth/space guards,
+Zod, CSP, квоты, noteVersion и realtime-протокол не меняются.
+Для подтверждённой уязвимости принято разовое security-исключение из A52:
+релиз 2026-11-03 младше семи дней. Установка без хуков и Linux lock сохранены.
+Контракт `test/next-config.test.ts` повышает минимальную версию до 16.4.5 и
+сверяет Next/ESLint/lock. Он не проверяет отсутствие будущих CVE, эксплуатацию
+уязвимостей или фактическую версию production; rollout пока не подтверждён.
+Локальный npm audit после обновления не содержит `next`, но сообщает 7 high
+и 9 moderate записей по другим пакетам/зависимым цепочкам. Их достижимость
+не установлена этим обновлением; отдельный пробел записан в `risks.md`.
+Проверены lint/typecheck, 833 unit, 579 static security, 320 integration
+(15 skipped) и 146 E2E на production-сборке Next.js 16.4.5 с локальными
+тестовыми БД. Live OAuth/Pusher/S3/AI не проверялись; тестовые сессии и
+фиктивные сервисные credentials не подтверждают внешние интеграции.
+
 ## Подпись состояния пункта (2026-11-09, A111)
 
 Добавлено общее для участников поле `Item.statusText`: одна строка plain text
