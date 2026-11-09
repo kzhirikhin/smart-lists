@@ -48,7 +48,14 @@ Zod, CSP, квоты, noteVersion и realtime-протокол не меняют
 релиз 2026-11-03 младше семи дней. Установка без хуков и Linux lock сохранены.
 Контракт `test/next-config.test.ts` повышает минимальную версию до 16.4.5 и
 сверяет Next/ESLint/lock. Он не проверяет отсутствие будущих CVE, эксплуатацию
-уязвимостей или фактическую версию production; rollout пока не подтверждён.
+уязвимостей или фактическую версию production. Rollout подтверждён отдельно:
+PR #260, `main@590a031a3cbf0b606bf431e4b91d9b88dc391484`,
+[main CI](https://github.com/kzhirikhin/smart-lists/actions/runs/42609609994)
+и production migration успешны;
+[Vercel](https://vercel.com/kirills-projects-ed9814e1/smart-lists/C7P8CCLHvMKW4D8BAKoHXZRuAoas)
+сообщил success для того же SHA. Production `/en` дал 200; чистый Chromium
+подтвердил гостевые список/пункт/подпись и reload без ошибок JavaScript.
+Это датированная проверка выкладки, не постоянный контроль deployed-версии.
 Локальный npm audit после обновления не содержит `next`, но сообщает 7 high
 и 9 moderate записей по другим пакетам/зависимым цепочкам. Их достижимость
 не установлена этим обновлением; отдельный пробел записан в `risks.md`.
