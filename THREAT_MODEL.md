@@ -63,7 +63,18 @@ owner/editor, другого пространства, постороннего,
 темах просмотрены; это не live-проверка Pusher или платформенных настроек.
 Одновременные изменения подписи разрешаются последним сохранением, как у
 названия; защита noteVersion заметок сохранена. Перенос сохраняет подпись,
-новая копия сбрасывает её. Внешние среды этой задачей не мигрировались.
+новая копия сбрасывает её. Production/Preview миграции уже применены
+защищёнными jobs: web CI 42589710225 и Preview sync 42590375617; read-only
+production catalog audit 42590524160 успешен. AI PR #100, deploy 42588589538:
+insights-api-00070-q8b получил 100% трафика; serving scan 42589128871
+подтвердил provenance/evidence и PASS (Critical=0, блокирующих High=0,
+advisory High=59, VEX/waiver=0). Web PR #258, SHA f82b342 опубликован вручную
+из main через Vercel Create Deployment после зелёной миграции: deployment
+ERDQcFW9eXztpPVcxmLzbQs7vGNA имеет Ready. Автозапуск main deployment
+не произошёл; причина неизвестна, настройки integration не менялись.
+Production guest smoke подтвердил /en=200, создание/сохранение подписи после
+reload и её положение над названием; это не проверка OAuth, live Pusher или
+ответа Vertex AI на новое поле. Новые пользовательские credentials не брались.
 
 ## Карта документа
 
