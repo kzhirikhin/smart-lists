@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-09 (подпись текущего состояния и AI-контекст, локальная разработка)
+**Последнее обновление:** 2026-11-09 (security-обновление Next.js 16.4.5; описание состояния опубликовано в AI и web)
 
 Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
 Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
@@ -179,6 +179,28 @@ Presigned GET для text/plain объявляет `charset=utf-8` через
 исполнение контроля; перенесённые строки явно не перепроверены, live-настройки
 unknown до новой проверки. Подробности — `docs/threat-model/audit-2026-10-14.md`.
 
+## Релиз описания состояния (2026-11-09)
+
+Web PR #258 слит, commit `f82b342036a40510e746978de0a2df9baf063bb1`. Полный
+[CI 42589710225](https://github.com/kzhirikhin/smart-lists/actions/runs/42589710225)
+прошёл static/unit/security, интеграции ограниченной runtime-ролью, E2E
+и production migration: `20261109000000_add_item_state` применена.
+Preview sync 42590375617 и read-only production catalog audit 42590524160
+также успешны. AI PR #100 опубликован раньше web: deploy 42588589538,
+ревизия `insights-api-00070-q8b`, 100% трафика по deploy job; независимый scan
+42589128871 подтвердил provenance/evidence и PASS (Critical=0, блокирующих
+High=0, advisory High=59, VEX/waiver=0).
+
+Web опубликован вручную из main SHA `f82b342` после завершения migration gate:
+[Vercel Ready](https://vercel.com/kirills-projects-ed9814e1/smart-lists/ERDQcFW9eXztpPVcxmLzbQs7vGNA).
+Автопубликация для этого main push не создалась; причина не установлена,
+обход выполнялся штатным Create Deployment пользователем, credentials не
+передавались агенту. Production guest smoke в отдельном браузерном контексте
+подтвердил /en=200, добавление подписи, сохранение после reload и расположение
+над названием; тестовые данные остались только в localStorage этого контекста.
+Реальный AI-запрос с новым полем, OAuth и live Pusher не проверялись:
+доступа к авторизованной пользовательской browser-сессии не было.
+
 ## Назначение
 
 Smart Lists — локализованное веб-приложение для личных и совместных списков. Пользователь организует списки по пространствам и группам, совместно редактирует записи и заметки, прикрепляет файлы и может запрашивать AI-инсайт.
@@ -190,7 +212,7 @@ Smart Lists — локализованное веб-приложение для 
 
 ## Актуальный стек
 
-- Next.js и `eslint-config-next` `16.4.0`, App Router, Server Components и Server Actions;
+- Next.js и `eslint-config-next` `16.4.5`, App Router, Server Components и Server Actions;
 - React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.5.1` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.10`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
@@ -202,6 +224,12 @@ Smart Lists — локализованное веб-приложение для 
 - Vitest `5.0.3` (точная версия), Playwright `1.64.0` — тестовый стек; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Security-обновление 2026-11-09: Next.js/ESLint `16.4.0 → 16.4.5` включает
+октябрьские RCE/Server Actions DoS и семь ноябрьских advisory. Для подтверждённой
+уязвимости сделано разовое исключение из семидневного cooldown (релиз 2026-11-03).
+Минимум в `test/next-config.test.ts` поднят до 16.4.5; это проверка версии,
+а не автоматический поиск новых CVE или подтверждение production deployment.
 
 Next.js и его ESLint-конфигурация обновляются совместно: security-контракт
 проверяет равенство версий manifest/lock. ESLint 16.4 включает новые правила
@@ -316,7 +344,7 @@ critical `GHSA-vcvr-r3jv-pc5j` (RCE в Node.js `next/og ImageResponse`)
 и последующие advisory релиза 16.3.8. Приложение не использует `next/og`,
 динамические metadata image routes, `next/image`, Draft Mode или `use cache`;
 исправление зависимости снимает необходимость полагаться на эту недостижимость.
-Тест `next-config.test.ts` запрещает откат ниже 16.3.8 и рассинхрон Next/ESLint/lock.
+Тест `next-config.test.ts` теперь запрещает откат ниже 16.4.5 и рассинхрон Next/ESLint/lock.
 Другие high/moderate-находки dependency audit требуют отдельного разбора.
 
 Security-обновления 2026-09-06: `fast-uri` 3.1.7 в дереве Prisma CLI и
@@ -727,8 +755,7 @@ UPLOADED сохранены. Живая проверка вложений вып
   недоверенные данные внутри экранированного JSON, не инструкции и не замена
   статуса. Уведомление о составе данных обновлено на четырёх языках. Для релиза
   сначала обновляется FastAPI, затем web; реальная модель локально не вызывается. Миграция `20261109000000_add_item_state` аддитивная;
-  перед запуском web её нужно применить к выбранной среде. Внешние среды
-  этой локальной задачей не мигрировались.
+  перед запуском web её нужно применить к выбранной среде. Production и Preview мигрированы защищёнными jobs; публикация web описана ниже.
 
 - `Item` принадлежит списку и может хранить автора добавления.
 - `ItemStatus` включён в точный enum-инвентарь операционных ролей; набор
