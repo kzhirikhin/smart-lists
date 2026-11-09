@@ -77,3 +77,34 @@ describe("database release workflow", () => {
     expect(guard).not.toContain("target.database");
   });
 });
+
+const backup = readRepoFile(".github/workflows/backup.yml");
+const backupInstall = backup.slice(
+  backup.indexOf("      - name: Install PostgreSQL client"),
+  backup.indexOf("      - name: Verify SSL mode"),
+);
+
+describe("backup PostgreSQL client installation", () => {
+  it("ограничивает доверие загруженному ключу репозиторием PGDG", () => {
+    const keyPath = backupInstall.match(/--output (\/\S+\.asc)/)?.[1];
+    expect(keyPath).toBeDefined();
+    expect(backupInstall).toContain("signed-by=" + keyPath);
+    expect(backupInstall).toContain("https://apt.postgresql.org/pub/repos/apt");
+    expect(backupInstall).toContain("https://www.postgresql.org/media/keys/ACCC4CF8.asc");
+    expect(backupInstall).not.toMatch(/sudo apt-key|trusted\.gpg\.d|trusted=yes|allow-unauthenticated/);
+    expect(backupInstall).toContain("set -euo pipefail");
+    expect(backupInstall).toMatch(/curl[^\n]*--fail/);
+    expect(backupInstall).toContain("sudo chmod 0644 " + keyPath);
+  });
+
+  it("сохраняет major клиента для дампа и проверки и не получает секреты", () => {
+    const installedMajor = backupInstall.match(/apt-get install -y postgresql-client-(\d+)/)?.[1];
+    expect(installedMajor).toBe("17");
+    const tools = [...backup.matchAll(/\/usr\/lib\/postgresql\/(\d+)\/bin\/(pg_dump|pg_restore)/g)];
+    expect(tools.length).toBeGreaterThanOrEqual(4);
+    expect(tools.every(([, major]) => major === installedMajor)).toBe(true);
+    expect(backupInstall).toContain("pg_dump --version");
+    expect(backupInstall).toContain("pg_restore --version");
+    expect(backupInstall).not.toContain("secrets.");
+  });
+});

@@ -744,6 +744,7 @@ export default function ListsContainer({
         const matchedItems = list.items.filter(
           (item) =>
             item.name.toLocaleLowerCase().includes(q) ||
+            (item.statusText?.toLocaleLowerCase().includes(q) ?? false) ||
             (item.note?.toLocaleLowerCase().includes(q) ?? false),
         );
         if (matchedItems.length > 0) {

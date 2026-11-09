@@ -31,6 +31,7 @@ import { auth } from "@/auth";
 import { listInSpaceWhere } from "@/lib/spaces";
 import { getCloudRunIdToken } from "@/lib/gcp-auth";
 import { resolveInsightsServiceUrl } from "@/lib/insights-service-url";
+import { itemStateForInsight } from "@/lib/item-state";
 import { deriveParentStatus, getItemStatus, type ItemStatus } from "@/lib/item-status";
 import { MAX_ITEMS_PER_LIST, MAX_SUB_ITEMS_PER_ITEM } from "@/lib/limits";
 import { logger, hashId } from "@/lib/logger";
@@ -146,7 +147,7 @@ export async function getListInsight(
             { createdAt: "asc" },
           ],
           take: MAX_ITEMS_PER_LIST,
-          select: { id: true, name: true, isCompleted: true, status: true },
+          select: { id: true, name: true, statusText: true, isCompleted: true, status: true },
         }),
         tx.item.findMany({
           where: { listId, parentId: { not: null } },
@@ -159,6 +160,7 @@ export async function getListInsight(
           select: {
             id: true,
             name: true,
+            statusText: true,
             isCompleted: true,
             status: true,
             parentId: true,
@@ -176,6 +178,7 @@ export async function getListInsight(
           select: {
             id: true,
             name: true,
+            statusText: true,
             isCompleted: true,
             status: true,
             note: true,
@@ -279,7 +282,7 @@ export async function getListInsight(
   // Пункты с заметками идут первыми — тот же приоритет, что и раньше.
   const selectedItems = new Map<
     string,
-    { id: string; name: string; isCompleted: boolean; status: ItemStatus }
+    { id: string; name: string; statusText: string | null; isCompleted: boolean; status: ItemStatus }
   >();
   for (const item of noteCandidates) {
     if (item.parentId !== null || !noteByItemId.has(item.id)) continue;
@@ -287,6 +290,7 @@ export async function getListInsight(
     selectedItems.set(item.id, {
       id: item.id,
       name: item.name,
+      statusText: item.statusText,
       isCompleted: item.isCompleted,
       status: item.status,
     });
@@ -336,12 +340,14 @@ export async function getListInsight(
     const status = statusOf(item);
     return {
       name: item.name.slice(0, 200),
+      status_text: itemStateForInsight(item.statusText),
       // Статус выводится из полной выборки до усечения контекста.
       status,
       is_completed: status === "COMPLETED",
       note: noteByItemId.get(item.id) ?? null,
       sub_items: subItems.map((subItem) => ({
         name: subItem.name.slice(0, 200),
+        status_text: itemStateForInsight(subItem.statusText),
         status: getItemStatus(subItem),
         is_completed: subItem.isCompleted,
         note: noteByItemId.get(subItem.id) ?? null,

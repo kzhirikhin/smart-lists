@@ -1,8 +1,88 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-10-18.** STRIDE по потокам/границам, LINDDUN для AI. Дополнение этой даты — приёмка ручного ZAP workflow; аудит доказательств остальных разделов датирован 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-09.** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+
+**Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
+[Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
+успешно проверил provenance/evidence прежнего serving `sha256:b36483f5…96c4c9b`,
+но заблокировал Python 3.14.9 / CVE-2026-115557 (Critical) и четыре исправимых
+High pyasn1 0.6.4; 60 неисправимых High остаются advisory по A100. Certifi-фикс
+A109 остаётся действующим, но не покрывает runtime-level distrust eMudhra
+intermediate CA keys. Затронуты TB4/TB5 (TLS и зависимости проверки вызывающего).
+FastAPI закрепляет Python 3.14.10 в builder/runtime/трёх workflow и
+pyasn1 0.6.5 в обоих hash-lock; другие Python-версии пакетов не изменены.
+299 тестов без сети, pip check, production build и health/auth/TLS smoke прошли.
+Локальный Grype 0.117.0 со свежей базой: PASS, Critical=0, блокирующих High=0,
+advisory High=60, VEX/waiver=0; это не serving/provenance-проверка production.
+Минимальные установленные версии и равенство patch pins проверяет CI-контракт;
+он не доказывает TLS-handshake distrust или недостижимость ASN.1 DoS во всех
+SDK/ADC-путях. Новых границ, IAM-прав, секретов или состава AI-данных нет;
+колёса/хеши, fail-closed scan, OIDC/WIF, квоты и прежние риски сохранены.
+Исправление опубликовано [FastAPI PR #96](https://github.com/kzhirikhin/smart-lists-fastapi-service/pull/96),
+commit `d8140c23dbd4a2f627b4ff7e603c8a5ce9769541`.
+[Deploy 41958660134](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41958660134)
+прошёл test, provenance, attestation, SBOM и pre-deploy Grype; ревизия
+`insights-api-00069-5fl` получает 100% трафика по результату deploy.
+[Serving scan 41959094732](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41959094732)
+подтвердил provenance/evidence и policy PASS: Critical=0, блокирующих High=0,
+advisory High=60, VEX/waiver=0. Parent OCI
+`sha256:b2c70a6841c62706164434f218c5e2a8db624991e36b7cc090f47a74e4e24ced`,
+serving child
+`sha256:5839780ab8f1207495c4511400c3b5fc0a4c2010bbc75d529d0daa2f82c06e8a`.
+Внешние health/insights без токена дают ожидаемый IAM 403. Владелец 2026-11-05 подтвердил получение реального AI-инсайта через production UI
+после выкладки. Это общая ручная проверка, не полный набор AI-сценариев.
+Подробный review: FastAPI `security/reviews/2026-11-05-image-scan.md`.
+
+## Подпись состояния пункта (2026-11-09, A111)
+
+Добавлено общее для участников поле `Item.statusText`: одна строка plain text
+до 120 символов, не связанная с enum статуса или версией заметки. Затронуты
+активы содержимого списков, TB1/TB6 и гостевое localStorage; передача
+подписи в AI затрагивает также TB4/TB5. Новых границ,
+сервисов или credentials нет. Доступ проверяется по БД в текущем пространстве
+и повторяется в UPDATE; сохранены auth, суточный бюджет, scoped DB, layout
+revalidation и after/Pusher с исключением socketId. Pusher передаёт только
+refresh; подпись не логируется. В AI-контекст она включается как отдельное
+поле `status_text` у отобранных пунктов и подпунктов после повторного Zod
+safeParse. FastAPI независимо проверяет тип, trim, одну строку и 120 символов,
+при отсутствии/пустом значении сохраняет совместимость старого клиента.
+Бюджеты 50 пунктов/100 подпунктов и фактического тела 100 КБ сохранены;
+подписей не более 18 000 символов. State text сериализуется только в общий
+экранированный untrusted JSON; system prompt трактует его как ситуацию/блокер,
+не меняющий enum статуса, и запрещает исполнять вложенные команды.
+Уведомление о составе данных обновлено в четырёх локалях; opt-out и квоты
+сохранены, прежние риски внешней обработки распространяются на подпись.
+Проверены обе стороны контракта, граничные значения и prompt injection
+без сети и вызовов модели; это не подтверждение послушания реальной модели.
+Выкладка требует FastAPI перед web. Zod ограничивает ввод,
+React отображает текст без разбора HTML. Миграция добавляет nullable VARCHAR(120),
+не меняет RLS, FK и права ролей. Проверены schema/guest unit и DB-интеграции
+owner/editor, другого пространства, постороннего, отзыва share и валидации;
+39 E2E подтвердили новый редактор, reload, отмену, удаление, поиск, гостя
+и существующие потоки пунктов/подпунктов. Снимки на 320/1280 px в тёмной/светлой
+темах просмотрены; это не live-проверка Pusher или платформенных настроек.
+Одновременные изменения подписи разрешаются последним сохранением, как у
+названия; защита noteVersion заметок сохранена. Перенос сохраняет подпись,
+новая копия сбрасывает её. Внешние среды этой задачей не мигрировались.
 
 ## Карта документа
+
+**Image review 2026-10-22, TB11/A66/A100.** Artifact scan `39732626472`
+для serving `b36483f…96c4c9b` проверен по SHA-256: 55 advisory High по 14 CVE,
+Critical=0, VEX/waiver=0. Четыре CVE без прежнего review изучены по upstream.
+Новые проверки strfmon, libstdc++ и Pod::Text в FastAPI PR #89 локально
+подтверждены на exact serving rootfs: PASS 29 checks, 30 candidates, 752 ELF,
+без запуска контейнера. PR #89 слит;
+[main-scan 39783031067](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/39783031067)
+подтвердил provenance/evidence/policy PASS, те же 29 checks/30 candidates,
+Critical=0, 55 advisory High и VEX/waiver=0.
+PBDS erase_if — header-only; отсутствие динамической
+libstdc++ не исключает статически встроенный шаблон. Sdist шести native-
+зависимостей не содержит известных PBDS-маркеров; соответствие wheel и
+полнота native build inputs не доказаны. Новых исключений/waiver нет,
+политика A100 и её принятый остаток сохраняются. Read-only Cloud Run API
+подтвердил тот же digest, 100% трафика и отсутствие command/volume overrides;
+это ручная проверка на дату, не CI-контроль конфигурации.
 
 **Dependency review 2026-10-18:** плановые minor/patch-обновления прямых зависимостей AWS SDK,
 Next.js/ESLint, OIDC, Google Auth, UI/i18n, логирования и тестового стека.
@@ -25,7 +105,7 @@ runtime-конфигурации, не к пользовательскому в�
 отказ при отсутствии файла (без платформенных credentials/сетевых вызовов).
 Новая граница или доступ не вводятся; принятые риски сохраняются.
 
-- [Реестр допущений](docs/threat-model/assumptions.md) — 107 стабильных ID, контроль, границы, дата и статус сверки.
+- [Реестр допущений](docs/threat-model/assumptions.md) — 111 стабильных ID, контроль, границы, дата и статус сверки.
 - [Риски и план](docs/threat-model/risks.md) — открытые пробелы, принятые риски и условия пересмотра.
 - [Отчёт аудита](docs/threat-model/audit-2026-10-14.md) — источники, воспроизведённые пропуски и ограничения.
 - [Исторический снимок](docs/threat-model/archive-2026-10-14.md) — прежние rollout/digest; содержит устаревшие/опровергнутые утверждения, не источник текущих гарантий.
@@ -117,6 +197,33 @@ runner: PR-проверка выявила риск cache poisoning, кешир�
 CodeQL alert #7 — намеренный reflected XSS только в изолированной учебной
 мишени control, исключение used in tests; правило приложения не отключено.
 
+## Critical: доверие TLS FastAPI (2026-10-22)
+
+Serving image scan [39569700298](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/39569700298)
+заблокирован GHSA-6q48-6c7w-9gw2: certifi 2026.7.22 доверяет emSign ECC Root CA - G3
+с скомпрометированными промежуточными CA. Затронуты получение Google signing keys
+в TB4 и исходящий TLS TB5. Успех scan 2026-10-14 не описывает текущую базу уязвимостей.
+Исправление certifi 2026.10.19 опубликовано FastAPI PR #86, commit
+`24dbe7b6924da0bfe603537bd209b7bde9dfb328`. Deploy `39732206290` прошёл gates;
+ревизия `insights-api-00068-mdn` получает 100% трафика. Serving scan
+[39732626472](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/39732626472)
+подтвердил exact provenance/evidence и policy PASS: Critical=0, certifi matches=0,
+VEX/waiver=0. Parent OCI `sha256:9a8508060c8286fc7bfd676284e366f5030ed59d2b825b23e3d30575d7ccf78b`,
+serving child `sha256:b36483f57518b5b9889b97f6323186763ffe24cb869689b6e9ee9100096c4c9b`.
+Critical закрыт для проверенного serving digest; это датированная M, не гарантия
+будущего rollout или отсутствия других уязвимостей.
+Wheel сверён с PyPI SHA-256 и всеми файлами upstream commit
+`662df63d7906df66f1f07c0751a3dfe9da14d914`; из CA-набора удалён один root,
+новых roots нет. Runtime-код core.py не меняется. Срочное исключение A52
+из семидневной выдержки соответствует приоритету владельца; gates не ослабляются.
+A109 закрепляет отсутствие exact DER root в requests/httpx; это не проверка
+всех TLS consumers/окружения или свидетельство отсутствия MITM.
+Из локального production-образа с новым certifi проверены HTTPS к Google signing
+keys (200, непустой набор) и Vertex endpoint (TLS/404, без credentials/модели).
+Анонимные внешние health/insights Cloud Run дают IAM 403. Владелец 2026-10-22 подтвердил работу AI-инсайта в production UI. Это общая
+ручная UI-проверка, не все AI-сценарии; browser runtime агента недоступен.
+Остальные 55 High advisory не пересматриваются этой задачей.
+
 ## Состояние доказательств
 
 Есть прикладные/DB-контроли доступа, ограничения входа/квот, security gate и защищённые release-пути. Наличие контроля не доказывает полноту всех способов доступа или невозможность регрессии.
@@ -183,7 +290,7 @@ flowchart LR
 | TB5-legacy | прежний Anthropic | код удалён; одно rule архивировано по сообщению владельца. Другие каналы не инвентаризированы (A93) |
 | TB6 | Next.js → Neon | verify-full, runtime-роль, scoped context/RLS/guards; deployed каталог требует live audit |
 | TB7 | пользователь/пространство A ↔ B | listInSpaceWhere, scoped транзакции/DB enforcement; логическая граница внутри потока |
-| TB8 | backup workflow → S3 | OIDC/ограниченная роль; external trust/bucket policy unknown |
+| TB8 | backup workflow → S3 | OIDC/ограниченная роль; клиент PGDG по HTTPS с отдельным signed-by (A108). External trust/bucket policy unknown |
 | TB9 | main CI → preview → Vercel | защищённый workflow синхронизирует проверенный SHA; branch/rulesets unknown |
 | TB10 | workflow → Neon enforcement | target guards, Environment, catalog contract, locks, транзакционный apply; среды отдельно |
 | TB11 | scanner → metadata / Registry | traffic/tagged revisions, offline evidence; read-only IAM отдельная live-проверка |
@@ -195,6 +302,14 @@ flowchart LR
 | TZ5 | source run/artifact → controller → GitHub Issue | Checkout только default branch, не head_sha события; source API/attempt/ветка/собственный repo, точные имена ZIP без extraction/исполнения, строгие JSON, issues:write только контроллеру. Live bootstrap/probes/workflow_run проверены 2026-10-18. Журнал/владельцы repo доверены, будущий cron/email и общий сбой Actions не гарантируются; A107 |
 
 SDK выполняют дополнительные запросы (БД, S3, Pusher, JWKS, ADC); DFD и egress-тесты не полная опись сетевых соединений.
+
+Подготовка backup (2026-10-22): ключ PGDG ограничен одной APT source через
+`signed-by`, загрузка по HTTPS с отказом на HTTP-ошибку. Глобальное доверие
+через `apt-key` снято. Актив — полный дамп БД; установка пакетов остаётся
+доверенным кодом раннера. TLS БД, Environment Backup, OIDC и путь S3
+сохранены; новая внешняя платформа или credential не вводятся. Статический
+контракт A108 не доказывает доступность PGDG, отсутствие закладки или
+восстановимость дампа; live bucket policy и restore остаются unknown.
 
 ## Контроли, которые нужно сохранять
 

@@ -232,7 +232,7 @@
     "analyzing": "分析中...",
     "error": "インサイトを取得できませんでした",
     "rateLimitError": "本日の上限に達しました。明日お試しください。",
-    "privacyNotice": "リスト名、項目とサブ項目およびその進行状況、共有相手を含む全員のメモ、あなたのグループ名、あなたの質問が、分析のためVertex AI（Google Cloud）へ送信されます。参加者は誰でもリストメニューからオフにできます。",
+    "privacyNotice": "リスト名、項目とサブ項目およびその進行状況と現状の説明、共有相手を含む全員のメモ、あなたのグループ名、あなたの質問が、分析のためVertex AI（Google Cloud）へ送信されます。参加者は誰でもリストメニューからオフにできます。",
     "disabledError": "このリストではAIがオフになっています",
     "notesContext": "送信した項目メモ: {included}件、省略: {omitted}件。"
   },
@@ -306,5 +306,12 @@
       "confirmationMismatch": "名前が一致しません",
       "unknownError": "操作を完了できませんでした"
     }
+  },
+  "ItemState": {
+    "add": "現状を追加",
+    "edit": "現状を編集",
+    "label": "現状",
+    "placeholder": "例：返答待ち",
+    "error": "現状を保存できませんでした"
   }
 }

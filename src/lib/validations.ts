@@ -12,6 +12,7 @@
  * а возвращает `{ success: true, data }` или `{ success: false, error }`.
  */
 
+import { itemStateTextSchema } from "@/lib/item-state";
 import { z } from "zod";
 import { ITEM_STATUSES } from "@/lib/item-status";
 import { MAX_FILE_SIZE, sanitizeFileName } from "@/lib/attachments";
@@ -336,6 +337,12 @@ export const getAttachmentUrlSchema = z.object({
   spaceId: z.string().min(1).max(100),
   /** true → форсировать скачивание, false → инлайн-просмотр. */
   download: z.boolean().optional(),
+});
+
+/** Подпись состояния — одна строка plain text, пустая строка удаляет её. */
+export const updateItemStateSchema = z.object({
+  itemId: z.string().min(1),
+  statusText: itemStateTextSchema,
 });
 
 /**

@@ -232,7 +232,7 @@
     "analyzing": "Analyzing...",
     "error": "Failed to get the insight",
     "rateLimitError": "Daily limit reached. Try again tomorrow.",
-    "privacyNotice": "The list title, its items and sub-items with their work statuses, notes of everyone sharing it, your group names and your question are sent to Vertex AI (Google Cloud) for analysis. Any member can turn this off in the list menu.",
+    "privacyNotice": "The list title, its items and sub-items with their work statuses and current state descriptions, notes of everyone sharing it, your group names and your question are sent to Vertex AI (Google Cloud) for analysis. Any member can turn this off in the list menu.",
     "disabledError": "AI is turned off for this list",
     "notesContext": "Item notes sent: {included}; omitted: {omitted}."
   },
@@ -306,5 +306,12 @@
       "confirmationMismatch": "The name does not match",
       "unknownError": "The operation could not be completed"
     }
+  },
+  "ItemState": {
+    "add": "Add current state",
+    "edit": "Edit current state",
+    "label": "Current state",
+    "placeholder": "For example, waiting for a reply",
+    "error": "Could not save current state"
   }
 }

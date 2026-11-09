@@ -55,6 +55,7 @@ export default async function ListsDataFetcher({
           select: {
             id: true,
             name: true,
+            statusText: true,
             note: true,
             noteVersion: true,
             isCompleted: true,
