@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-09 (описание состояния опубликовано в AI и web, production smoke)
+**Последнее обновление:** 2026-11-09 (security-обновление Next.js 16.4.5; описание состояния опубликовано в AI и web)
 
 Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
 Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
@@ -212,7 +212,7 @@ Smart Lists — локализованное веб-приложение для 
 
 ## Актуальный стек
 
-- Next.js и `eslint-config-next` `16.4.0`, App Router, Server Components и Server Actions;
+- Next.js и `eslint-config-next` `16.4.5`, App Router, Server Components и Server Actions;
 - React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.5.1` и dnd-kit;
 - Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.10`;
 - Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
@@ -224,6 +224,12 @@ Smart Lists — локализованное веб-приложение для 
 - Vitest `5.0.3` (точная версия), Playwright `1.64.0` — тестовый стек; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
+
+Security-обновление 2026-11-09: Next.js/ESLint `16.4.0 → 16.4.5` включает
+октябрьские RCE/Server Actions DoS и семь ноябрьских advisory. Для подтверждённой
+уязвимости сделано разовое исключение из семидневного cooldown (релиз 2026-11-03).
+Минимум в `test/next-config.test.ts` поднят до 16.4.5; это проверка версии,
+а не автоматический поиск новых CVE или подтверждение production deployment.
 
 Next.js и его ESLint-конфигурация обновляются совместно: security-контракт
 проверяет равенство версий manifest/lock. ESLint 16.4 включает новые правила
@@ -338,7 +344,7 @@ critical `GHSA-vcvr-r3jv-pc5j` (RCE в Node.js `next/og ImageResponse`)
 и последующие advisory релиза 16.3.8. Приложение не использует `next/og`,
 динамические metadata image routes, `next/image`, Draft Mode или `use cache`;
 исправление зависимости снимает необходимость полагаться на эту недостижимость.
-Тест `next-config.test.ts` запрещает откат ниже 16.3.8 и рассинхрон Next/ESLint/lock.
+Тест `next-config.test.ts` теперь запрещает откат ниже 16.4.5 и рассинхрон Next/ESLint/lock.
 Другие high/moderate-находки dependency audit требуют отдельного разбора.
 
 Security-обновления 2026-09-06: `fast-uri` 3.1.7 в дереве Prisma CLI и

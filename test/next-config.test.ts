@@ -43,12 +43,12 @@ describe("nextConfig", () => {
     const version = manifest.dependencies.next;
 
     // Точная stable-версия исключает незаметный переход на prerelease.
-    // 16.3.8 включает исправление RCE в next/og и последующие security-патчи.
+    // 16.4.5 включает октябрьские RCE/Server Actions DoS и ноябрьские security-патчи.
     expect(version).toMatch(/^\d+\.\d+\.\d+$/);
     const [major, minor, patch] = version.split(".").map(Number);
     expect(
       major > 16 ||
-        (major === 16 && (minor > 3 || (minor === 3 && patch >= 8))),
+        (major === 16 && (minor > 4 || (minor === 4 && patch >= 5))),
     ).toBe(true);
     expect(manifest.devDependencies["eslint-config-next"]).toBe(version);
     expect(lock.packages["node_modules/next"].version).toBe(version);
