@@ -1,0 +1,77 @@
+import { test, anonymousTest, expect } from "./fixtures";
+import { makeItems, makeList, makeSubItems, setGuestMode } from "./factories";
+import { addItem, createList, itemRow, listCard, onlyListCard, openItemMenu, openSpace, subItemRow, visible } from "./helpers";
+
+for (const [width, theme, locale] of [[320, "dark", "ru"], [1280, "light", "en"]] as const) {
+  test("состояние: сохранение, отмена, поиск и подпункты " + width, async ({ page, user, db }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.addInitScript((value) => localStorage.setItem("theme", value), theme);
+    const list = await makeList(db, user.id, user.defaultSpaceId);
+    const [item] = await makeItems(db, list.id, ["Название задачи"]);
+    const [sub] = await makeSubItems(db, list.id, item.id, ["Подзадача"]);
+    await db.item.update({ where: { id: item.id }, data: { status: "IN_PROGRESS" } });
+    await openSpace(page, user);
+    await page.goto("/" + locale + "/spaces/" + user.defaultSpaceId);
+    const card = listCard(page, list.id);
+    const row = itemRow(card, item.id);
+    await (await openItemMenu(card, item.id)).getByTestId("item-state-edit").click();
+    await row.getByTestId("item-state-input").first().fill("Ожидаю ответа");
+    await row.getByTestId("item-state-input").first().press("Enter");
+    await expect(row.getByTestId("item-state-text").first()).toHaveText("Ожидаю ответа");
+    const stateBox = await row.getByTestId("item-state-text").first().boundingBox();
+    const nameBox = await row.getByTestId("item-name").first().boundingBox();
+    expect(stateBox!.y + stateBox!.height).toBeLessThanOrEqual(nameBox!.y);
+    await page.reload();
+    await expect(row.getByTestId("item-state-text").first()).toHaveText("Ожидаю ответа");
+    await row.getByTestId("item-state-text").first().click();
+    await row.getByTestId("item-state-input").first().fill("Не сохранять");
+    await row.getByTestId("item-state-input").first().press("Escape");
+    await expect(row.getByTestId("item-state-text").first()).toHaveText("Ожидаю ответа");
+    await row.getByTestId("item-state-text").first().click();
+    await expect(row.getByTestId("item-state-save").first()).toHaveText("✓");
+    await expect(row.getByTestId("item-state-cancel").first()).toHaveText("✗");
+    const inputBox = await row.getByTestId("item-state-input").first().boundingBox();
+    const saveBox = await row.getByTestId("item-state-save").first().boundingBox();
+    expect(saveBox!.x).toBeGreaterThanOrEqual(inputBox!.x + inputBox!.width);
+    await row.getByTestId("item-state-input").first().fill("Отменить кнопкой");
+    await row.getByTestId("item-state-cancel").first().click();
+    await expect(row.getByTestId("item-state-text").first()).toHaveText("Ожидаю ответа");
+    const subRow = subItemRow(card, sub.id);
+    await subRow.getByTestId("item-menu-trigger").click();
+    await subRow.getByTestId("item-state-edit").click();
+    const longText = "<img src=x onerror=alert(1)>" + "я".repeat(80);
+    await subRow.getByTestId("item-state-input").fill(longText);
+    await subRow.getByTestId("item-state-save").click();
+    await expect(subRow.getByTestId("item-state-text")).toHaveText(longText);
+    await expect(subRow.getByTestId("item-state-text").locator("img")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await card.screenshot({ path: testInfo.outputPath("item-state.png") });
+    await visible(page, "tab-search").click();
+    await visible(page, "search-input").fill("Ожидаю");
+    await expect(row.getByTestId("item-state-text").first().locator("mark")).toHaveText("Ожидаю");
+    await visible(page, "search-input").fill("");
+    await row.getByTestId("item-state-text").first().click();
+    await row.getByTestId("item-state-input").first().fill("");
+    await row.getByTestId("item-state-save").first().click();
+    await expect(row.getByTestId("item-state-text").first()).not.toHaveText("Ожидаю ответа");
+    await expect.poll(async () => (await db.item.findUniqueOrThrow({ where: { id: item.id } })).statusText).toBeNull();
+    await page.reload();
+    await expect(row.getByTestId("item-state-text").first()).not.toHaveText("Ожидаю ответа");
+  });
+}
+
+anonymousTest("гостевая подпись переживает reload", async ({ page, db }) => {
+  await setGuestMode(db, true);
+  await page.goto("/en");
+  await visible(page, "sign-in-guest").click();
+  await createList(page, "Гостевая работа");
+  const card = onlyListCard(page);
+  await addItem(card, "Задача");
+  await card.getByTestId("item-menu-trigger").click();
+  await card.getByTestId("item-state-edit").click();
+  await card.getByTestId("item-state-input").fill("Жду ответа");
+  await card.getByTestId("item-state-save").click();
+  await expect(card.getByTestId("item-state-text")).toHaveText("Жду ответа");
+  await page.reload();
+  await expect(onlyListCard(page).getByTestId("item-state-text")).toHaveText("Жду ответа");
+});

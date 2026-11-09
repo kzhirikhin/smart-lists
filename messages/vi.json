@@ -232,7 +232,7 @@
     "analyzing": "Đang phân tích...",
     "error": "Không thể lấy phân tích",
     "rateLimitError": "Đã đạt giới hạn hôm nay. Thử lại vào ngày mai.",
-    "privacyNotice": "Tên danh sách, các mục và mục con cùng trạng thái thực hiện, ghi chú của mọi thành viên, tên các nhóm của bạn và câu hỏi của bạn được gửi tới Vertex AI (Google Cloud) để phân tích. Bất kỳ thành viên nào cũng có thể tắt trong menu danh sách.",
+    "privacyNotice": "Tên danh sách, các mục và mục con cùng trạng thái thực hiện và mô tả tình hình hiện tại, ghi chú của mọi thành viên, tên các nhóm của bạn và câu hỏi của bạn được gửi tới Vertex AI (Google Cloud) để phân tích. Bất kỳ thành viên nào cũng có thể tắt trong menu danh sách.",
     "disabledError": "AI đã tắt cho danh sách này",
     "notesContext": "Đã gửi ghi chú mục: {included}; đã bỏ qua: {omitted}."
   },
@@ -306,5 +306,12 @@
       "confirmationMismatch": "Tên không khớp",
       "unknownError": "Không thể hoàn tất thao tác"
     }
+  },
+  "ItemState": {
+    "add": "Thêm tình hình hiện tại",
+    "edit": "Sửa tình hình hiện tại",
+    "label": "Tình hình hiện tại",
+    "placeholder": "Ví dụ: đang chờ phản hồi",
+    "error": "Không thể lưu tình hình hiện tại"
   }
 }

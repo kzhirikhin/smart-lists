@@ -80,6 +80,7 @@ export type ListOwner = {
 export type Item = {
   id: string;
   name: string;
+  statusText?: string | null;
   note: string | null;
   noteVersion: number;
   isCompleted: boolean;

@@ -33,6 +33,7 @@ import {
   removeSharedUserSchema,
   renameListSchema,
   renameItemSchema,
+  updateItemStateSchema,
   moveItemSchema,
   moveItemToListSchema,
   createGroupSchema,
@@ -564,6 +565,86 @@ export async function setItemStatus(formData: FormData) {
   after(() => notifyUsers(changed.notificationUserIds, socketId));
   return { success: true };
 }
+
+/** Обновляет подпись состояния с теми же правами, что и содержимое списка. */
+export async function updateItemState(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Необходима авторизация" };
+    }
+    const userId = session.user.id;
+
+    if (!(await consumeMutationBudget(userId))) {
+      return { success: false, error: "dailyLimitReached" };
+    }
+    const space = await resolveActionSpace(userId, formData);
+    if (!space) return { success: false, error: "Пространство не найдено" };
+
+    const rawData = {
+      itemId: formData.get("itemId"),
+      statusText: formData.get("statusText"),
+    };
+
+    const result = updateItemStateSchema.safeParse(rawData);
+    if (!result.success) {
+      return {
+        success: false,
+        error: getValidationError(result.error),
+      };
+    }
+
+    const updatedItem = await withSpaceDb(userId, space.id, async (tx) => {
+      const item = await tx.item.findFirst({
+        where: {
+          id: result.data.itemId,
+          list: listInSpaceWhere(userId, space.id),
+        },
+        select: {
+          listId: true,
+          list: {
+            select: {
+              ownerId: true,
+              shares: { select: { userId: true } },
+            },
+          },
+        },
+      });
+      if (!item) return null;
+
+      // Условие доступа повторяется в UPDATE: если share отозван между
+      // SELECT и записью, операция завершится fail-closed.
+      const updated = await tx.item.updateMany({
+        where: {
+          id: result.data.itemId,
+          list: listInSpaceWhere(userId, space.id),
+        },
+        data: { statusText: result.data.statusText || null },
+      });
+      if (updated.count === 0) return null;
+
+      return {
+        listId: item.listId,
+        notificationUserIds: listNotificationUserIds(item.list),
+      };
+    });
+
+    if (!updatedItem) {
+      return { success: false, error: "Запись не найдена" };
+    }
+
+    revalidatePath("/", "layout");
+    // Уведомление после ответа (after), без эха вкладке автора (socketId)
+    const socketId = formData.get("socketId");
+    after(() => notifyUsers(updatedItem.notificationUserIds, socketId));
+    logger.info({ uid: hashId(userId), listId: updatedItem.listId, action: "updateItemState" }, "Состояние записи обновлено");
+    return { success: true };
+  } catch (error) {
+    logger.error({ errorType: error instanceof Error ? error.name : "unknown" }, "Ошибка обновления состояния записи");
+    return { success: false, error: "Не удалось сохранить состояние" };
+  }
+}
+
 
 /**
  * Переименовывает запись в списке.

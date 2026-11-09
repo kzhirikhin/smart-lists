@@ -22,6 +22,7 @@ import {
   toggleItem,
   setItemStatus,
   renameItem,
+  updateItemState,
   moveItem,
   moveItemToList,
   updateItemNote,
@@ -86,6 +87,8 @@ export default function ServerListsApiProvider({
             spaceId,
           ),
         ),
+      updateItemState: async (itemId, statusText) =>
+        updateItemState(buildFormData({ itemId, statusText }, spaceId)),
       renameItem: async (itemId, itemName) => renameItem(buildFormData({ itemId, itemName }, spaceId)),
       updateItemNote: async (itemId, note, expectedVersion) =>
         updateItemNote(buildFormData({ itemId, note, expectedVersion: expectedVersion.toString() }, spaceId)),

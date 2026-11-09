@@ -22,6 +22,7 @@ for (const width of [320, 1280]) {
       await openSpace(page, user);
       const card = listCard(page, list.id);
       await card.getByTestId("ai-insight-button").click();
+      await expect(card.getByTestId("ai-privacy-notice")).toContainText("current state descriptions");
       await page.route("**/*", async (route) => {
         const request = route.request();
         if (request.method() !== "POST" || !request.headers()["next-action"]) {

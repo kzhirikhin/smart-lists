@@ -207,3 +207,12 @@ it.each(localeNames)("AI-уведомление в %s раскрывает пе�
   expect(Object.keys(statusNoticeWording).sort()).toEqual([...localeNames].sort());
   expect(flat[locale].get("AiInsight.privacyNotice")).toContain(statusNoticeWording[locale]);
 });
+
+const stateDescriptionWording: Record<string, string> = {
+  ru: "текстом текущего состояния", en: "current state descriptions",
+  vi: "mô tả tình hình hiện tại", ja: "現状の説明",
+};
+it.each(localeNames)("AI-уведомление в %s раскрывает передачу подписи состояния", (locale) => {
+  expect(Object.keys(stateDescriptionWording).sort()).toEqual([...localeNames].sort());
+  expect(flat[locale].get("AiInsight.privacyNotice")).toContain(stateDescriptionWording[locale]);
+});
