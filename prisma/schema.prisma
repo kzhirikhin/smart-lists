@@ -324,6 +324,9 @@ enum ItemStatus {
 }
 
 model Item {
+  /// Короткое пояснение текущего состояния, независимо от статуса работы.
+  statusText String? @db.VarChar(120)
+
   id String @id @default(cuid())
 
   /// Дополнительная текстовая заметка к записи. null означает, что заметки нет.

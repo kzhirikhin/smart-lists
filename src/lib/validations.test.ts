@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import { FALLBACK_FILE_NAME, MAX_FILE_SIZE } from "@/lib/attachments";
 import { MAX_NOTE_LENGTH } from "@/lib/notes";
 import {
+  updateItemStateSchema,
   createItemSchema,
   setItemStatusSchema,
   createListSchema,
@@ -430,5 +431,20 @@ describe("setItemStatusSchema", () => {
   it("отбивает пустой ID и чужие поля", () => {
     expect(setItemStatusSchema.safeParse({ itemId: "", status: "IN_PROGRESS" }).success).toBe(false);
     expect(setItemStatusSchema.safeParse({ itemId: "a", status: "IN_PROGRESS", ownerId: "other" }).success).toBe(false);
+  });
+});
+
+describe("updateItemStateSchema", () => {
+  it("нормализует пробелы и допускает удаление", () => {
+    expect(updateItemStateSchema.parse({ itemId: "item", statusText: "  Жду ответа  " }).statusText).toBe("Жду ответа");
+    expect(updateItemStateSchema.parse({ itemId: "item", statusText: "  " }).statusText).toBe("");
+  });
+  it("ограничивает длину и принимает plain text", () => {
+    expect(updateItemStateSchema.safeParse({ itemId: "item", statusText: "я".repeat(120) }).success).toBe(true);
+    expect(updateItemStateSchema.safeParse({ itemId: "item", statusText: "я".repeat(121) }).success).toBe(false);
+    expect(updateItemStateSchema.safeParse({ itemId: "item", statusText: "A\nB" }).success).toBe(false);
+    expect(updateItemStateSchema.safeParse({ itemId: "", statusText: "A" }).success).toBe(false);
+    expect(updateItemStateSchema.safeParse({ itemId: "item", statusText: null }).success).toBe(false);
+    expect(updateItemStateSchema.parse({ itemId: "item", statusText: "<script>test</script>" }).statusText).toBe("<script>test</script>");
   });
 });

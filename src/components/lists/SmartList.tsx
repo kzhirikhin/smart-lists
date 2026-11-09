@@ -70,6 +70,8 @@ import PauseIcon from "@/components/ui/PauseIcon";
 import ProgressIcon from "@/components/ui/ProgressIcon";
 import { useCollapsedItems } from "@/components/providers/CollapsedItemsProvider";
 import { getItemStatus, type ItemStatus } from "@/lib/item-status";
+import ItemState from "@/components/lists/ItemState";
+import { MessageSquare } from "lucide-react";
 import CollapseChevron from "@/components/ui/CollapseChevron";
 
 // ---------------------------------------------------------------------------
@@ -80,6 +82,7 @@ import CollapseChevron from "@/components/ui/CollapseChevron";
 type Item = {
   id: string;
   name: string;
+  statusText?: string | null;
   note: string | null;
   noteVersion: number;
   isCompleted: boolean;
@@ -481,6 +484,8 @@ export default function SmartList({
   searchQuery = "",
 }: SmartListProps) {
   const t = useTranslations("SmartList");
+  const stateT = useTranslations("ItemState");
+  const [stateEditingId, setStateEditingId] = useState<string | null>(null);
   const notesT = useTranslations("Notes");
   const commonT = useTranslations("Common");
 
@@ -547,8 +552,9 @@ export default function SmartList({
         isCompleted,
         parentId,
         status,
+        statusText,
       }: {
-        action: "status" | "toggle" | "delete" | "add" | "rename" | "move" | "reorder";
+        action: "stateText" | "status" | "toggle" | "delete" | "add" | "rename" | "move" | "reorder";
         itemId: string;
         itemName?: string;
         addedBy?: Item["addedBy"];
@@ -557,6 +563,7 @@ export default function SmartList({
         /** Целевая отметка для `toggle` — уже производная, а не поле записи. */
         isCompleted?: boolean;
         status?: ItemStatus;
+        statusText?: string;
         /**
          * Для `add` — родитель новой записи (null — обычный пункт).
          * Для `reorder` — уровень, который переставляют.
@@ -565,6 +572,8 @@ export default function SmartList({
       },
     ) => {
       switch (action) {
+        case "stateText":
+          return state.map((item) => item.id === itemId ? { ...item, statusText: statusText || null } : item);
         case "status":
           return applyItemStatus(state, itemId, status ?? "NOT_STARTED");
         case "toggle":
@@ -1610,8 +1619,23 @@ export default function SmartList({
               </Tooltip>
             </form>
 
-            {/* Метаданные стоят ниже: длинному названию нужна вся доступная ширина. */}
+            {/* Состояние и автор не отнимают ширину у длинного названия. */}
             <div className="flex-1 min-w-0">
+              {!isPending && (
+                <ItemState
+                  key={item.id + (stateEditingId === item.id ? ":editing" : ":view")}
+                  value={item.statusText ?? null}
+                  editing={stateEditingId === item.id}
+                  onEdit={() => setStateEditingId(item.id)}
+                  onClose={() => setStateEditingId(null)}
+                  onSave={async (statusText) => {
+                    setOptimisticItems({ action: "stateText", itemId: item.id, statusText });
+                    return api.updateItemState(item.id, statusText);
+                  }}
+                  query={searchQuery}
+                />
+              )}
+
               <div
                 className={`flex-1 min-w-0 flex items-center gap-1 rounded-lg px-1 -mx-1 transition-colors ${
                   !isPending && !isCompleted && editingItemId !== item.id
@@ -1993,6 +2017,20 @@ export default function SmartList({
                           />
                         </>
                       )}
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="item-state-edit"
+                        onClick={() => {
+                          setOpenItemActionsId(null);
+                          setStateEditingId(item.id);
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                      >
+                        <MessageSquare size={17} aria-hidden />
+                        {stateT(item.statusText ? "edit" : "add")}
+                      </button>
 
                       {!item.note && (
                         <button

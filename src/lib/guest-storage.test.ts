@@ -1065,3 +1065,42 @@ describe("состояние работы", () => {
     expect(await api.setItemStatus(itemId, "invalid")).toEqual({ success: false, error: "validationError" });
   });
 });
+
+describe("подпись состояния", () => {
+  it("сохраняет пункт и подпункт независимо от названия, заметки и статуса", async () => {
+    const api = createApi();
+    await api.createList({ title: "Работа" });
+    const listId = stored().lists[0].id;
+    await api.addItem(listId, "Задача");
+    const itemId = stored().lists[0].items[0].id;
+    await api.addItem(listId, "Подзадача", itemId);
+    const subId = stored().lists[0].items[0].subItems[0].id;
+    await api.setItemStatus(itemId, "DEFERRED");
+    expect((await api.updateItemState(itemId, " Жду ответа ")).success).toBe(true);
+    expect((await api.updateItemState(subId, "Нужна доработка")).success).toBe(true);
+    const item = stored().lists[0].items[0];
+    expect(item.name).toBe("Задача");
+    expect(item.status).toBe("DEFERRED");
+    expect(item.statusText).toBe("Жду ответа");
+    const rows = toListData(stored(), GUEST_NAME)[0].items;
+    expect(rows.find((row) => row.id === subId)?.statusText).toBe("Нужна доработка");
+    expect((await api.updateItemState(itemId, "x".repeat(121))).success).toBe(false);
+    expect(stored().lists[0].items[0].statusText).toBe("Жду ответа");
+    expect((await api.updateItemState("missing", "A")).success).toBe(false);
+    await api.updateItemState(itemId, " ");
+    expect(stored().lists[0].items[0].statusText).toBeNull();
+  });
+  it("перенос сохраняет состояние, а новая копия начинает без него", async () => {
+    const api = createApi();
+    await api.createList({ title: "A" });
+    await api.createList({ title: "B" });
+    const [target, source] = stored().lists;
+    await api.addItem(source.id, "Задача");
+    const id = stored().lists.find((list) => list.id === source.id)!.items[0].id;
+    await api.updateItemState(id, "Жду");
+    await api.moveItemToList(id, target.id, "copy");
+    expect(stored().lists.find((list) => list.id === target.id)!.items[0].statusText ?? null).toBeNull();
+    await api.moveItemToList(id, target.id, "move");
+    expect(stored().lists.find((list) => list.id === target.id)!.items.find((item) => item.id === id)?.statusText).toBe("Жду");
+  });
+});

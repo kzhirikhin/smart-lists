@@ -75,6 +75,7 @@ export type ListsApi = {
     itemName: string,
     parentItemId?: string | null,
   ) => Promise<ActionResult>;
+  updateItemState: (itemId: string, statusText: string) => Promise<ActionResult>;
   renameItem: (itemId: string, itemName: string) => Promise<ActionResult>;
   updateItemNote: (itemId: string, note: string, expectedVersion: number) => Promise<NoteActionResult>;
   deleteItem: (itemId: string) => Promise<void>;

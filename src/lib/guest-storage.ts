@@ -30,6 +30,7 @@ import { ZodError } from "zod";
 import {
   createItemSchema,
   renameItemSchema,
+  updateItemStateSchema,
   moveItemSchema,
   moveItemToListSchema,
   createListSchema,
@@ -64,6 +65,7 @@ const storedSubItemSchema = z.object({
   name: z.string(),
   isCompleted: z.boolean(),
   status: z.enum(ITEM_STATUSES).optional(),
+  statusText: z.string().max(120).nullable().optional(),
   note: z.string().nullable().optional(),
   noteVersion: z.number().int().nonnegative().optional(),
 });
@@ -301,6 +303,7 @@ function storedListToListData(
       {
         id: item.id,
         name: item.name,
+        statusText: item.statusText ?? null,
         isCompleted: item.isCompleted,
         status: getItemStatus(item),
         note: item.note ?? null,
@@ -311,6 +314,7 @@ function storedListToListData(
       ...item.subItems.map((subItem) => ({
         id: subItem.id,
         name: subItem.name,
+        statusText: subItem.statusText ?? null,
         isCompleted: subItem.isCompleted,
         status: getItemStatus(subItem),
         note: subItem.note ?? null,
@@ -501,6 +505,17 @@ export function createGuestListsApi(refresh: () => void, guestName: string): Lis
         }
 
         list.items.push({ ...created, subItems: [] });
+        return { success: true };
+      });
+    },
+
+    updateItemState: async (itemId, statusText) => {
+      const parsed = updateItemStateSchema.safeParse({ itemId, statusText });
+      if (!parsed.success) return { success: false, error: getValidationError(parsed.error) };
+      return mutate((data) => {
+        const location = locateItem(data, parsed.data.itemId);
+        if (!location) return { success: false, error: "Запись не найдена" };
+        location.item.statusText = parsed.data.statusText || null;
         return { success: true };
       });
     },
