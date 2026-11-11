@@ -73,7 +73,17 @@ GHSA-g3hv-75wg-m249 требует optimizationLevel>=2 и исправлена 
 Проверить на Preview S3 upload/download/delete (настоящая AWS WIF); отдельно
 подтвердить AI-инсайт через GCP WIF в окружении, где сервис настроен. Локальные
 SDK-тесты не подтверждают IAM, STS или фактическую конфигурацию платформы.
-Новый набор ещё не опубликован.
+Изменения отправлены в [черновой PR #266](https://github.com/kzhirikhin/smart-lists/pull/266),
+ветка chore/dependency-security-nov-2026. Production не изменён.
+Для code commit 2272d1104fdb54738ced9b12ae86432f96de3917 GitHub status Vercel
+подтвердил success: deployment 2xiYho9xmufRAN2fXPpXivyWuuRa. Это статус сборки,
+не проверка S3/AI.
+[Preview](https://smart-lists-git-chore-dependen-c0aa50-kirills-projects-ed9814e1.vercel.app)
+защищён Vercel SSO (анонимный запрос /en перенаправляется на SSO).
+Браузерные инструменты этой сессии не запускаются: CreateProcessWithLogonW 267.
+Это блокирует ручную проверку S3 через интерфейс агентом; для AI дополнительно
+нужно окружение с настроенным INSIGHTS_SERVICE_URL. Проверки CI и актуальный
+статус Vercel отслеживаются в PR, успешный build не заменяет live S3/AI.
 
 Источники: [Zod advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5),
 [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249),
