@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-11 (обновления OIDC, fast-uri, dotenv и Motion в PR #266; production прежний)
+**Последнее обновление:** 2026-11-11 (выпуск обновлений OIDC, fast-uri, dotenv и Motion; production и AI проверены)
 
 Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
 Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
@@ -179,28 +179,34 @@ Presigned GET для text/plain объявляет `charset=utf-8` через
 исполнение контроля; перенесённые строки явно не перепроверены, live-настройки
 unknown до новой проверки. Подробности — `docs/threat-model/audit-2026-10-14.md`.
 
-## Обновления зависимостей в PR #266 (2026-11-11)
+## Выпуск зависимостей (2026-11-11)
 
 [План и ограничения](docs/dependency-updates-2026-11.md): OIDC 4.0.6 и AWS
 provider 3.3.18 устраняют вложенный Zod 4.1.11; все копии используют 4.6.7.
 Override fast-uri@3 поднят до 3.1.9. dotenv 18.0.9 и Motion 14.9.0 закреплены
-точно; все девять изменённых записей пакетов выдержаны семь дней, integrity
-сверена с npm registry. Lock собран в Linux без install-хуков.
+точно; все девять изменённых lock-записей выдержаны семь дней, integrity
+сверена с registry. Lock собран и установлен в Linux без install-хуков.
 Локальный npm audit: Critical=0, High=0, Moderate=8 — одна advisory minimatch
-в цепочке typescript-eslint, а не восемь независимых уязвимостей. Совместимый
-upstream по-прежнему требует @10; принудительного override на @11 нет.
-В просмотренном вызове SDK используется только dot:true, без условия
-optimizationLevel>=2 из advisory. Это ограниченный review, не гарантия полноты.
-OIDC 4 добавляет чтение файла токена из VERCEL_OIDC_TOKEN_FILE; приложение
-не задаёт этот путь по пользовательскому вводу. Проверки SDK используют
-фиктивные токены, не доказывают настоящий WIF. Владелец 2026-11-11
-подтвердил на Preview S3 upload/open/download/delete; AI WIF и production
-нового набора пока не подтверждены. Lint/typecheck, 840 unit, 586 security,
-335 integration с runtime-ролью, локальный backup/restore и 146 E2E на новой
-production-сборке прошли. Изменения отправлены в черновой PR #266; Preview
-защищён Vercel SSO. Браузерные инструменты сессии завершаются до запуска
-(CreateProcessWithLogonW 267); S3 проверил владелец, AI ещё не проверен; production
-не изменён. Результаты и ограничения — в плане.
+в цепочке typescript-eslint. Совместимый upstream требует @10; override на @11
+не введён. Просмотренный вызов dot:true не задаёт optimizationLevel>=2 из
+advisory; это ограниченный review, не VEX. OIDC 4 добавляет файл токена из
+VERCEL_OIDC_TOKEN_FILE, путь не приходит из пользовательского ввода.
+Локально прошли lint/typecheck, 840 unit, 586 security, 335 integration с
+runtime-ролью, backup/restore и 146 E2E на новой production-сборке; prisma
+generate с пустым DIRECT_URL работает. PR CI 42971870806 и CodeQL успешны.
+ZAP 42971870748 completed: 22/22, 545 запросов, pending=0, High=0,
+new=0/changed=0, 30 групп uncompared; это не полнота анализа приложения.
+
+PR #266 слит в main@b8c9da01f18a19fdd565a3aca88d2cb365398639.
+[Main CI 42973000713](https://github.com/kzhirikhin/smart-lists/actions/runs/42973000713)
+и Production database migration прошли; GitHub status Vercel — success для
+[deployment 7Q18qJjs6RyLkTKhsgt5NiYvyS1k](https://vercel.com/kirills-projects-ed9814e1/smart-lists/7Q18qJjs6RyLkTKhsgt5NiYvyS1k)
+того же SHA. Анонимный GET /en и редирект / → /en дали 200.
+[Sync Preview Proxy 42973587020](https://github.com/kzhirikhin/smart-lists/actions/runs/42973587020)
+завершился успешно. Владелец 2026-11-11 подтвердил на Preview загрузку,
+открытие/скачивание и удаление вложения, затем настоящий AI-инсайт в production.
+Это ручное подтверждение общих UI-потоков; IAM/STS независимо не проверялись,
+полнота сценариев S3/AI, live OAuth и Pusher не подтверждены.
 
 ## Релиз описания состояния (2026-11-09)
 

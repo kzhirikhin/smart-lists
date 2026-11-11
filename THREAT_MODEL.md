@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-11-11 (feature-ветка зависимостей; production rollout не выполнен).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-11 (зависимости опубликованы; rollout и ручные S3/AI-проверки).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 **Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
 [Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
@@ -64,7 +64,7 @@ PR #260, `main@590a031a3cbf0b606bf431e4b91d9b88dc391484`,
 тестовыми БД. Live OAuth/Pusher/S3/AI не проверялись; тестовые сессии и
 фиктивные сервисные credentials не подтверждают внешние интеграции.
 
-## Локальные зависимости (2026-11-11, A112)
+## Выпуск зависимостей (2026-11-11, A112)
 
 OIDC 4.0.6 + AWS provider 3.3.18 сводят обе цепочки к cli-config 0.3.6 и
 Zod 4.6.7, устраняя GHSA-mrhx-c7xc-m3w5 во вложенных копиях. Основная
@@ -94,13 +94,30 @@ SDK перечитывает файл при ротации. Это провер
 не находят новые CVE и не контролируют deployed-версию. План/проверки:
 [обновления](docs/dependency-updates-2026-11.md). Владелец 2026-11-11
 подтвердил на Preview S3 upload/open/download/delete; это ручное сообщение
-о UI-потоке, не независимая IAM/STS-проверка агентом. AI WIF и production
-rollout нового набора пока не подтверждены. A52 без нового исключения,
+о UI-потоке, не независимая IAM/STS-проверка агентом. AI-инсайт после production rollout также подтверждён владельцем 2026-11-11. A52 без нового исключения,
 A58 и прежние статусы других угроз не пересматриваются.
 Итоговые локальные проверки: lint/typecheck, 840 unit, 586 static security,
 335 integration под ограниченной runtime-ролью, backup/restore gate и 146 E2E
 на новой production-сборке прошли; снимки 320px/light и 1280px/dark просмотрены.
-Prisma generate с пустым DIRECT_URL прошёл. Это не live S3/AI/OAuth/Pusher.
+Prisma generate с пустым DIRECT_URL прошёл. Локальные проверки не доказывают
+live S3/AI/OAuth/Pusher.
+
+PR #266 слит в main@b8c9da01f18a19fdd565a3aca88d2cb365398639.
+[Main CI 42973000713](https://github.com/kzhirikhin/smart-lists/actions/runs/42973000713)
+и Production database migration прошли; GitHub status Vercel — success для
+[deployment 7Q18qJjs6RyLkTKhsgt5NiYvyS1k](https://vercel.com/kirills-projects-ed9814e1/smart-lists/7Q18qJjs6RyLkTKhsgt5NiYvyS1k)
+того же SHA. Анонимный GET /en и редирект / → /en дали 200.
+[Sync Preview Proxy 42973587020](https://github.com/kzhirikhin/smart-lists/actions/runs/42973587020)
+завершился успешно. Владелец 2026-11-11 подтвердил на Preview загрузку,
+открытие/скачивание и удаление вложения, затем настоящий AI-инсайт в production.
+Это ручное подтверждение общих UI-потоков; IAM/STS независимо не проверялись,
+полнота сценариев S3/AI, live OAuth и Pusher не подтверждены.
+
+PR CI 42971870806 и CodeQL успешны. ZAP 42971870748 completed проверил
+merge-result d2c5d19e (родители: исходный main и финальный head PR): 22/22,
+545 запросов, pending=0, High=0, new=0/changed=0, known=36, uncompared=30.
+Политика/baseline из default branch, dirty=false. Неполная CSP остаётся
+confirmed; несравнённые группы не объявляются безопасными.
 
 ## Подпись состояния пункта (2026-11-09, A111)
 
