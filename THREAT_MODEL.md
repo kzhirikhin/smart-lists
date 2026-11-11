@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-11-09.** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-11 (feature-ветка зависимостей; production rollout не выполнен).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 **Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
 [Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
@@ -63,6 +63,44 @@ PR #260, `main@590a031a3cbf0b606bf431e4b91d9b88dc391484`,
 (15 skipped) и 146 E2E на production-сборке Next.js 16.4.5 с локальными
 тестовыми БД. Live OAuth/Pusher/S3/AI не проверялись; тестовые сессии и
 фиктивные сервисные credentials не подтверждают внешние интеграции.
+
+## Локальные зависимости (2026-11-11, A112)
+
+OIDC 4.0.6 + AWS provider 3.3.18 сводят обе цепочки к cli-config 0.3.6 и
+Zod 4.6.7, устраняя GHSA-mrhx-c7xc-m3w5 во вложенных копиях. Основная
+валидация приложения уже использовала исправленный Zod. В просмотренном
+CLI-config пути проверяются локальные файлы; путь от HTTP-входа к уязвимому
+массиву не найден. Это review, не утверждение о всех SDK-путях.
+fast-uri@3 3.1.9 закрывает четыре URI advisory без смены мажора.
+Локальный npm audit итогового lock: Critical=0, High=0, Moderate=8, одна
+GHSA-g3hv-75wg-m249 в minimatch 10.2.6 через typescript-eslint. Совместимый
+upstream требует @10; override @11 не введён. Просмотренный вызов в
+useProgramFromProjectService.js передаёт dot:true без optimizationLevel>=2,
+необходимого по advisory; это ограниченное свидетельство, не blanket VEX.
+
+Затронуты runtime identity/TB2/TB4 и цепочка поставок, загрузка окружения
+(dotenv 18.0.9), клиентские анимации/порядок (Motion 14.9.0). Новых сервисов,
+IAM-прав, прикладных URL allowlist или передаваемых AI-данных нет. Сохраняются
+auth/space guards, WIF, noteVersion, S3 two-phase и revalidation/realtime.
+OIDC 4 добавляет VERCEL_OIDC_TOKEN_FILE: путь приходит из доверенного env,
+приложение не формирует его из HTTP. Пустой файл не даёт тихий env fallback;
+SDK перечитывает файл при ротации. Это проверяется на фиктивных токенах,
+без STS и не является доказательством production WIF.
+
+Девять изменённых lock-записей старше семи дней; integrity сверена с registry.
+Официальные tarball OIDC/provider/cli-config, fast-uri, dotenv и Motion
+сверены по SHA-512, install-хуки не исполнялись. Это не полный аудит upstream.
+Контракты проверяют все присутствующие копии Zod/fast-uri/OIDC в lock, но
+не находят новые CVE и не контролируют deployed-версию. План/проверки:
+[обновления](docs/dependency-updates-2026-11.md). Владелец 2026-11-11
+подтвердил на Preview S3 upload/open/download/delete; это ручное сообщение
+о UI-потоке, не независимая IAM/STS-проверка агентом. AI WIF и production
+rollout нового набора пока не подтверждены. A52 без нового исключения,
+A58 и прежние статусы других угроз не пересматриваются.
+Итоговые локальные проверки: lint/typecheck, 840 unit, 586 static security,
+335 integration под ограниченной runtime-ролью, backup/restore gate и 146 E2E
+на новой production-сборке прошли; снимки 320px/light и 1280px/dark просмотрены.
+Prisma generate с пустым DIRECT_URL прошёл. Это не live S3/AI/OAuth/Pusher.
 
 ## Подпись состояния пункта (2026-11-09, A111)
 
