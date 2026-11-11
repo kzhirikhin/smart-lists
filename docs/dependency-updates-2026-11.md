@@ -68,24 +68,30 @@ GHSA-g3hv-75wg-m249 требует optimizationLevel>=2 и исправлена 
 - Первый параллельный прогон OIDC превысил 5-секундный timeout в двух тестах;
   последовательный прогон с двумя worker прошёл без изменения проверок и timeout.
 
-## Следующий этап перед публикацией
+## Результат выпуска
 
-Владелец 2026-11-11 подтвердил загрузку, открытие/скачивание и удаление
-тестового вложения на Preview. Это ручное подтверждение UI-потока с настоящим
-S3, не независимая проверка IAM/STS агентом и не свидетельство всех сценариев.
-Остаётся подтвердить AI-инсайт через GCP WIF в окружении, где сервис настроен.
-Локальные SDK-тесты не подтверждают IAM, STS или конфигурацию платформы.
-Изменения отправлены в [черновой PR #266](https://github.com/kzhirikhin/smart-lists/pull/266),
-ветка chore/dependency-security-nov-2026. Production не изменён.
-Для code commit 2272d1104fdb54738ced9b12ae86432f96de3917 GitHub status Vercel
-подтвердил success: deployment 2xiYho9xmufRAN2fXPpXivyWuuRa. Это статус сборки,
-не проверка S3/AI.
-[Preview](https://smart-lists-git-chore-dependen-c0aa50-kirills-projects-ed9814e1.vercel.app)
-защищён Vercel SSO (анонимный запрос /en перенаправляется на SSO).
-Браузерные инструменты этой сессии не запускаются: CreateProcessWithLogonW 267.
-Это блокирует ручную проверку интерфейса агентом; S3 проверил владелец. Для AI дополнительно
-нужно окружение с настроенным INSIGHTS_SERVICE_URL. Проверки CI и актуальный
-статус Vercel отслеживаются в PR, успешный build не заменяет live S3/AI.
+PR #266 слит в main@b8c9da01f18a19fdd565a3aca88d2cb365398639.
+[Main CI 42973000713](https://github.com/kzhirikhin/smart-lists/actions/runs/42973000713)
+и Production database migration прошли; GitHub status Vercel — success для
+[deployment 7Q18qJjs6RyLkTKhsgt5NiYvyS1k](https://vercel.com/kirills-projects-ed9814e1/smart-lists/7Q18qJjs6RyLkTKhsgt5NiYvyS1k)
+того же SHA. Анонимный GET /en и редирект / → /en дали 200.
+[Sync Preview Proxy 42973587020](https://github.com/kzhirikhin/smart-lists/actions/runs/42973587020)
+завершился успешно. Владелец 2026-11-11 подтвердил на Preview загрузку,
+открытие/скачивание и удаление вложения, затем настоящий AI-инсайт в production.
+Это ручное подтверждение общих UI-потоков; IAM/STS независимо не проверялись,
+полнота сценариев S3/AI, live OAuth и Pusher не подтверждены.
+
+[PR CI 42971870806](https://github.com/kzhirikhin/smart-lists/actions/runs/42971870806),
+CodeQL и Vercel Preview для финального PR head 32311cc успешны.
+[ZAP 42971870748](https://github.com/kzhirikhin/smart-lists/actions/runs/42971870748)
+completed: 22/22, 545 запросов, pending=0, High=0; new=0, known=36,
+changed=0, uncompared=30. Проверен merge-result d2c5d19e с родителями
+0c08204 и 32311cc; trusted policy/baseline из main, dirty=false.
+Известная неполная CSP остаётся confirmed; uncompared не означает безопасно.
+
+Браузерные инструменты агента не запускались (CreateProcessWithLogonW 267),
+поэтому настоящие UI-потоки проверил владелец. Новых платформенных credentials
+агент не брал; использован существующий GitHub CLI по SECRETS.md.
 
 Источники: [Zod advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5),
 [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249),
