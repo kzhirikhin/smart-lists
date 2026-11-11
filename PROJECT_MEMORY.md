@@ -2,7 +2,7 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-09 (security-обновление Next.js 16.4.5; описание состояния опубликовано в AI и web)
+**Последнее обновление:** 2026-11-11 (локальные обновления OIDC, fast-uri, dotenv и Motion; ещё не опубликованы)
 
 Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
 Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
@@ -179,6 +179,25 @@ Presigned GET для text/plain объявляет `charset=utf-8` через
 исполнение контроля; перенесённые строки явно не перепроверены, live-настройки
 unknown до новой проверки. Подробности — `docs/threat-model/audit-2026-10-14.md`.
 
+## Локальные обновления зависимостей (2026-11-11)
+
+[План и ограничения](docs/dependency-updates-2026-11.md): OIDC 4.0.6 и AWS
+provider 3.3.18 устраняют вложенный Zod 4.1.11; все копии используют 4.6.7.
+Override fast-uri@3 поднят до 3.1.9. dotenv 18.0.9 и Motion 14.9.0 закреплены
+точно; все девять изменённых записей пакетов выдержаны семь дней, integrity
+сверена с npm registry. Lock собран в Linux без install-хуков.
+Локальный npm audit: Critical=0, High=0, Moderate=8 — одна advisory minimatch
+в цепочке typescript-eslint, а не восемь независимых уязвимостей. Совместимый
+upstream по-прежнему требует @10; принудительного override на @11 нет.
+В просмотренном вызове SDK используется только dot:true, без условия
+optimizationLevel>=2 из advisory. Это ограниченный review, не гарантия полноты.
+OIDC 4 добавляет чтение файла токена из VERCEL_OIDC_TOKEN_FILE; приложение
+не задаёт этот путь по пользовательскому вводу. Проверки SDK используют
+фиктивные токены, не доказывают настоящий WIF. Live S3/AI и публикация
+нового набора пока не подтверждены. Lint/typecheck, 840 unit, 586 security,
+335 integration с runtime-ролью, локальный backup/restore и 146 E2E на новой
+production-сборке прошли. Результаты и ограничения — в плане.
+
 ## Релиз описания состояния (2026-11-09)
 
 Web PR #258 слит, commit `f82b342036a40510e746978de0a2df9baf063bb1`. Полный
@@ -213,15 +232,15 @@ Smart Lists — локализованное веб-приложение для 
 ## Актуальный стек
 
 - Next.js и `eslint-config-next` `16.4.5`, App Router, Server Components и Server Actions;
-- React `19.3.0`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `13.5.1` и dnd-kit;
-- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `3.8.10`;
-- Prisma `7.10.0`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
+- React `19.3.1`, TypeScript `6.0.3` strict, Tailwind CSS 4, Framer Motion `14.9.0` и dnd-kit;
+- Auth.js v5 с Google OAuth, Prisma Adapter и `@vercel/oidc` `4.0.6`;
+- Prisma `7.10.1`, генератор `prisma-client`, `@prisma/adapter-pg` и PostgreSQL;
 - runtime-пул `pg`: максимум 5 соединений на экземпляр, connect timeout 5 секунд, idle timeout 10 секунд;
 - `next-intl` `4.14.9`: `ru`, `vi`, `en`, `ja`; default locale — `en`;
 - Pusher, приватный S3-бакет через AWS SDK `3.1149.0` и внешний FastAPI-сервис
   AI-инсайтов;
-- Zod, Pino `10.4.0`, React Hot Toast, `next-themes` и `lucide-react` `1.55.0`;
-- Vitest `5.0.3` (точная версия), Playwright `1.64.0` — тестовый стек; требуется Node.js >=22.12, проект использует Node 24;
+- Zod, Pino `10.4.0`, React Hot Toast, `next-themes` и `lucide-react` `1.66.0`;
+- Vitest `5.0.5` (точная версия), Playwright `1.64.1` — тестовый стек; требуется Node.js >=22.12, проект использует Node 24;
 - React Markdown — только для ответов AI-инсайтов; остальной пользовательский текст разметку не разбирает;
 - Vercel region — `sin1`.
 
@@ -239,11 +258,11 @@ Next.js и его ESLint-конфигурация обновляются сов�
 проверяет равенство версий manifest/lock. ESLint 16.4 включает новые правила
 React Compiler; пять точечных исключений сохраняют существующую синхронизацию
 AI-флага/гидратации темы и побочные эффекты только внутри событий подпункта/DnD.
-Глобальные правила и `react/no-danger` не ослаблены. OIDC AWS provider — `3.3.11`,
-google-auth-library — `11.2.0`, pino-pretty — `13.2.0`.
-AWS provider транзитивно использует OIDC `4.0.0` с необязательным источником
+Глобальные правила и `react/no-danger` не ослаблены. OIDC AWS provider — `3.3.18`,
+google-auth-library — `11.3.2`, pino-pretty — `13.2.0`.
+Обе OIDC-интеграции используют `4.0.6` с необязательным источником
 `VERCEL_OIDC_TOKEN_FILE` после request header и перед env token. Приложение
-переменную не задаёт; прямой OIDC для GCP остаётся на `3.8.10`.
+переменную не задаёт; прямой OIDC для GCP также использует `4.0.6`.
 
 TypeScript 6.0.3 закреплён точно; совместимый `typescript-eslint@8` — override
 8.71.0. `ignore@7` оставлен на 7.0.5, чтобы обновление компилятора не подтянуло
@@ -253,15 +272,15 @@ PR #219 выложен 2026-10-07: CI 37625134128 прошёл сборку, и�
 commit `42c60ce1bdf47d8fea46868a9ea77de914932fdd`.
 TypeScript 7 пока несовместим с peer-диапазоном typescript-eslint (`<6.1`);
 ESLint 10 не поддерживается текущими eslint-plugin-react/jsx-a11y.
-dotenv 18.0.6 опубликован 2026-10-06 UTC: семидневная выдержка — 2026-10-14
-JST; ранние 18.0.4/18.0.5 не выбираем вместо исправленного релиза.
+dotenv `18.0.9` сохраняет side-effect import `dotenv/config`; отдельный тест
+проверяет настоящий entrypoint и приоритет env процесса над одноразовым .env.
 
 Security-патчи 2026-10-07: `source-map-js` 1.2.2, `sharp` 0.35.5 и
 `@img/sharp-libvips-*` 1.3.4 в lock; `fast-copy@4` закреплён override 4.1.1.
 Next 16.3.8 разрешает sharp `^0.35.4`, поэтому патч принят без override
 sharp. Свежая fast-copy 4.1.2 не нужна для исправления и пока не выдержана.
 Linux Node 24 подтвердил librsvg 2.63.2, SVG → PNG, ограничения section
-offsets/source maps и maxDepth; install-хуки отключены. Остаток npm audit —
+offsets/source maps и maxDepth; install-хуки отключены. На 2026-10-07 остаток npm audit —
 8 High в dev/build-цепочках braces и deepmerge-ts, без Critical/moderate.
 
 Миграция AI Insights на Vertex AI завершена 2026-09-18: все десять этапов

@@ -10,7 +10,7 @@
 
 | Приоритет | Пробел | Для закрытия |
 |---|---|---|
-| 1 | Остаточные npm advisory после обновления Next.js 2026-11-09: 7 high / 9 moderate записей, включая цепочки OIDC/Zod, Prisma/deepmerge-ts и ESLint/minimatch/fast-uri | Отдельно разобрать достижимость и совместимые исправления; это записи npm по пакетам, не 16 независимых уязвимостей. `next` в отчёте отсутствует; rollout 16.4.5 подтверждён для main@590a031 (A58), остальные находки этим не закрыты. Автоматический major/downgrade через audit fix не принят |
+| 2 | Остаточная npm advisory GHSA-g3hv-75wg-m249: minimatch 10.2.6 в typescript-eslint, восемь Moderate записей npm audit 2026-11-11; Critical=0/High=0 | Ждать совместимого обновления upstream, требующего minimatch >=11.0.1, либо отдельный review замены. В просмотренном вызове dot:true, без optimizationLevel>=2 из advisory; это ограниченный R, не полнота и не VEX. Override @10 -> @11 не принят. Вложенный Zod и fast-uri исправлены в локальном lock (A112); rollout и live S3/AI ещё не выполнены |
 | 1 | A29/A74: неполный разбор exports, текст не исполнение auth/бюджета | AST/реальные exports, fail-closed неподдерживаемых форм, сценарии отказа/бюджета и альтернативного синтаксиса |
 | 1 | A56/A68: частичный network detector/file allowlist | Инвентарь клиентов/каждого call, aliases, SDK/ADC-пути, пробы нового call/формы |
 | 2 | A51/A71/A79: command/guard/имя без полной связи с исполнением | Уточнить shell/YAML-область, scripts и конкретных потребителей |

@@ -47,7 +47,7 @@ updates:
     #   - eslint 9 -> 10 (#96): eslint-config-next тянет eslint-plugin-import,
     #     eslint-plugin-react и eslint-plugin-jsx-a11y, а те не объявляют
     #     ESLint 10 в peer-диапазоне;
-    #   - typescript 5 -> 7 (#97): typescript-eslint держит peer <6.1.0.
+    #   - typescript 6 -> 7 (#97): typescript-eslint держит peer <6.1.0.
     # Обход обоих существует — ослабить peer-проверку при установке, — но он
     # ломает воспроизводимость npm ci, ради которой lock собирается в
     # контейнере. Поэтому ждём, а не обходим.
@@ -60,6 +60,9 @@ updates:
     #
     # Закрыты 08-20: @types/node 20 -> 24 (#94), lucide-react 0.x -> 1.x (#95).
     # Закрыт 08-21: framer-motion 12 -> 13.
+    # Локально обновлены 11-11: OIDC 3 -> 4, dotenv 17 -> 18, Motion 13 -> 14.
+    # minimatch @10 в typescript-eslint ждёт совместимого upstream-обновления;
+    # override на @11 намеренно не используется. План: docs/dependency-updates-2026-11.md.
     ignore:
       - dependency-name: "*"
         update-types:
