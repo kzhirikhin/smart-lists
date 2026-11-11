@@ -193,12 +193,13 @@ upstream по-прежнему требует @10; принудительног�
 optimizationLevel>=2 из advisory. Это ограниченный review, не гарантия полноты.
 OIDC 4 добавляет чтение файла токена из VERCEL_OIDC_TOKEN_FILE; приложение
 не задаёт этот путь по пользовательскому вводу. Проверки SDK используют
-фиктивные токены, не доказывают настоящий WIF. Live S3/AI и публикация
+фиктивные токены, не доказывают настоящий WIF. Владелец 2026-11-11
+подтвердил на Preview S3 upload/open/download/delete; AI WIF и production
 нового набора пока не подтверждены. Lint/typecheck, 840 unit, 586 security,
 335 integration с runtime-ролью, локальный backup/restore и 146 E2E на новой
 production-сборке прошли. Изменения отправлены в черновой PR #266; Preview
 защищён Vercel SSO. Браузерные инструменты сессии завершаются до запуска
-(CreateProcessWithLogonW 267), поэтому live S3/AI не подтверждены; production
+(CreateProcessWithLogonW 267); S3 проверил владелец, AI ещё не проверен; production
 не изменён. Результаты и ограничения — в плане.
 
 ## Релиз описания состояния (2026-11-09)

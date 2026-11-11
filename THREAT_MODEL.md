@@ -92,8 +92,10 @@ SDK перечитывает файл при ротации. Это провер
 сверены по SHA-512, install-хуки не исполнялись. Это не полный аудит upstream.
 Контракты проверяют все присутствующие копии Zod/fast-uri/OIDC в lock, но
 не находят новые CVE и не контролируют deployed-версию. План/проверки:
-[обновления](docs/dependency-updates-2026-11.md). Live S3 на Preview, AI WIF
-и rollout нового набора пока не подтверждены. A52 без нового исключения,
+[обновления](docs/dependency-updates-2026-11.md). Владелец 2026-11-11
+подтвердил на Preview S3 upload/open/download/delete; это ручное сообщение
+о UI-потоке, не независимая IAM/STS-проверка агентом. AI WIF и production
+rollout нового набора пока не подтверждены. A52 без нового исключения,
 A58 и прежние статусы других угроз не пересматриваются.
 Итоговые локальные проверки: lint/typecheck, 840 unit, 586 static security,
 335 integration под ограниченной runtime-ролью, backup/restore gate и 146 E2E
