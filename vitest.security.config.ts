@@ -43,7 +43,7 @@ export const staticSecuritySuites = [
   { path: "test/database-audit-workflow.test.ts", controls: ["database-audit"] },
   { path: "test/database-release-workflow.test.ts", controls: ["A13", "A31"] },
   { path: "test/dependency-install-hooks.test.ts", controls: ["A51"] },
-  { path: "test/dependency-security.test.ts", controls: ["A112"] },
+  { path: "test/dependency-security.test.ts", controls: ["A112", "A114"] },
   { path: "test/oidc-runtime.test.ts", controls: ["A112"] },
   { path: "test/dotenv-config.test.ts", controls: ["A32"] },
   { path: "test/eslint-xss-guard.test.ts", controls: ["A3"] },

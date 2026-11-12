@@ -2,7 +2,19 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-11 (выпуск обновлений OIDC, fast-uri, dotenv и Motion; production и AI проверены)
+**Последнее обновление:** 2026-11-12 (rollout OpenTelemetry заблокирован FIPS-CVE; разбор minimatch)
+
+FastAPI PR #102 с opentelemetry-api 1.45.1 слит в main@5b6eb992, но deploy
+43181145499 остановлен до Cloud Run новой High CVE-2026-119170 в Python 3.14.10.
+Fixed-in 3.14.11 ещё не опубликован. Serving scan 43181865048 также заблокирован
+одной High; 59 неисправимых High advisory. Gate/VEX не менялись. Владелец
+разрешил отдельную ручную FIPS-диагностику через scanner identity (A115);
+проверка local FIPS=0 не подменяет production.
+
+minimatch 10.2.6 остаётся открытым: [разбор](docs/minimatch-review-2026-11-12.md)
+не нашёл эксплуатации через текущий HTTP/src/ESLint путь. A114 проверяет
+текущие config/lock/ограниченные matcher-пробы; это не все JS-вызовы или
+Vercel bundle. Совместимого upstream-фикса нет; override мажора 11 не добавлен.
 
 Serving image-scan FastAPI `41816747488` от 2026-11-04 заблокирован новой
 Critical Python 3.14.9 (CVE-2026-115557, eMudhra intermediate CA distrust)
