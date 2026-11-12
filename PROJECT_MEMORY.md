@@ -2,17 +2,20 @@
 
 > Живой снимок устойчивых знаний о проекте. Перед работой сверяй его с кодом и обновляй после существенных изменений.
 
-**Последнее обновление:** 2026-11-12 (rollout OpenTelemetry заблокирован FIPS-CVE; разбор minimatch)
+**Последнее обновление:** 2026-11-12 (OpenTelemetry выложен; exact FIPS VEX и serving scan проверены)
 
-FastAPI PR #102 с opentelemetry-api 1.45.1 слит в main@5b6eb992, но deploy
-43181145499 остановлен до Cloud Run новой High CVE-2026-119170 в Python 3.14.10.
-Fixed-in 3.14.11 ещё не опубликован. Serving scan 43181865048 также заблокирован
-одной High; 59 неисправимых High advisory. Gate/VEX не менялись. Владелец
-разрешил отдельную ручную FIPS-диагностику через scanner identity (A115).
-Она опубликована PR #103; fips_probe job 43183151100 успешна: exact serving
-child 534fcd9b…d802e870, FIPS=0/fips.so=0, релевантных runtime env, volumes
-или command overrides нет. Это копия serving image, не live-память или новый
-candidate. Gate всё ещё FAIL, исключений нет. [Review](docs/fips-review-2026-11-12.md).
+FastAPI OpenTelemetry API 1.45.1 выложен signed source 5b6eb992 через exact
+promotion 43188890883. Serving — insights-api-00071-2kt, child 7faf8be3…9c581d7c,
+parent 73784498…c087bba. Прежний deploy блокировался FIPS-only Python CVE;
+после candidate-пробы и явного разрешения владельца PR #107 принял один
+exact FIPS VEX для child/python 3.14.10/CVE-2026-119170. Waiver нет, обычный
+deploy gate не ослаблен; другие images/CVE не покрываются. A116/A117 описывают
+подпись/SBOM/FIPS/fresh scan/runtime/baseline и семидневный promotion record.
+Независимый serving scan 43189371657: provenance/evidence/runtime guard PASS,
+Critical=0, блокирующих High=0, advisory High=59, VEX=1. Selected overrides нет,
+FIPS=0/fips.so=0 в копии exact serving image; это не live-память. Drift снова
+блокирует recurring scan. [Review](docs/fips-review-2026-11-12.md).
+Реальный AI-ответ через UI после rollout не проверен.
 
 minimatch 10.2.6 остаётся открытым: [разбор](docs/minimatch-review-2026-11-12.md)
 не нашёл эксплуатации через текущий HTTP/src/ESLint путь. A114 проверяет

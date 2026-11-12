@@ -10,7 +10,7 @@
 
 | Приоритет | Пробел | Для закрытия |
 |---|---|---|
-| 1 | Rollout OpenTelemetry остановлен CVE-2026-119170 в Python 3.14.10; fixed-in 3.14.11 ещё не опубликован. Serving scan 43181865048 также заблокирован | A115: probe 43183151100 для exact serving child 534fcd9b…d802e870 дала FIPS=0/fips.so=0 и отсутствие выбранных overrides; это копия image, не live-память или следующий candidate. [Review](../fips-review-2026-11-12.md). Отдельно рассмотреть точную применимость/механизм допуска либо официальный patch. Gate и VEX не менялись; rollout не выполнен |
+| 2 | Условный exact FIPS VEX Python 3.14.10 для child 7faf8be3…9c581d7c; interpreter ещё не обновлён официальным patch | Promotion 43188890883 и независимый scan 43189371657 PASS: FIPS=0/fips.so=0, selected overrides нет, VEX=1/waiver=0, 59 advisory High сохраняются. Runtime drift снова блокирует recurring scan (A117). [Review](../fips-review-2026-11-12.md). Новый image не наследует VEX; при официальном patch/новом exploit path или включении FIPS требуется пересмотр. Это не память live-процесса и не атомарность внешнего control plane |
 | 2 | Остаточная npm advisory GHSA-g3hv-75wg-m249: minimatch 10.2.6 в typescript-eslint, семь Moderate записей npm audit 2026-11-12; Critical=0/High=0 | Ждать совместимого обновления upstream, требующего minimatch >=11.0.1, либо отдельный review замены. Проверки A114 и [разбор minimatch](../minimatch-review-2026-11-12.md) не нашли достижимость через текущий src/ESLint: project service выключен, просмотренный вызов без optimizationLevel>=2, prod-only установка без пакета. Это T* + R с указанными границами, не blanket VEX. Override @10 -> @11 не принят. Вложенный Zod и fast-uri исправлены и опубликованы PR #266/main@b8c9da0; CI 42973000713, production migration и Vercel status success; владелец подтвердил Preview S3 и production AI (A112). Это не независимый IAM/STS-аудит |
 | 1 | A29/A74: неполный разбор exports, текст не исполнение auth/бюджета | AST/реальные exports, fail-closed неподдерживаемых форм, сценарии отказа/бюджета и альтернативного синтаксиса |
 | 1 | A56/A68: частичный network detector/file allowlist | Инвентарь клиентов/каждого call, aliases, SDK/ADC-пути, пробы нового call/формы |
@@ -21,6 +21,15 @@
 | 3 | Retry/time-budget AI SDK A16 и containment после смены провайдера не оценены | Текущие SDK/timeout/retry/все адресаты, затем решение |
 
 ## Закрыто в проверенном serving-образе
+
+2026-11-12: rollout OpenTelemetry API 1.45.1 завершён exact promotion
+43188890883 после отдельного FIPS non-affected review PR #107. Serving
+insights-api-00071-2kt / child 7faf8be3…9c581d7c подтверждён независимым scan
+43189371657: provenance/evidence/runtime guard/policy PASS, Critical=0,
+блокирующих High=0, VEX=1/waiver=0, advisory High=59. Закрыт именно rollout gap,
+а не все Python CVE: conditional FIPS VEX остаётся отдельным остатком выше.
+Реальный production AI-ответ после rollout не проверен.
+
 
 2026-11-05: CVE-2026-115557 и четыре High pyasn1 устранены обновлением
 Python до 3.14.10 и pyasn1 до 0.6.5 (FastAPI PR #96, A110). Deploy 41958660134
