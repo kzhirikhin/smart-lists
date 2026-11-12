@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-11-11 (зависимости опубликованы; rollout и ручные S3/AI-проверки).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-12 (rollout OpenTelemetry заблокирован FIPS-CVE; ручная диагностика).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 **Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
 [Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
@@ -32,6 +32,66 @@ serving child
 Внешние health/insights без токена дают ожидаемый IAM 403. Владелец 2026-11-05 подтвердил получение реального AI-инсайта через production UI
 после выкладки. Это общая ручная проверка, не полный набор AI-сценариев.
 Подробный review: FastAPI `security/reviews/2026-11-05-image-scan.md`.
+
+## Блокировка rollout и ручная FIPS-диагностика (2026-11-12)
+
+FastAPI PR #102 слит в main@5b6eb992; CI/CodeQL/dependency-review прошли.
+Deploy 43181145499 остановился до Cloud Run: pre-deploy Grype обнаружил
+High CVE-2026-119170 (регрессия hashlib только при OpenSSL FIPS в Python 3.14.10).
+Fixed-in 3.14.11 на дату проверки не опубликован: официальный CPython tag
+и Docker manifest отсутствуют. Serving scan 43181865048 также заблокировал
+прежний serving child 534fcd9b…d802e870; provenance/evidence выполнены,
+59 High без доступного исправления остаются advisory. Policy/VEX не ослаблены.
+Локальный runtime показывает FIPS=0 и отсутствие fips.so, но это не production.
+
+Владелец явно разрешил ручную FIPS-job в существующем image-scan workflow.
+Необязательный probe_fips по умолчанию выключен. Job использует ту же
+main-only read-only scanner identity, читает Cloud Run/registry и исполняет
+только cold Python в exact image без сети, mounts/передачи env, с read-only FS,
+UID 10001, cap-drop/no-new-privileges, CPU/memory/pid/time limits. Artifact
+содержит фиксированный набор version/FIPS полей, имена релевантных runtime env
+и признаки mounts/command overrides; значения env/секреты не публикуются.
+Это новый ручной путь исполнения production-образа на CI runner, отдельный от
+неисполняющего offline evidence. Изоляция ограничивает последствия недоверенного
+image; Docker/runner остаются доверенной границей. Job не меняет сервис,
+трафик, IAM или CVE-policy и не получает production Environment. Проверка
+копии образа не читает память live-процесса и не доказывает все поздние загрузки
+OpenSSL; автоматического решения VEX нет. A115 фиксирует границы и тесты.
+
+## Достижимость minimatch (2026-11-12, A114)
+
+[Разбор](docs/minimatch-review-2026-11-12.md): vulnerable 10.2.6 в dev-цепочке
+TypeScript ESLint; в просмотренном вызове trusted allowDefaultProject и
+{dot:true}, optimizationLevel по умолчанию 1. Эффективный ESLint config для
+всех текущих src TS/TSX не включает project service/project. Ограниченная
+положительная проба включает опасные фазы только при уровне 2. В чистой Linux
+prod-only установке по lock minimatch/typescript-estree отсутствуют. Путь
+HTTP → этот matcher не найден. Это T* + ограниченный R, не полнота всех
+JS-вызовов, будущих config/env и Vercel bundle. Alert/риск не закрываются;
+меняются только evidence/триггеры пересмотра. Override мажора не добавлен.
+Lint/typecheck, 843 unit и 589 static security прошли.
+
+## OpenTelemetry API: исправление DoS в main (2026-11-12, rollout заблокирован)
+
+FastAPI закрепляет `opentelemetry-api==1.45.1` в `.in` и обоих Linux hash-lock.
+GHSA-xcq7-p3pf-p88h / CVE-2026-114603 закрывается линейным разбором tracestate
+и пределом длины. Затронуты доступность TB4 и цепочка поставок; новых границ,
+активов, секретов, IAM-прав или передаваемых данных нет. Пять telemetry-флагов
+остаются выключенными (A102), tracing/exporters не включаются. Тесты
+TestOpenTelemetrySecurity закрепляют версию установленного пакета и всех pins,
+отбрасывание oversized-заголовка и сохранение корректного короткого заголовка.
+Это не доказательство всех OTel-путей или версии serving-образа: rollout не выполнен.
+331 pytest без сети и pip check прошли в чистом Python 3.14.10/Linux.
+Регрессионные проверки установленной версии и отказа до парсера ожидаемо
+падают с wheel 1.45.0; lock-контракт остаётся зелёным. Production Docker build
+и smoke старта/health=200 прошли без внешней сети и настоящих credentials.
+
+Повторная проверка npm 2026-11-12: Critical=0, High=0, Moderate=7; production
+npm audit — 0 находок. Единственная исходная npm advisory — minimatch 10.2.6.
+Последний стабильный typescript-estree 8.72.2 всё ещё требует minimatch ^10.2.2;
+в ветке 10 исправления нет. Прежний отказ от override мажора 10 на 11 сохранён,
+риск в risks.md остаётся открытым. 59 неисправимых High serving-образа по scan
+43006882362 от 2026-11-11 остаются advisory по A100; этот фикс их не закрывает.
 
 ## Security-обновление Next.js (2026-11-09, A52/A58)
 
