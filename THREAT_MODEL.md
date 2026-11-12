@@ -57,6 +57,15 @@ image; Docker/runner остаются доверенной границей. Job
 трафик, IAM или CVE-policy и не получает production Environment. Проверка
 копии образа не читает память live-процесса и не доказывает все поздние загрузки
 OpenSSL; автоматического решения VEX нет. A115 фиксирует границы и тесты.
+Диагностика опубликована FastAPI PR #103/main@d1fb01c. fips_probe job
+[43183151100](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/43183151100)
+успешна: serving insights-api-00070-q8b, exact child 534fcd9b…d802e870,
+Python 3.14.10/OpenSSL 3.5.7, FIPS=0, fips.so=0; релевантных runtime env,
+volumes и command overrides нет. Условие этой CVE не обнаружено в проверенной
+копии/настройках; candidate следующего deploy этим не покрыт. Отдельная scan
+job того же run остаётся FAIL, policy/VEX/waiver не менялись. Результат — M
+конкретного digest, не blanket non-affected. Подробности:
+[датированный review](docs/fips-review-2026-11-12.md).
 
 ## Достижимость minimatch (2026-11-12, A114)
 

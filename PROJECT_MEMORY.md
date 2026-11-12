@@ -8,8 +8,11 @@ FastAPI PR #102 с opentelemetry-api 1.45.1 слит в main@5b6eb992, но depl
 43181145499 остановлен до Cloud Run новой High CVE-2026-119170 в Python 3.14.10.
 Fixed-in 3.14.11 ещё не опубликован. Serving scan 43181865048 также заблокирован
 одной High; 59 неисправимых High advisory. Gate/VEX не менялись. Владелец
-разрешил отдельную ручную FIPS-диагностику через scanner identity (A115);
-проверка local FIPS=0 не подменяет production.
+разрешил отдельную ручную FIPS-диагностику через scanner identity (A115).
+Она опубликована PR #103; fips_probe job 43183151100 успешна: exact serving
+child 534fcd9b…d802e870, FIPS=0/fips.so=0, релевантных runtime env, volumes
+или command overrides нет. Это копия serving image, не live-память или новый
+candidate. Gate всё ещё FAIL, исключений нет. [Review](docs/fips-review-2026-11-12.md).
 
 minimatch 10.2.6 остаётся открытым: [разбор](docs/minimatch-review-2026-11-12.md)
 не нашёл эксплуатации через текущий HTTP/src/ESLint путь. A114 проверяет
