@@ -1,6 +1,6 @@
 # Threat Model — Smart Lists
 
-**Актуальная сводка: 2026-11-12 (rollout OpenTelemetry заблокирован FIPS-CVE; ручная диагностика).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
+**Актуальная сводка: 2026-11-12 (OpenTelemetry выложен; exact FIPS VEX и serving scan проверены).** STRIDE по потокам/границам, LINDDUN для AI. Дополнения 2026-10-22 — подготовка backup (A108), устранение Critical certifi FastAPI (A109) и разбор advisory High (A66/A100); приёмка ручного ZAP workflow — 2026-10-18; аудит остальных разделов — 2026-10-14. Полной новой проверки приложения и живой инфраструктуры не проводилось.
 
 **Image-scan 2026-11-04 / production-исправление 2026-11-05 (A110).**
 [Run 41816747488](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/41816747488)
@@ -33,39 +33,48 @@ serving child
 после выкладки. Это общая ручная проверка, не полный набор AI-сценариев.
 Подробный review: FastAPI `security/reviews/2026-11-05-image-scan.md`.
 
-## Блокировка rollout и ручная FIPS-диагностика (2026-11-12)
+## OpenTelemetry rollout и exact FIPS VEX (2026-11-12, A113/A115–A117)
 
-FastAPI PR #102 слит в main@5b6eb992; CI/CodeQL/dependency-review прошли.
-Deploy 43181145499 остановился до Cloud Run: pre-deploy Grype обнаружил
-High CVE-2026-119170 (регрессия hashlib только при OpenSSL FIPS в Python 3.14.10).
-Fixed-in 3.14.11 на дату проверки не опубликован: официальный CPython tag
-и Docker manifest отсутствуют. Serving scan 43181865048 также заблокировал
-прежний serving child 534fcd9b…d802e870; provenance/evidence выполнены,
-59 High без доступного исправления остаются advisory. Policy/VEX не ослаблены.
-Локальный runtime показывает FIPS=0 и отсутствие fips.so, но это не production.
+OpenTelemetry API 1.45.1 из FastAPI PR #102/source 5b6eb992 опубликован
+через [promotion 43188890883](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/43188890883).
+Serving insights-api-00071-2kt указывает на child 7faf8be3…9c581d7c,
+связанный с parent 73784498…c087bba. Первоначальный deploy блокировался
+CVE-2026-119170 в Python 3.14.10, применимой только при OpenSSL FIPS;
+официальный fixed-in 3.14.11 на дату review ещё не опубликован.
 
-Владелец явно разрешил ручную FIPS-job в существующем image-scan workflow.
-Необязательный probe_fips по умолчанию выключен. Job использует ту же
-main-only read-only scanner identity, читает Cloud Run/registry и исполняет
-только cold Python в exact image без сети, mounts/передачи env, с read-only FS,
-UID 10001, cap-drop/no-new-privileges, CPU/memory/pid/time limits. Artifact
-содержит фиксированный набор version/FIPS полей, имена релевантных runtime env
-и признаки mounts/command overrides; значения env/секреты не публикуются.
-Это новый ручной путь исполнения production-образа на CI runner, отдельный от
-неисполняющего offline evidence. Изоляция ограничивает последствия недоверенного
-image; Docker/runner остаются доверенной границей. Job не меняет сервис,
-трафик, IAM или CVE-policy и не получает production Environment. Проверка
-копии образа не читает память live-процесса и не доказывает все поздние загрузки
-OpenSSL; автоматического решения VEX нет. A115 фиксирует границы и тесты.
-Диагностика опубликована FastAPI PR #103/main@d1fb01c. fips_probe job
-[43183151100](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/43183151100)
-успешна: serving insights-api-00070-q8b, exact child 534fcd9b…d802e870,
-Python 3.14.10/OpenSSL 3.5.7, FIPS=0, fips.so=0; релевантных runtime env,
-volumes и command overrides нет. Условие этой CVE не обнаружено в проверенной
-копии/настройках; candidate следующего deploy этим не покрыт. Отдельная scan
-job того же run остаётся FAIL, policy/VEX/waiver не менялись. Результат — M
-конкретного digest, не blanket non-affected. Подробности:
-[датированный review](docs/fips-review-2026-11-12.md).
+Владелец явно разрешил диагностику, exact допуск и rollout. Candidate job
+43185846747 повторно проверила Sigstore/source/claims до исполнения,
+единственный linux/amd64 child, OpenTelemetry 1.45.1 и FIPS=0/fips.so=0.
+Selected runtime overrides отсутствуют как у serving revisions, так и у service
+template. PR #107 принял один CycloneDX not_affected/requires_configuration
+для этого child/python 3.14.10/CVE. VEX не переносится на parent/другой image;
+waiver нет, другие CVE не подавляются. Подробности и границы:
+[review](docs/fips-review-2026-11-12.md).
+
+Manual-only promotion (PR #106/#108): main + production Environment, tests,
+существующая deployer identity; fixed parent/source/child/baseline и review
+record <=7 дней с совпадающими VEX metadata. Перед mutation повторяются
+подпись/claims, FIPS/пакеты, exact SBOM attachment, fresh full Grype и selected
+runtime/time guards. Разрешён ровно один этот VEX, ноль waiver/иных блокеров;
+после deploy проверяется serving digest. Обычный push-deploy gate неизменён.
+Это дополнительный разрешённый путь записи control plane, не новый IAM grant.
+
+Независимый [serving scan 43189371657](https://github.com/kzhirikhin/smart-lists-fastapi-service/actions/runs/43189371657)
+подтвердил provenance/evidence, metadata-only FIPS runtime guard и policy PASS:
+raw Critical=0/High=60, VEX=1, waiver=0, блокирующих Critical=0/High=0,
+advisory High=59. Exact serving FIPS-проба: mode=0, fips.so=0, selected overrides
+нет. Recurring VEX при drift/ошибке блокируется до evaluator.
+
+Штатный offline evidence не исполняет image. Opt-in FIPS/candidate probes
+исполняют cold Python в копии exact image без host env/credentials/mounts/network,
+read-only FS, UID 10001, cap-drop/no-new-privileges, CPU/memory/pid/time limits.
+Artifact не публикует значения runtime env. Docker/runner/main остаются
+доверенными; cold probe не live-память и не все поздние provider paths, а guards
+не атомарны относительно внешнего изменения control plane. Новых runtime
+сервисов, IAM grants, секретов или AI-данных нет. TB11/TB12 уточнены ниже.
+420 pytest без сети/pip check и YAML parse четырёх workflow прошли; plaintext
+run guard фиксирует известную форму, не весь синтаксис Actions. Реальный
+production AI-ответ после rollout не проверялся.
 
 ## Достижимость minimatch (2026-11-12, A114)
 
@@ -80,7 +89,7 @@ JS-вызовов, будущих config/env и Vercel bundle. Alert/риск н
 меняются только evidence/триггеры пересмотра. Override мажора не добавлен.
 Lint/typecheck, 843 unit и 589 static security прошли.
 
-## OpenTelemetry API: исправление DoS в main (2026-11-12, rollout заблокирован)
+## OpenTelemetry API: исправление DoS (2026-11-12, опубликовано)
 
 FastAPI закрепляет `opentelemetry-api==1.45.1` в `.in` и обоих Linux hash-lock.
 GHSA-xcq7-p3pf-p88h / CVE-2026-114603 закрывается линейным разбором tracestate
@@ -89,7 +98,8 @@ GHSA-xcq7-p3pf-p88h / CVE-2026-114603 закрывается линейным р
 остаются выключенными (A102), tracing/exporters не включаются. Тесты
 TestOpenTelemetrySecurity закрепляют версию установленного пакета и всех pins,
 отбрасывание oversized-заголовка и сохранение корректного короткого заголовка.
-Это не доказательство всех OTel-путей или версии serving-образа: rollout не выполнен.
+Это не доказательство всех OTel-путей. Версия serving-образа связана с candidate
+через immutable digest и отдельно проверенный rollout выше.
 331 pytest без сети и pip check прошли в чистом Python 3.14.10/Linux.
 Регрессионные проверки установленной версии и отказа до парсера ожидаемо
 падают с wheel 1.45.0; lock-контракт остаётся зелёным. Production Docker build
@@ -431,6 +441,9 @@ flowchart LR
     G -->|TB8: backup OIDC| K[S3 backups]
     G -->|TB11/TB12: image / provenance / SBOM| A[Artifact Registry]
     A -->|exact digest deploy| F
+    G -->|TB12: build deploy / exact reviewed promotion| F
+    A -->|TB11: exact child без credentials| GP[Docker sandbox CI]
+    GP -->|cold package/FIPS evidence| G
     G -->|TB9: проверенный SHA| Q[Vercel Preview]
     PB[Chromium / local pilot] -->|TZ1: synthetic Session| Z[ZAP / internal network]
     Z --> LN[Next production build / local]
@@ -459,8 +472,8 @@ flowchart LR
 | TB8 | backup workflow → S3 | OIDC/ограниченная роль; клиент PGDG по HTTPS с отдельным signed-by (A108). External trust/bucket policy unknown |
 | TB9 | main CI → preview → Vercel | защищённый workflow синхронизирует проверенный SHA; branch/rulesets unknown |
 | TB10 | workflow → Neon enforcement | target guards, Environment, catalog contract, locks, транзакционный apply; среды отдельно |
-| TB11 | scanner → metadata / Registry | traffic/tagged revisions, offline evidence; read-only IAM отдельная live-проверка |
-| TB12 | deploy → Registry → Cloud Run | exact digest/SBOM/attestation до защищённого deploy; ручной путь не запрещён Binary Authorization |
+| TB11 | scanner → metadata / Registry / sandbox | traffic/tagged revisions, offline evidence, opt-in cold probes и selected runtime guard A115–A117; read-only IAM — отдельная проверка |
+| TB12 | deploy → Registry → Cloud Run | обычный build gate и narrow manual promotion A117: exact signature/SBOM/fresh policy/runtime; вне workflow ручная выкладка не запрещена Binary Authorization |
 | TZ1 | тестовый браузер → локальный ZAP → тестовое приложение | Отдельный Docker project/БД, internal network, localhost proxy/API без published ports; 22 выбранных сценария, не весь HTTP/API; A103 |
 | TZ2 | память ZAP → сборщик → локальные отчёты | Конечные словари признаков, строгая схема, лимиты размера, экранирование HTML/Markdown; raw headers/body/session DB/trace не экспортируются. Неизвестное несопоставимо, error запрещает детальный экспорт. A104 |
 | TZ3 | default branch / PR-runner → CI publisher → GitHub artifacts | Обычные blobs trusted checkout, без PR fallback; повторная схема и генерация отчёта, точный upload allowlist, stdlib error fallback. Независимый advisory workflow без боевых secrets/OIDC/write; runner/workflow-код доверен, произвольный PR host-код этим не sandboxed. PR completed/error/incomplete/skipped и trusted main после merge подтверждены 2026-10-17; A105 |
